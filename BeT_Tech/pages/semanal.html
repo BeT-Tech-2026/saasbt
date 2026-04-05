@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -9,184 +11,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e5e7eb; border-radius: 12px; overflow: hidden; }
+        .calendar-header { background: #f9fafb; padding: 12px; text-align: center; font-weight: 600; color: #6b7280; font-size: 13px; }
+        .calendar-day { background: white; min-height: 100px; padding: 8px; }
+        .calendar-day.other-month { background: #f9fafb; color: #9ca3af; }
+        .calendar-day.today { background: #ecfdf5; }
+        .calendar-day .day-number { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+        .calendar-day.today .day-number { color: #16a34a; }
+        .calendar-turma { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border: 1px solid #86efac; border-radius: 6px; padding: 4px 6px; font-size: 10px; margin-bottom: 4px; cursor: pointer; }
+        .calendar-turma .turma-horario { font-weight: 700; color: #16a34a; font-size: 9px; }
+        .calendar-turma .turma-nome { color: #166534; font-weight: 600; }
+        .week-view { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 10px; }
+        .week-column { min-width: 160px; flex: 1; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .week-header { background: linear-gradient(135deg, #111827 0%, #1f2937 100%); color: white; padding: 12px; text-align: center; }
+        .week-header.today { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+        .week-header .dia-nome { font-weight: 700; font-size: 14px; }
+        .week-header .dia-num { font-size: 11px; opacity: 0.8; }
+        .week-content { padding: 10px; min-height: 200px; }
+        .week-turma { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border: 1px solid #86efac; border-radius: 8px; padding: 8px; margin-bottom: 8px; cursor: pointer; }
+        .week-turma .hora { font-size: 11px; color: #16a34a; font-weight: 700; }
+        .week-turma .nome { font-size: 13px; color: #166534; font-weight: 600; }
+        .view-btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; border: none; }
+        .view-btn.active { background: #16a34a; color: white; }
+        .view-btn:not(.active) { background: #f3f4f6; color: #6b7280; }
+        .nav-btn { background: white; border: 1px solid #e5e7eb; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #374151; }
         
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background: #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        .calendar-header {
-            background: #f9fafb;
-            padding: 12px;
-            text-align: center;
-            font-weight: 600;
-            color: #6b7280;
-            font-size: 13px;
-        }
-        
-        .calendar-day {
-            background: white;
-            min-height: 100px;
-            padding: 8px;
-            position: relative;
-        }
-        
-        .calendar-day.other-month {
-            background: #f9fafb;
-            color: #9ca3af;
-        }
-        
-        .calendar-day.today {
-            background: #ecfdf5;
-        }
-        
-        .calendar-day .day-number {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-        
-        .calendar-day.today .day-number {
-            color: #16a34a;
-        }
-        
-        .calendar-turma {
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-            border: 1px solid #86efac;
-            border-radius: 6px;
-            padding: 4px 6px;
-            font-size: 10px;
-            margin-bottom: 4px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        
-        .calendar-turma:hover {
-            transform: scale(1.02);
-        }
-        
-        .calendar-turma .turma-horario {
-            font-weight: 700;
-            color: #16a34a;
-            font-size: 9px;
-        }
-        
-        .calendar-turma .turma-nome {
-            color: #166534;
-            font-weight: 600;
-        }
-        
-        .week-view {
-            display: flex;
-            gap: 16px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-        }
-        
-        .week-column {
-            min-width: 160px;
-            flex: 1;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .week-header {
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-            color: white;
-            padding: 12px;
-            text-align: center;
-        }
-        
-        .week-header.today {
-            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-        }
-        
-        .week-header .dia-nome {
-            font-weight: 700;
-            font-size: 14px;
-        }
-        
-        .week-header .dia-num {
-            font-size: 11px;
-            opacity: 0.8;
-        }
-        
-        .week-content {
-            padding: 10px;
-            min-height: 200px;
-        }
-        
-        .week-turma {
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-            border: 1px solid #86efac;
-            border-radius: 8px;
-            padding: 8px;
-            margin-bottom: 8px;
-        }
-        
-        .week-turma .hora {
-            font-size: 11px;
-            color: #16a34a;
-            font-weight: 700;
-        }
-        
-        .week-turma .nome {
-            font-size: 13px;
-            color: #166534;
-            font-weight: 600;
-        }
-        
-        .view-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-        
-        .view-btn.active {
-            background: #16a34a;
-            color: white;
-        }
-        
-        .view-btn:not(.active) {
-            background: #f3f4f6;
-            color: #6b7280;
-        }
-        
-        .nav-btn {
-            background: white;
-            border: 1px solid #e5e7eb;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            color: #374151;
-            transition: all 0.2s;
-        }
-        
-        .nav-btn:hover {
-            background: #f3f4f6;
-        }
+        .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+        .modal-body { padding: 20px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f3f4f6; padding: 15px; border-radius: 8px; }
+        .info-item label { display: block; font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+        .info-item span { font-size: 14px; color: #111827; font-weight: 500; }
+        .aluno-list { list-style: none; padding: 0; margin: 0; }
+        .aluno-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f3f4f6; }
+        .aluno-avatar { width: 32px; height: 32px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: #6b7280; }
+        .aluno-nome { font-size: 14px; font-weight: 500; }
+        .btn-primary { background: #16a34a; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body class="dashboard-body">
-
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
             <span class="text-xl font-bold">B&T Tech</span>
         </div>
         <nav class="sidebar-menu">
-            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
+            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Inicio</a>
             <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
             <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
             <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
@@ -204,36 +78,25 @@
             <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </div>
     </aside>
-
     <main class="main-content">
         <header class="top-header">
             <h1><i class="fas fa-calendar-week mr-2"></i>Agenda</h1>
             <div class="flex items-center gap-3">
-                <button onclick="changeView('month')" id="btnMonth" class="view-btn active">Mês</button>
+                <button onclick="changeView('month')" id="btnMonth" class="view-btn active">Mes</button>
                 <button onclick="changeView('week')" id="btnWeek" class="view-btn">Semana</button>
             </div>
         </header>
-
         <div class="content">
-            <!-- Navegação -->
             <div class="flex items-center justify-between mb-4">
-                <button onclick="navegar(-1)" class="nav-btn">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
+                <button onclick="navegar(-1)" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
                 <h2 id="periodoLabel" class="text-xl font-bold" style="color: #111827;">Abril 2024</h2>
-                <button onclick="navegar(1)" class="nav-btn">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
+                <button onclick="navegar(1)" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
             </div>
-
-            <!-- Visualização Mês -->
             <div id="viewMonth" class="card">
                 <div class="card-body" style="padding: 0;">
                     <div class="calendar-grid" id="calendarGrid"></div>
                 </div>
             </div>
-
-            <!-- Visualização Semana -->
             <div id="viewWeek" class="card" style="display: none;">
                 <div class="card-body">
                     <div class="week-view" id="weekView"></div>
@@ -242,44 +105,69 @@
         </div>
     </main>
 
+    <!-- Modal -->
+    <div id="modalDetalhesAula" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTurmaNome">Detalhes da Aula</h3>
+                <button onclick="fecharModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-grid">
+                    <div class="info-item"><label>Dia</label><span id="modalTurmaDia">-</span></div>
+                    <div class="info-item"><label>Horario</label><span id="modalTurmaHorario">-</span></div>
+                    <div class="info-item"><label>Professor</label><span id="modalTurmaProfessor">-</span></div>
+                    <div class="info-item"><label>Sala</label><span id="modalTurmaSala">-</span></div>
+                </div>
+                <h4 style="font-size:14px;margin-bottom:10px;">Alunos (<span id="countAlunos">0</span>)</h4>
+                <ul class="aluno-list" id="listaAlunos"></ul>
+                <div id="loadingAlunos" style="text-align:center;padding:20px;color:#6b7280;">Carregando...</div>
+                <p id="semAlunos" style="display:none;text-align:center;color:#9ca3af;">Nenhum aluno.</p>
+                <button class="btn-primary" onclick="abrirMatricula()"><i class="fas fa-user-plus"></i> Matricular</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let perfil = null;
-        let currentDate = new Date();
-        let currentView = 'month';
-        let turmas = [];
+        var perfil = null;
+        var currentDate = new Date();
+        var currentView = 'month';
+        var turmas = [];
+        var turmaSelecionadaId = null;
+        var meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        var diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+        var diasSemanaFull = ['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
 
-        const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        const diasSemanaFull = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
+        document.addEventListener('DOMContentLoaded', function() {
+            var token = localStorage.getItem('token');
             if (!token) { window.location.href = '/'; return; }
-
-            perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(token);
-            if (!perfil) { window.location.href = '/'; return; }
-
-            document.getElementById('userName').textContent = perfil.nome;
-            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
-
-            if (perfil.tipo !== 'dono') {
-                document.querySelector('a[href="/professores"]').style.display = 'none';
-            }
-
-            await loadTurmas();
-            render();
+            perfil = JSON.parse(localStorage.getItem('perfil'));
+            if (!perfil) {
+                fetch('/api/session', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(function(res){ return res.json(); })
+                .then(function(data){
+                    perfil = data.perfil;
+                    localStorage.setItem('perfil', JSON.stringify(perfil));
+                    init();
+                });
+            } else { init(); }
         });
 
-        async function getPerfil(token) {
-            const response = await fetch('/api/session', { headers: { 'Authorization': `Bearer ${token}` } });
-            const data = await response.json();
-            return data.perfil;
+        function init() {
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+            if (perfil.tipo !== 'dono') document.querySelector('a[href="/professores"]').style.display = 'none';
+            loadTurmas();
         }
 
-        async function loadTurmas() {
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/turmas', { headers: { 'Authorization': `Bearer ${token}` } });
-            turmas = await response.json();
+        function loadTurmas() {
+            var token = localStorage.getItem('token');
+            fetch('/api/turmas', { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(function(res){ return res.json(); })
+            .then(function(data){
+                turmas = data;
+                render();
+            });
         }
 
         function changeView(view) {
@@ -292,170 +180,139 @@
         }
 
         function navegar(direcao) {
-            if (currentView === 'month') {
-                currentDate.setMonth(currentDate.getMonth() + direcao);
-            } else {
-                currentDate.setDate(currentDate.getDate() + (direcao * 7));
-            }
+            if (currentView === 'month') currentDate.setMonth(currentDate.getMonth() + direcao);
+            else currentDate.setDate(currentDate.getDate() + (direcao * 7));
             render();
         }
 
         function render() {
-            document.getElementById('periodoLabel').textContent = currentView === 'month' 
-                ? `${meses[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-                : getWeekLabel();
-
-            if (currentView === 'month') {
-                renderMonth();
-            } else {
-                renderWeek();
-            }
+            var periodoLabel = document.getElementById('periodoLabel');
+            periodoLabel.textContent = currentView === 'month' ? meses[currentDate.getMonth()] + ' ' + currentDate.getFullYear() : getWeekLabel();
+            if (currentView === 'month') renderMonth();
+            else renderWeek();
         }
 
         function getWeekLabel() {
-            const primeiroDia = getPrimeiroDiaSemana();
-            const ultimoDia = new Date(primeiroDia);
+            var primeiroDia = getPrimeiroDiaSemana();
+            var ultimoDia = new Date(primeiroDia);
             ultimoDia.setDate(ultimoDia.getDate() + 6);
-            
-            const dia1 = primeiroDia.getDate();
-            const dia2 = ultimoDia.getDate();
-            const mes1 = meses[primeiroDia.getMonth()];
-            const mes2 = meses[ultimoDia.getMonth()];
-            
-            if (mes1 === mes2) {
-                return `${dia1} - ${dia2} de ${mes1}`;
-            }
-            return `${dia1} de ${mes1} - ${dia2} de ${mes2}`;
+            var dia1 = primeiroDia.getDate();
+            var dia2 = ultimoDia.getDate();
+            var mes1 = meses[primeiroDia.getMonth()];
+            var mes2 = meses[ultimoDia.getMonth()];
+            return mes1 === mes2 ? dia1 + ' - ' + dia2 + ' de ' + mes1 : dia1 + ' de ' + mes1 + ' - ' + dia2 + ' de ' + mes2;
         }
 
         function getPrimeiroDiaSemana() {
-            const hoje = new Date(currentDate);
-            const dia = hoje.getDay();
-            return new Date(hoje.setDate(hoje.getDate() - dia));
+            var hoje = new Date(currentDate);
+            return new Date(hoje.setDate(hoje.getDate() - hoje.getDay()));
         }
 
         function renderMonth() {
-            const ano = currentDate.getFullYear();
-            const mes = currentDate.getMonth();
+            var ano = currentDate.getFullYear();
+            var mes = currentDate.getMonth();
+            var primeiroDia = new Date(ano, mes, 1);
+            var ultimoDia = new Date(ano, mes + 1, 0);
+            var diasNoMes = ultimoDia.getDate();
+            var primeiroDiaSemana = primeiroDia.getDay();
+            var hoje = new Date();
+            var html = '';
             
-            const primeiroDia = new Date(ano, mes, 1);
-            const ultimoDia = new Date(ano, mes + 1, 0);
-            const primeiroDiaSemana = primeiroDia.getDay();
-            const diasNoMes = ultimoDia.getDate();
+            for (var i = 0; i < diasSemana.length; i++) html += '<div class="calendar-header">' + diasSemana[i] + '</div>';
             
-            const hoje = new Date();
+            var ultimoDiaMesAnterior = new Date(ano, mes, 0).getDate();
+            for (var i = primeiroDiaSemana - 1; i >= 0; i--) html += '<div class="calendar-day other-month"><div class="day-number">' + (ultimoDiaMesAnterior - i) + '</div></div>';
             
-            let html = diasSemana.map(d => `<div class="calendar-header">${d}</div>`).join('');
-            
-            // Dias do mês anterior
-            const diasMesAnterior = primeiroDiaSemana;
-            const ultimoDiaMesAnterior = new Date(ano, mes, 0).getDate();
-            for (let i = diasMesAnterior - 1; i >= 0; i--) {
-                const dia = ultimoDiaMesAnterior - i;
-                html += `<div class="calendar-day other-month"><div class="day-number">${dia}</div></div>`;
+            for (var dia = 1; dia <= diasNoMes; dia++) {
+                var dataAtual = new Date(ano, mes, dia);
+                var diaSemana = diasSemanaFull[dataAtual.getDay()];
+                var ehHoje = dataAtual.toDateString() === hoje.toDateString();
+                var turmasDoDia = turmas.filter(function(t) { return t.dia_semana === diaSemana; });
+                var turmasHtml = '';
+                for (var j = 0; j < turmasDoDia.length; j++) {
+                    var t = turmasDoDia[j];
+                    turmasHtml += '<div class="calendar-turma" onclick="abrirDetalhesTurma(' + t.id + ')"><div class="turma-horario">' + t.horario_inicio + '</div><div class="turma-nome">' + t.nome + '</div></div>';
+                }
+                html += '<div class="calendar-day ' + (ehHoje ? 'today' : '') + '"><div class="day-number">' + dia + '</div>' + turmasHtml + '</div>';
             }
             
-            // Dias do mês atual
-            for (let dia = 1; dia <= diasNoMes; dia++) {
-                const dataAtual = new Date(ano, mes, dia);
-                const dataStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-                const diaSemana = diasSemanaFull[dataAtual.getDay()];
-                
-                const ehHoje = dataAtual.toDateString() === hoje.toDateString();
-                const turmasDoDia = turmas.filter(t => t.dia_semana === diaSemana);
-                
-                let turmasHtml = turmasDoDia.map(t => `
-                    <div class="calendar-turma" title="${t.nome} - ${t.horario_inicio}">
-                        <div class="turma-horario">${t.horario_inicio}</div>
-                        <div class="turma-nome">${t.nome}</div>
-                    </div>
-                `).join('');
-                
-                html += `
-                    <div class="calendar-day ${ehHoje ? 'today' : ''}">
-                        <div class="day-number">${dia}</div>
-                        ${turmasHtml}
-                    </div>
-                `;
-            }
-            
-            // Dias do próximo mês
-            const totalCells = Math.ceil((diasMesAnterior + diasNoMes) / 7) * 7;
-            const diasProximoMes = totalCells - (diasMesAnterior + diasNoMes);
-            for (let dia = 1; dia <= diasProximoMes; dia++) {
-                html += `<div class="calendar-day other-month"><div class="day-number">${dia}</div></div>`;
-            }
+            var totalCells = Math.ceil((primeiroDiaSemana + diasNoMes) / 7) * 7;
+            for (var dia = 1; dia <= totalCells - (primeiroDiaSemana + diasNoMes); dia++) html += '<div class="calendar-day other-month"><div class="day-number">' + dia + '</div></div>';
             
             document.getElementById('calendarGrid').innerHTML = html;
         }
 
         function renderWeek() {
-            const primeiroDia = getPrimeiroDiaSemana();
-            const hoje = new Date();
+            var primeiroDia = getPrimeiroDiaSemana();
+            var hoje = new Date();
+            var html = '';
             
-            let html = '';
-            
-            for (let i = 0; i < 7; i++) {
-                const dataAtual = new Date(primeiroDia);
+            for (var i = 0; i < 7; i++) {
+                var dataAtual = new Date(primeiroDia);
                 dataAtual.setDate(primeiroDia.getDate() + i);
-                
-                const diaSemana = diasSemanaFull[dataAtual.getDay()];
-                const ehHoje = dataAtual.toDateString() === hoje.toDateString();
-                
-                const turmasDoDia = turmas.filter(t => t.dia_semana === diaSemana).sort((a, b) => a.horario_inicio.localeCompare(b.horario_inicio));
-                
-                let turmasHtml = turmasDoDia.map(t => `
-                    <div class="week-turma">
-                        <div class="hora">${t.horario_inicio} - ${t.horario_fim}</div>
-                        <div class="nome">${t.nome}</div>
-                        <div style="font-size:11px;color:#6b7280;">${t.perfis?.nome || ''}</div>
-                    </div>
-                `).join('') || '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:13px;">Sem aulas</p>';
-                
-                html += `
-                    <div class="week-column">
-                        <div class="week-header ${ehHoje ? 'today' : ''}">
-                            <div class="dia-nome">${diasSemana[i]}</div>
-                            <div class="dia-num">${dataAtual.getDate()}</div>
-                        </div>
-                        <div class="week-content">
-                            ${turmasHtml}
-                        </div>
-                    </div>
-                `;
+                var diaSemana = diasSemanaFull[dataAtual.getDay()];
+                var ehHoje = dataAtual.toDateString() === hoje.toDateString();
+                var turmasDoDia = turmas.filter(function(t) { return t.dia_semana === diaSemana; }).sort(function(a,b) { return a.horario_inicio.localeCompare(b.horario_inicio); });
+                var turmasHtml = '';
+                if (turmasDoDia.length === 0) turmasHtml = '<p style="text-align:center;color:#9ca3af;padding:20px;">Sem aulas</p>';
+                else for (var j = 0; j < turmasDoDia.length; j++) {
+                    var t = turmasDoDia[j];
+                    turmasHtml += '<div class="week-turma" onclick="abrirDetalhesTurma(' + t.id + ')"><div class="hora">' + t.horario_inicio + ' - ' + t.horario_fim + '</div><div class="nome">' + t.nome + '</div><div style="font-size:11px;color:#6b7280;">' + (t.perfis ? t.perfis.nome : '') + '</div></div>';
+                }
+                html += '<div class="week-column"><div class="week-header ' + (ehHoje ? 'today' : '') + '"><div class="dia-nome">' + diasSemana[i] + '</div><div class="dia-num">' + dataAtual.getDate() + '</div></div><div class="week-content">' + turmasHtml + '</div></div>';
             }
-            
             document.getElementById('weekView').innerHTML = html;
         }
 
-        async function logout() {
-            const token = localStorage.getItem('token');
-            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+        function abrirDetalhesTurma(id) {
+            var turmaId = Number(id);
+            var turma = null;
+            for (var i = 0; i < turmas.length; i++) if (Number(turmas[i].id) === turmaId) { turma = turmas[i]; break; }
+            if (!turma) { alert('Turma nao encontrada!'); return; }
+            turmaSelecionadaId = turmaId;
+            document.getElementById('modalTurmaNome').textContent = turma.nome;
+            var diaIndex = diasSemanaFull.indexOf(turma.dia_semana);
+            document.getElementById('modalTurmaDia').textContent = diaIndex >= 0 ? diasSemana[diaIndex] : turma.dia_semana;
+            document.getElementById('modalTurmaHorario').textContent = turma.horario_inicio + ' as ' + turma.horario_fim;
+            document.getElementById('modalTurmaProfessor').textContent = turma.perfis ? turma.perfis.nome : 'Nao definido';
+            document.getElementById('modalTurmaSala').textContent = turma.sala || 'Nao definida';
+            document.getElementById('listaAlunos').innerHTML = '';
+            document.getElementById('loadingAlunos').style.display = 'block';
+            document.getElementById('semAlunos').style.display = 'none';
+            document.getElementById('modalDetalhesAula').classList.add('show');
+            carregarAlunosDaTurma(turmaId);
+        }
+
+        function carregarAlunosDaTurma(turmaId) {
+            var token = localStorage.getItem('token');
+            fetch('/api/matriculas/' + turmaId, { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(function(res){ return res.json(); })
+            .then(function(matriculas){
+                document.getElementById('loadingAlunos').style.display = 'none';
+                var alunos = [];
+                for (var i = 0; i < matriculas.length; i++) if (matriculas[i].ativa && matriculas[i].alunos) alunos.push(matriculas[i].alunos);
+                document.getElementById('countAlunos').textContent = alunos.length;
+                if (alunos.length === 0) { document.getElementById('semAlunos').style.display = 'block'; return; }
+                var html = '';
+                for (var i = 0; i < alunos.length; i++) html += '<li class="aluno-item"><div class="aluno-avatar"><i class="fas fa-user"></i></div><div class="aluno-nome">' + alunos[i].nome + '</div></li>';
+                document.getElementById('listaAlunos').innerHTML = html;
+            })
+            .catch(function(){
+                document.getElementById('loadingAlunos').style.display = 'none';
+                document.getElementById('semAlunos').style.display = 'block';
+            });
+        }
+
+        function fecharModal() { document.getElementById('modalDetalhesAula').classList.remove('show'); }
+        function abrirMatricula() { window.location.href = '/turmas?matricular=' + turmaSelecionadaId; }
+        function logout() {
+            var token = localStorage.getItem('token');
+            fetch('/api/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
             window.location.href = '/';
         }
+        window.onclick = function(event) { if (event.target.id === 'modalDetalhesAula') fecharModal(); };
     </script>
-    <!-- Modal Matricular Aluno na Semana -->
-<div id="modalMatricularSemana" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Matricular Aluno</h3>
-            <button onclick="closeModal('matricularSemana')" class="close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p class="mb-3">Selecione os alunos para matricular nesta turma:</p>
-            <div id="alunosCheckboxesSemana" class="space-y-2" style="max-height: 300px; overflow-y: auto;"></div>
-            <div class="modal-footer" style="margin-top: 20px;">
-                <button onclick="salvarMatriculasSemana()" class="btn btn-primary">Salvar</button>
-                <button onclick="closeModal('matricularSemana')" class="btn btn-secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
-</div>
-<button onclick="matricularAlunosSemana('${t.id}')" class="btn btn-sm" style="background:#16a34a;color:white;margin-top:4px;">
-    <i class="fas fa-user-plus"></i> Matricular
-</button>
-
 </body>
 </html>
