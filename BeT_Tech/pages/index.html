@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="login-page">
+
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-volleyball-ball"></i>
+                </div>
+                <h1>B&T Tech</h1>
+                <p>Gestão de Beach Tennis</p>
+            </div>
+
+            <!-- Abas -->
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('login')">Entrar</button>
+                <button class="tab" onclick="showTab('cadastro')">Cadastrar</button>
+            </div>
+
+            <!-- Formulário de Login -->
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-envelope"></i> E-mail
+                    </label>
+                    <input type="email" id="loginEmail" placeholder="seu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i> Senha
+                    </label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+
+                <div id="loginError" class="error-message hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="loginErrorText"></span>
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+            </form>
+
+            <!-- Formulário de Cadastro -->
+            <form id="cadastroForm" class="login-form hidden">
+                <div class="form-group">
+                    <label for="cadNome">
+                        <i class="fas fa-user"></i> Seu Nome
+                    </label>
+                    <input type="text" id="cadNome" placeholder="Seu nome completo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cadEmail">
+                        <i class="fas fa-envelope"></i> E-mail
+                    </label>
+                    <input type="email" id="cadEmail" placeholder="seu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cadPassword">
+                        <i class="fas fa-lock"></i> Senha
+                    </label>
+                    <input type="password" id="cadPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="cadEscola">
+                        <i class="fas fa-school"></i> Nome da Escola
+                    </label>
+                    <input type="text" id="cadEscola" placeholder="Minha Escola de Beach Tennis" required>
+                </div>
+
+                <div id="cadError" class="error-message hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="cadErrorText"></span>
+                </div>
+
+                <button type="submit" id="cadBtn" class="btn-login">
+                    <i class="fas fa-user-plus"></i> Criar Conta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Alternar abas
+        function showTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const cadastroForm = document.getElementById('cadastroForm');
+            const tabs = document.querySelectorAll('.tab');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                cadastroForm.classList.add('hidden');
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+            } else {
+                loginForm.classList.add('hidden');
+                cadastroForm.classList.remove('hidden');
+                tokens[0].classList.remove('active');
+                tabs[1].classList.add('active');
+            }
+        }
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+            const errorText = document.getElementById('loginErrorText');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao fazer login');
+                }
+
+                // Corrigido: pega token de qualquer lugar
+                const token = data.access_token || (data.user && data.user.access_token);
+                if (!token) {
+                    throw new Error('Token não encontrado');
+                }
+
+                localStorage.setItem('token', token);
+                localStorage.setItem('perfil', JSON.stringify(data.perfil));
+
+                window.location.href = '/dashboard';
+
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                errorText.textContent = error.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+            }
+        });
+
+        // Cadastro
+        document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nome = document.getElementById('cadNome').value;
+            const email = document.getElementById('cadEmail').value;
+            const password = document.getElementById('cadPassword').value;
+            const nomeEscola = document.getElementById('cadEscola').value;
+            const btn = document.getElementById('cadBtn');
+            const errorDiv = document.getElementById('cadError');
+            const errorText = document.getElementById('cadErrorText');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/cadastro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, password, nomeEscola })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao fazer cadastro');
+                }
+
+                alert('Conta criada com sucesso! Agora você pode fazer login.');
+                showTab('login');
+                document.getElementById('loginEmail').value = email;
+                document.getElementById('cadastroForm').reset();
+
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                errorText.textContent = error.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Criar Conta';
+            }
+        });
+    </script>
+</body>
+</html>

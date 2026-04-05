@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Turmas - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .aluno-tag {
+            display: inline-flex;
+            align-items: center;
+            background: #ecfdf5;
+            border: 1px solid #86efac;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 12px;
+            margin: 2px;
+            color: #166534;
+        }
+        .aluno-tag button {
+            margin-left: 6px;
+            color: #dc2626;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <span class="text-xl font-bold">B&T Tech</span>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
+            <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
+            <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
+            <a href="/turmas" class="menu-item active"><i class="fas fa-school"></i> Turmas</a>
+            <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
+            <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Carregando...</p>
+                    <p class="user-type" id="userType">Carregando...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1>Turmas</h1>
+        </header>
+
+        <div class="content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Lista de Turmas</h2>
+                    <button id="btnNovaTurma" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nova Turma
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="turmasList" class="grid-cards"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Nova/Editar Turma -->
+    <div id="modalTurma" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nova Turma</h3>
+                <button onclick="fecharModalTurma()" class="close">&times;</button>
+            </div>
+            <form id="turmaForm" class="modal-body">
+                <div class="form-group">
+                    <label>Nome da Turma *</label>
+                    <input type="text" id="turmaNome" required placeholder="Ex: Avançado A">
+                </div>
+                <div class="form-group">
+                    <label>Dia da Semana *</label>
+                    <select id="turmaDia" required>
+                        <option value="">Selecione...</option>
+                        <option value="segunda">Segunda-feira</option>
+                        <option value="terca">Terça-feira</option>
+                        <option value="quarta">Quarta-feira</option>
+                        <option value="quinta">Quinta-feira</option>
+                        <option value="sexta">Sexta-feira</option>
+                        <option value="sabado">Sábado</option>
+                        <option value="domingo">Domingo</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Início *</label>
+                        <input type="time" id="turmaInicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fim *</label>
+                        <input type="time" id="turmaFim" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Professor</label>
+                    <select id="turmaProfessor">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Limite de Alunos</label>
+                    <input type="number" id="turmaLimite" value="4" min="1" max="20">
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="turmaRecorrente" style="margin-right: 10px; width: 18px; height: 18px;">
+                        <span style="font-weight: bold; color: #4b5563;">Turma Recorrente</span>
+                    </label>
+                    <p style="font-size: 11px; color: #6b7280; margin-left: 28px;">Se marcado, cria turmas para todos os dias da semana.</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" onclick="fecharModalTurma()" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Matricular -->
+    <div id="modalMatricular" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Matricular Aluno</h3>
+                <button onclick="fecharModalMatricular()" class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Selecione os alunos:</p>
+                <div id="alunosCheckboxes" style="max-height: 300px; overflow-y: auto;"></div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button onclick="salvarMatriculas()" class="btn btn-primary">Salvar</button>
+                    <button onclick="fecharModalMatricular()" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let perfil = null;
+        let turmasData = [];
+        let turmaSelecionada = null;
+        let turmaEmEdicao = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Iniciando...');
+            
+            const token = localStorage.getItem('token');
+            if (!token) { 
+                window.location.href = '/'; 
+                return; 
+            }
+
+            perfil = JSON.parse(localStorage.getItem('perfil'));
+            
+            if (!perfil) {
+                const response = await fetch('/api/session', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                const data = await response.json();
+                perfil = data.perfil;
+                localStorage.setItem('perfil', JSON.stringify(perfil));
+            }
+
+            if (!perfil) { 
+                window.location.href = '/'; 
+                return; 
+            }
+
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+
+            if (perfil.tipo !== 'dono') {
+                document.querySelector('a[href="/professores"]').style.display = 'none';
+            }
+
+            // Event listener do botão
+            document.getElementById('btnNovaTurma').addEventListener('click', abrirModalTurma);
+            
+            await loadTurmas();
+            await loadProfessoresSelect();
+        });
+
+        async function loadTurmas() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/turmas', { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            turmasData = await response.json();
+
+            for (let turma of turmasData) {
+                const res = await fetch(`/api/matriculas/${turma.id}`, { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                turma.alunosMatriculados = await res.json();
+            }
+
+            renderTurmas();
+        }
+
+        function renderTurmas() {
+            const container = document.getElementById('turmasList');
+            if (turmasData && turmasData.length > 0) {
+                container.innerHTML = turmasData.map(t => `
+                    <div class="turma-card">
+                        <div class="turma-header">
+                            <h3>${t.nome}</h3>
+                            <span class="badge">${t.dia_semana}</span>
+                        </div>
+                        <div class="turma-body">
+                            <p><i class="fas fa-clock"></i> ${t.horario_inicio} - ${t.horario_fim}</p>
+                            <p><i class="fas fa-user"></i> ${t.perfis?.nome || 'Sem professor'}</p>
+                            <p><i class="fas fa-users"></i> ${t.alunosMatriculados?.length || 0}/${t.limite_alunos} alunos</p>
+                            
+                            <div style="margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
+                                <p style="font-size:12px;color:#6b7280;margin-bottom:8px;">ALUNOS:</p>
+                                <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                    ${t.alunosMatriculados?.map(m => `
+                                        <span class="aluno-tag">
+                                            ${m.alunos?.nome}
+                                            <button onclick="desmatricular('${m.id}')" title="Remover">&times;</button>
+                                        </span>
+                                    `).join('') || '<span style="font-size:12px;color:#9ca3af;">Nenhum</span>'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="turma-actions">
+                            <button onclick="matricularAlunos('${t.id}')" class="btn btn-sm btn-primary" style="flex:1">
+                                <i class="fas fa-user-plus"></i> Matricular
+                            </button>
+                            <button onclick="editarTurma('${t.id}')" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="excluirTurma('${t.id}')" class="btn btn-sm btn-danger">Excluir</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p class="empty">Nenhuma turma cadastrada</p>';
+            }
+        }
+
+        async function loadProfessoresSelect() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/professores', { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            const professores = await response.json();
+            const select = document.getElementById('turmaProfessor');
+            if (professores) {
+                select.innerHTML = '<option value="">Selecione...</option>' + 
+                    professores.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            }
+        }
+
+        function abrirModalTurma() {
+            turmaEmEdicao = null;
+            document.getElementById('turmaForm').reset();
+            document.getElementById('turmaRecorrente').checked = false;
+            document.querySelector('#modalTurma .modal-header h3').textContent = 'Nova Turma';
+            document.getElementById('modalTurma').classList.remove('hidden');
+        }
+
+        function fecharModalTurma() {
+            document.getElementById('modalTurma').classList.add('hidden');
+        }
+
+        function abrirModalMatricular() {
+            document.getElementById('modalMatricular').classList.remove('hidden');
+        }
+
+        function fecharModalMatricular() {
+            document.getElementById('modalMatricular').classList.add('hidden');
+        }
+
+        // Editar Turma
+        window.editarTurma = async (id) => {
+            const turma = turmasData.find(t => t.id === id);
+            if (!turma) return;
+
+            turmaEmEdicao = id;
+            
+            document.getElementById('turmaNome').value = turma.nome;
+            document.getElementById('turmaDia').value = turma.dia_semana;
+            document.getElementById('turmaInicio').value = turma.horario_inicio;
+            document.getElementById('turmaFim').value = turma.horario_fim;
+            document.getElementById('turmaProfessor').value = turma.professor_id || '';
+            document.getElementById('turmaLimite').value = turma.limite_alunos;
+            document.getElementById('turmaRecorrente').checked = false;
+
+            document.querySelector('#modalTurma .modal-header h3').textContent = 'Editar Turma';
+            document.getElementById('modalTurma').classList.remove('hidden');
+        };
+
+        document.getElementById('turmaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+
+            const dados = {
+                nome: document.getElementById('turmaNome').value,
+                dia_semana: document.getElementById('turmaDia').value,
+                horario_inicio: document.getElementById('turmaInicio').value,
+                horario_fim: document.getElementById('turmaFim').value,
+                professor_id: document.getElementById('turmaProfessor').value || null,
+                limite_alunos: parseInt(document.getElementById('turmaLimite').value),
+                recorrente: document.getElementById('turmaRecorrente').checked
+            };
+
+            let url = '/api/turmas';
+            let method = 'POST';
+
+            if (turmaEmEdicao) {
+                url = `/api/turmas/${turmaEmEdicao}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(dados)
+            });
+
+            if (response.ok) {
+                fecharModalTurma();
+                document.getElementById('turmaForm').reset();
+                await loadTurmas();
+            } else {
+                const err = await response.json();
+                alert('Erro ao salvar: ' + err.error);
+            }
+        });
+
+        window.matricularAlunos = async (turmaId) => {
+            turmaSelecionada = turmasData.find(t => t.id === turmaId);
+            const token = localStorage.getItem('token');
+            
+            const response = await fetch('/api/alunos', { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            const alunos = await response.json();
+            
+            const matriculados = turmaSelecionada.alunosMatriculados?.map(m => m.aluno_id) || [];
+            
+            const container = document.getElementById('alunosCheckboxes');
+            container.innerHTML = alunos.map(a => `
+                <label style="display:flex;align-items:center;padding:10px;background:${matriculados.includes(a.id) ? '#dcfce7' : '#f9fafb'};border-radius:8px;cursor:pointer;margin-bottom:8px;">
+                    <input type="checkbox" value="${a.id}" ${matriculados.includes(a.id) ? 'checked' : ''} style="margin-right:10px;">
+                    <span>${a.nome}</span>
+                </label>
+            `).join('') || '<p style="text-align:center;color:#9ca3af;">Nenhum aluno</p>';
+            
+            abrirModalMatricular();
+        };
+
+        window.salvarMatriculas = async () => {
+            const token = localStorage.getItem('token');
+            const checkboxes = document.querySelectorAll('#alunosCheckboxes input:checked');
+            const alunosSelecionados = Array.from(checkboxes).map(c => c.value);
+            
+            for (const alunoId of alunosSelecionados) {
+                const jaMatriculado = turmaSelecionada.alunosMatriculados?.some(m => m.aluno_id === alunoId);
+                if (!jaMatriculado) {
+                    await fetch('/api/matriculas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ turma_id: turmaSelecionada.id, aluno_id: alunoId })
+                    });
+                }
+            }
+            
+            // Remover alunos que foram desmarcados
+            const alunosAtuaisIds = turmaSelecionada.alunosMatriculados?.map(m => m.aluno_id) || [];
+            for (const alunoId of alunosAtuaisIds) {
+                if (!alunosSelecionados.includes(alunoId)) {
+                    // Encontrar o ID da matrícula
+                    const matricula = turmaSelecionada.alunosMatriculados.find(m => m.aluno_id === alunoId);
+                    if (matricula) {
+                        await fetch(`/api/matriculas/${matricula.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                    }
+                }
+            }
+            
+            fecharModalMatricular();
+            await loadTurmas();
+            alert('Alunos matriculados!');
+        };
+
+        window.desmatricular = async (matriculaId) => {
+            if (!confirm('Remover aluno?')) return;
+            const token = localStorage.getItem('token');
+            await fetch(`/api/matriculas/${matriculaId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            await loadTurmas();
+        };
+
+        window.excluirTurma = async (id) => {
+            if (!confirm('Excluir turma?')) return;
+            const token = localStorage.getItem('token');
+            await fetch(`/api/turmas/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            await loadTurmas();
+        };
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/logout', { 
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('perfil');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

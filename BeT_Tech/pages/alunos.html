@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Alunos - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <span class="text-xl font-bold">B&T Tech</span>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
+            <a href="/alunos" class="menu-item active"><i class="fas fa-users"></i> Alunos</a>
+            <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
+            <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
+            <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
+            <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Carregando...</p>
+                    <p class="user-type" id="userType">Carregando...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1>Gestão de Alunos</h1>
+        </header>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total de Alunos</p>
+                        <p class="stat-value" id="totalAlunos">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-list mr-2"></i>Lista de Alunos</h2>
+                    <button onclick="openModal('aluno')" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Novo Aluno
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Telefone</th>
+                                <th>E-mail</th>
+                                <th>Turmas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alunosTable">
+                            <tr><td colspan="5" class="loading">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Novo Aluno -->
+    <div id="modalAluno" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Novo Aluno</h3>
+                <button onclick="closeModal('aluno')" class="close">&times;</button>
+            </div>
+            <form id="alunoForm" class="modal-body">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Nome *</label>
+                    <input type="text" id="alunoNome" placeholder="Nome completo" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fab fa-whatsapp"></i> Telefone</label>
+                    <input type="text" id="alunoTelefone" placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> E-mail</label>
+                    <input type="email" id="alunoEmail" placeholder="email@exemplo.com">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" onclick="closeModal('aluno')" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Matricular -->
+    <div id="modalMatricular" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Matricular Aluno em Turma</h3>
+                <button onclick="closeModal('matricular')" class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-4">Selecione a turma para matricular <strong id="alunoMatricularNome"></strong>:</p>
+                <div id="turmasSelect" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let perfil = null;
+        let alunosData = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/'; return; }
+
+            perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(token);
+            if (!perfil) { window.location.href = '/'; return; }
+
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+
+            if (perfil.tipo !== 'dono') {
+                document.querySelector('a[href="/professores"]').style.display = 'none';
+            }
+
+            loadAlunos();
+        });
+
+        async function getPerfil(token) {
+            const response = await fetch('/api/session', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await response.json();
+            return data.perfil;
+        }
+
+        async function loadAlunos() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/alunos', { headers: { 'Authorization': `Bearer ${token}` } });
+            alunosData = await response.json();
+
+            document.getElementById('totalAlunos').textContent = alunosData.length;
+
+            const tbody = document.getElementById('alunosTable');
+            if (alunosData.length > 0) {
+                tbody.innerHTML = await Promise.all(alunosData.map(async a => {
+                    const turmas = await getTurmasDoAluno(a.id);
+                    return `
+                        <tr>
+                            <td class="font-semibold">${a.nome}</td>
+                            <td>${a.telefone || '-'}</td>
+                            <td>${a.email || '-'}</td>
+                            <td>${turmas.map(t => `<span class="badge">${t}</span>`).join(' ')}</td>
+                            <td>
+                                <button onclick="matricular('${a.id}', '${a.nome}')" class="btn-icon text-green-600" title="Matricular"><i class="fas fa-plus-circle"></i></button>
+                                <button onclick="excluirAluno('${a.id}')" class="btn-icon text-red-600" title="Excluir"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                })).then(html => html.join(''));
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum aluno cadastrado</td></tr>';
+            }
+        }
+
+        async function getTurmasDoAluno(alunoId) {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/turmas', { headers: { 'Authorization': `Bearer ${token}` } });
+            const turmas = await response.json();
+            return turmas.filter(t => t.alunos?.some(m => m.alunos.id === alunoId)).map(t => t.nome);
+        }
+
+        window.openModal = (tipo) => document.getElementById(`modal${tipo}`).classList.remove('hidden');
+        window.closeModal = (tipo) => document.getElementById(`modal${tipo}`).classList.add('hidden');
+
+        document.getElementById('alunoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const nome = document.getElementById('alunoNome').value;
+            const telefone = document.getElementById('alunoTelefone').value;
+            const email = document.getElementById('alunoEmail').value;
+
+            await fetch('/api/alunos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ nome, telefone, email })
+            });
+
+            closeModal('aluno');
+            document.getElementById('alunoForm').reset();
+            loadAlunos();
+        });
+
+        window.matricular = async (alunoId, alunoNome) => {
+            document.getElementById('alunoMatricularNome').textContent = alunoNome;
+            
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/turmas', { headers: { 'Authorization': `Bearer ${token}` } });
+            const turmas = await response.json();
+
+            const container = document.getElementById('turmasSelect');
+            container.innerHTML = turmas.map(t => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <p class="font-semibold">${t.nome}</p>
+                        <p class="text-sm text-gray-500">${t.dia_semana} ${t.horario_inicio}</p>
+                    </div>
+                    <button onclick="confirmarMatricula('${t.id}', '${alunoId}')" class="btn btn-primary btn-sm">Matricular</button>
+                </div>
+            `).join('') || '<p class="text-gray-500">Nenhuma turma disponível</p>';
+
+            openModal('matricular');
+        };
+
+        window.confirmarMatricula = async (turmaId, alunoId) => {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/matriculas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ turma_id: turmaId, aluno_id: alunoId })
+            });
+
+            if (response.ok) {
+                alert('Aluno matriculado com sucesso!');
+                closeModal('matricular');
+                loadAlunos();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Erro ao matricular');
+            }
+        };
+
+        window.excluirAluno = async (id) => {
+            if (!confirm('Excluir aluno?')) return;
+            const token = localStorage.getItem('token');
+            await fetch(`/api/alunos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            loadAlunos();
+        };
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            localStorage.removeItem('token');
+            localStorage.removeItem('perfil');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

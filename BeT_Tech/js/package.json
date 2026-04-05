@@ -1,0 +1,12 @@
+{
+  "name": "bet-tech",
+  "version": "1.0.0",
+  "description": "Plataforma de Gestão para Escolas de Beach Tennis",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

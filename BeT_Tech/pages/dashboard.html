@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <span class="text-xl font-bold">B&T Tech</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item active"><i class="fas fa-home"></i> Início</a>
+            <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
+            <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
+            <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
+            <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
+            <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Carregando...</p>
+                    <p class="user-type" id="userType">Carregando...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1>Dashboard</h1>
+            <span class="date" id="currentDate"></span>
+        </header>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <p class="stat-label">Alunos Ativos</p>
+                        <p class="stat-value" id="totalAlunos">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-school"></i></div>
+                    <div class="stat-info">
+                        <p class="stat-label">Turmas Ativas</p>
+                        <p class="stat-value" id="totalTurmas">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon purple"><i class="fas fa-calendar-day"></i></div>
+                    <div class="stat-info">
+                        <p class="stat-label">Aulas Hoje</p>
+                        <p class="stat-value" id="aulasHoje">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class="fas fa-clock"></i> Aulas de Hoje</h2>
+                <div id="aulasHojeList" class="aulas-list">
+                    <p class="loading">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let perfil = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/'; return; }
+
+            perfil = JSON.parse(localStorage.getItem('perfil'));
+
+            if (!perfil) {
+                const response = await fetch('/api/session', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) { window.location.href = '/'; return; }
+                const data = await response.json();
+                perfil = data.perfil;
+                localStorage.setItem('perfil', JSON.stringify(perfil));
+            }
+
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+            
+            const data = new Date().toLocaleDateString('pt-BR', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            document.getElementById('currentDate').textContent = data;
+
+            if (perfil.tipo !== 'dono') {
+                document.querySelector('a[href="/professores"]').style.display = 'none';
+            }
+
+            loadDashboard();
+        });
+
+        async function loadDashboard() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/dashboard', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            const { alunosAtivos, turmasAtivas, aulasHoje } = await response.json();
+
+            document.getElementById('totalAlunos').textContent = alunosAtivos || 0;
+            document.getElementById('totalTurmas').textContent = turmasAtivas || 0;
+            document.getElementById('aulasHoje').textContent = aulasHoje?.length || 0;
+
+            const lista = document.getElementById('aulasHojeList');
+            if (aulasHoje && aulasHoje.length > 0) {
+                lista.innerHTML = aulasHoje.map(t => `
+                    <div class="aula-item">
+                        <div class="aula-info">
+                            <strong>${t.nome}</strong>
+                            <span>${t.perfis?.nome || 'Sem professor'}</span>
+                        </div>
+                        <div class="aula-horario">
+                            <span class="time">${t.horario_inicio}</span>
+                            <span class="end">${t.horario_fim}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                lista.innerHTML = '<p class="empty">Nenhuma aula agendada para hoje</p>';
+            }
+        }
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/logout', { 
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('perfil');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

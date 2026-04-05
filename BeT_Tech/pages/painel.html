@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Dia - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <span class="text-xl font-bold">B&T Tech</span>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
+            <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
+            <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
+            <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
+            <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
+            <a href="/painel" class="menu-item active"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Carregando...</p>
+                    <p class="user-type" id="userType">Carregando...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1>Painel do Dia</h1>
+            <div class="date-badge" id="dateBadge">Carregando...</div>
+        </header>
+
+        <div class="content">
+            <div id="painelContent"></div>
+        </div>
+    </main>
+
+
+<!-- Modal Presença -->
+<div id="modalPresenca" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Registrar Presença</h3>
+            <button onclick="closeModal('presenca')" class="close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-3">Selecione o status de presença:</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button onclick="atualizarStatus('confirmado')" class="btn" style="background:#dcfce7;color:#16a34a;border:1px solid #86efac;">
+                    <i class="fas fa-check"></i> Confirmado
+                </button>
+                <button onclick="atualizarStatus('present')" class="btn" style="background:#dbeafe;color:#2563eb;border:1px solid #93c5fd;">
+                    <i class="fas fa-user-check"></i> Presente
+                </button>
+                <button onclick="atualizarStatus('cancelado')" class="btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;">
+                    <i class="fas fa-times"></i> Cancelado
+                </button>
+                <button onclick="atualizarStatus('aguardando')" class="btn" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;">
+                    <i class="fas fa-clock"></i> Aguardando
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+        let perfil = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/'; return; }
+
+            perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(token);
+            if (!perfil) { window.location.href = '/'; return; }
+
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+
+            if (perfil.tipo !== 'dono') {
+                document.querySelector('a[href="/professores"]').style.display = 'none';
+            }
+
+            const hoje = new Date();
+            document.getElementById('dateBadge').textContent = hoje.toLocaleDateString('pt-BR');
+            
+            loadPainel();
+        });
+
+        async function getPerfil(token) {
+            const response = await fetch('/api/session', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            return data.perfil;
+        }
+
+        async function loadPainel() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/painel', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const turmas = await response.json();
+
+            const container = document.getElementById('painelContent');
+            
+            if (!turmas || turmas.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-times"></i><p>Nenhuma aula agendada para hoje</p></div>';
+                return;
+            }
+
+            container.innerHTML = turmas.map(turma => `
+                <div class="painel-card">
+                    <div class="painel-header">
+                        <div>
+                            <h3>${turma.nome}</h3>
+                            <p>${turma.perfis?.nome || 'Sem professor'} • ${turma.horario_inicio} às ${turma.horario_fim}</p>
+                        </div>
+                        <div class="painel-count">
+                            <span class="count">${turma.alunos.length}/${turma.limite_alunos}</span>
+                            <span class="label">vagas</span>
+                        </div>
+                    </div>
+                    <div class="painel-body">
+                        <table class="painel-table">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Contato</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${turma.alunos.length > 0 ? turma.alunos.map(m => `
+                                    <tr>
+                                        <td>${m.alunos.nome}</td>
+                                        <td>${m.alunos.telefone || '-'}</td>
+                                        <td><span class="status waiting">Aguardando</span></td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="3" class="empty">Nenhum aluno matriculado</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/logout', { 
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('perfil');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

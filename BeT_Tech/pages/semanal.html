@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Grade Semanal - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .calendar-header {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        
+        .calendar-day {
+            background: white;
+            min-height: 100px;
+            padding: 8px;
+            position: relative;
+        }
+        
+        .calendar-day.other-month {
+            background: #f9fafb;
+            color: #9ca3af;
+        }
+        
+        .calendar-day.today {
+            background: #ecfdf5;
+        }
+        
+        .calendar-day .day-number {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .calendar-day.today .day-number {
+            color: #16a34a;
+        }
+        
+        .calendar-turma {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            padding: 4px 6px;
+            font-size: 10px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        .calendar-turma:hover {
+            transform: scale(1.02);
+        }
+        
+        .calendar-turma .turma-horario {
+            font-weight: 700;
+            color: #16a34a;
+            font-size: 9px;
+        }
+        
+        .calendar-turma .turma-nome {
+            color: #166534;
+            font-weight: 600;
+        }
+        
+        .week-view {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        
+        .week-column {
+            min-width: 160px;
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .week-header {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            color: white;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .week-header.today {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+        
+        .week-header .dia-nome {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .week-header .dia-num {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        .week-content {
+            padding: 10px;
+            min-height: 200px;
+        }
+        
+        .week-turma {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .week-turma .hora {
+            font-size: 11px;
+            color: #16a34a;
+            font-weight: 700;
+        }
+        
+        .week-turma .nome {
+            font-size: 13px;
+            color: #166534;
+            font-weight: 600;
+        }
+        
+        .view-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .view-btn.active {
+            background: #16a34a;
+            color: white;
+        }
+        
+        .view-btn:not(.active) {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .nav-btn {
+            background: white;
+            border: 1px solid #e5e7eb;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #374151;
+            transition: all 0.2s;
+        }
+        
+        .nav-btn:hover {
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <span class="text-xl font-bold">B&T Tech</span>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
+            <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
+            <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
+            <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
+            <a href="/semanal" class="menu-item active"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
+            <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Carregando...</p>
+                    <p class="user-type" id="userType">Carregando...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1><i class="fas fa-calendar-week mr-2"></i>Agenda</h1>
+            <div class="flex items-center gap-3">
+                <button onclick="changeView('month')" id="btnMonth" class="view-btn active">Mês</button>
+                <button onclick="changeView('week')" id="btnWeek" class="view-btn">Semana</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Navegação -->
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="navegar(-1)" class="nav-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h2 id="periodoLabel" class="text-xl font-bold" style="color: #111827;">Abril 2024</h2>
+                <button onclick="navegar(1)" class="nav-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Visualização Mês -->
+            <div id="viewMonth" class="card">
+                <div class="card-body" style="padding: 0;">
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+            </div>
+
+            <!-- Visualização Semana -->
+            <div id="viewWeek" class="card" style="display: none;">
+                <div class="card-body">
+                    <div class="week-view" id="weekView"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let perfil = null;
+        let currentDate = new Date();
+        let currentView = 'month';
+        let turmas = [];
+
+        const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const diasSemanaFull = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/'; return; }
+
+            perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(token);
+            if (!perfil) { window.location.href = '/'; return; }
+
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+
+            if (perfil.tipo !== 'dono') {
+                document.querySelector('a[href="/professores"]').style.display = 'none';
+            }
+
+            await loadTurmas();
+            render();
+        });
+
+        async function getPerfil(token) {
+            const response = await fetch('/api/session', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await response.json();
+            return data.perfil;
+        }
+
+        async function loadTurmas() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/turmas', { headers: { 'Authorization': `Bearer ${token}` } });
+            turmas = await response.json();
+        }
+
+        function changeView(view) {
+            currentView = view;
+            document.getElementById('btnMonth').className = view === 'month' ? 'view-btn active' : 'view-btn';
+            document.getElementById('btnWeek').className = view === 'week' ? 'view-btn active' : 'view-btn';
+            document.getElementById('viewMonth').style.display = view === 'month' ? 'block' : 'none';
+            document.getElementById('viewWeek').style.display = view === 'week' ? 'block' : 'none';
+            render();
+        }
+
+        function navegar(direcao) {
+            if (currentView === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + direcao);
+            } else {
+                currentDate.setDate(currentDate.getDate() + (direcao * 7));
+            }
+            render();
+        }
+
+        function render() {
+            document.getElementById('periodoLabel').textContent = currentView === 'month' 
+                ? `${meses[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                : getWeekLabel();
+
+            if (currentView === 'month') {
+                renderMonth();
+            } else {
+                renderWeek();
+            }
+        }
+
+        function getWeekLabel() {
+            const primeiroDia = getPrimeiroDiaSemana();
+            const ultimoDia = new Date(primeiroDia);
+            ultimoDia.setDate(ultimoDia.getDate() + 6);
+            
+            const dia1 = primeiroDia.getDate();
+            const dia2 = ultimoDia.getDate();
+            const mes1 = meses[primeiroDia.getMonth()];
+            const mes2 = meses[ultimoDia.getMonth()];
+            
+            if (mes1 === mes2) {
+                return `${dia1} - ${dia2} de ${mes1}`;
+            }
+            return `${dia1} de ${mes1} - ${dia2} de ${mes2}`;
+        }
+
+        function getPrimeiroDiaSemana() {
+            const hoje = new Date(currentDate);
+            const dia = hoje.getDay();
+            return new Date(hoje.setDate(hoje.getDate() - dia));
+        }
+
+        function renderMonth() {
+            const ano = currentDate.getFullYear();
+            const mes = currentDate.getMonth();
+            
+            const primeiroDia = new Date(ano, mes, 1);
+            const ultimoDia = new Date(ano, mes + 1, 0);
+            const primeiroDiaSemana = primeiroDia.getDay();
+            const diasNoMes = ultimoDia.getDate();
+            
+            const hoje = new Date();
+            
+            let html = diasSemana.map(d => `<div class="calendar-header">${d}</div>`).join('');
+            
+            // Dias do mês anterior
+            const diasMesAnterior = primeiroDiaSemana;
+            const ultimoDiaMesAnterior = new Date(ano, mes, 0).getDate();
+            for (let i = diasMesAnterior - 1; i >= 0; i--) {
+                const dia = ultimoDiaMesAnterior - i;
+                html += `<div class="calendar-day other-month"><div class="day-number">${dia}</div></div>`;
+            }
+            
+            // Dias do mês atual
+            for (let dia = 1; dia <= diasNoMes; dia++) {
+                const dataAtual = new Date(ano, mes, dia);
+                const dataStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                const diaSemana = diasSemanaFull[dataAtual.getDay()];
+                
+                const ehHoje = dataAtual.toDateString() === hoje.toDateString();
+                const turmasDoDia = turmas.filter(t => t.dia_semana === diaSemana);
+                
+                let turmasHtml = turmasDoDia.map(t => `
+                    <div class="calendar-turma" title="${t.nome} - ${t.horario_inicio}">
+                        <div class="turma-horario">${t.horario_inicio}</div>
+                        <div class="turma-nome">${t.nome}</div>
+                    </div>
+                `).join('');
+                
+                html += `
+                    <div class="calendar-day ${ehHoje ? 'today' : ''}">
+                        <div class="day-number">${dia}</div>
+                        ${turmasHtml}
+                    </div>
+                `;
+            }
+            
+            // Dias do próximo mês
+            const totalCells = Math.ceil((diasMesAnterior + diasNoMes) / 7) * 7;
+            const diasProximoMes = totalCells - (diasMesAnterior + diasNoMes);
+            for (let dia = 1; dia <= diasProximoMes; dia++) {
+                html += `<div class="calendar-day other-month"><div class="day-number">${dia}</div></div>`;
+            }
+            
+            document.getElementById('calendarGrid').innerHTML = html;
+        }
+
+        function renderWeek() {
+            const primeiroDia = getPrimeiroDiaSemana();
+            const hoje = new Date();
+            
+            let html = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const dataAtual = new Date(primeiroDia);
+                dataAtual.setDate(primeiroDia.getDate() + i);
+                
+                const diaSemana = diasSemanaFull[dataAtual.getDay()];
+                const ehHoje = dataAtual.toDateString() === hoje.toDateString();
+                
+                const turmasDoDia = turmas.filter(t => t.dia_semana === diaSemana).sort((a, b) => a.horario_inicio.localeCompare(b.horario_inicio));
+                
+                let turmasHtml = turmasDoDia.map(t => `
+                    <div class="week-turma">
+                        <div class="hora">${t.horario_inicio} - ${t.horario_fim}</div>
+                        <div class="nome">${t.nome}</div>
+                        <div style="font-size:11px;color:#6b7280;">${t.perfis?.nome || ''}</div>
+                    </div>
+                `).join('') || '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:13px;">Sem aulas</p>';
+                
+                html += `
+                    <div class="week-column">
+                        <div class="week-header ${ehHoje ? 'today' : ''}">
+                            <div class="dia-nome">${diasSemana[i]}</div>
+                            <div class="dia-num">${dataAtual.getDate()}</div>
+                        </div>
+                        <div class="week-content">
+                            ${turmasHtml}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('weekView').innerHTML = html;
+        }
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            localStorage.removeItem('token');
+            localStorage.removeItem('perfil');
+            window.location.href = '/';
+        }
+    </script>
+    <!-- Modal Matricular Aluno na Semana -->
+<div id="modalMatricularSemana" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Matricular Aluno</h3>
+            <button onclick="closeModal('matricularSemana')" class="close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-3">Selecione os alunos para matricular nesta turma:</p>
+            <div id="alunosCheckboxesSemana" class="space-y-2" style="max-height: 300px; overflow-y: auto;"></div>
+            <div class="modal-footer" style="margin-top: 20px;">
+                <button onclick="salvarMatriculasSemana()" class="btn btn-primary">Salvar</button>
+                <button onclick="closeModal('matricularSemana')" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<button onclick="matricularAlunosSemana('${t.id}')" class="btn btn-sm" style="background:#16a34a;color:white;margin-top:4px;">
+    <i class="fas fa-user-plus"></i> Matricular
+</button>
+
+</body>
+</html>
