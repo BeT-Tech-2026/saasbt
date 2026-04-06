@@ -6,7 +6,7 @@
     <title>Login - B&T Tech</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="login-page">
 
@@ -20,13 +20,11 @@
                 <p>Gestão de Beach Tennis</p>
             </div>
 
-            <!-- Abas -->
             <div class="tabs">
                 <button class="tab active" onclick="showTab('login')">Entrar</button>
                 <button class="tab" onclick="showTab('cadastro')">Cadastrar</button>
             </div>
 
-            <!-- Formulário de Login -->
             <form id="loginForm" class="login-form">
                 <div class="form-group">
                     <label for="loginEmail">
@@ -52,7 +50,6 @@
                 </button>
             </form>
 
-            <!-- Formulário de Cadastro -->
             <form id="cadastroForm" class="login-form hidden">
                 <div class="form-group">
                     <label for="cadNome">
@@ -95,7 +92,6 @@
     </div>
 
     <script>
-        // Alternar abas
         function showTab(tab) {
             const loginForm = document.getElementById('loginForm');
             const cadastroForm = document.getElementById('cadastroForm');
@@ -109,12 +105,11 @@
             } else {
                 loginForm.classList.add('hidden');
                 cadastroForm.classList.remove('hidden');
-                tokens[0].classList.remove('active');
+                tabs[0].classList.remove('active');
                 tabs[1].classList.add('active');
             }
         }
 
-        // Login
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -141,7 +136,6 @@
                     throw new Error(data.error || 'Erro ao fazer login');
                 }
 
-                // Corrigido: pega token de qualquer lugar
                 const token = data.access_token || (data.user && data.user.access_token);
                 if (!token) {
                     throw new Error('Token não encontrado');
@@ -149,7 +143,6 @@
 
                 localStorage.setItem('token', token);
                 localStorage.setItem('perfil', JSON.stringify(data.perfil));
-
                 window.location.href = '/dashboard';
 
             } catch (error) {
@@ -161,7 +154,6 @@
             }
         });
 
-        // Cadastro
         document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             

@@ -5,14 +5,15 @@
     <title>Professores - B&T Tech</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="dashboard-body">
 
+    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
-            <span class="text-xl font-bold">B&T Tech</span>
+            <span>B&T Tech</span>
         </div>
         <nav class="sidebar-menu">
             <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
@@ -34,15 +35,16 @@
         </div>
     </aside>
 
+    <!-- Main Content -->
     <main class="main-content">
         <header class="top-header">
-            <h1>Professores</h1>
+            <h1><i class="fas fa-chalkboard-teacher mr-2"></i>Professores</h1>
         </header>
 
         <div class="content">
             <div class="card">
                 <div class="card-header">
-                    <h2>Lista de Professores</h2>
+                    <h2><i class="fas fa-list mr-2"></i>Lista de Professores</h2>
                     <button onclick="openModal()" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Novo Professor
                     </button>
@@ -63,13 +65,17 @@
             </div>
             <form id="professorForm" class="modal-body">
                 <div class="form-group">
-                    <label>Nome *</label>
-                    <input type="text" id="profNome" required>
+                    <label><i class="fas fa-user"></i> Nome *</label>
+                    <input type="text" id="profNome" placeholder="Nome completo" required>
                 </div>
                 <div class="form-group">
-                    <label>E-mail *</label>
-                    <input type="email" id="profEmail" required>
+                    <label><i class="fas fa-envelope"></i> E-mail *</label>
+                    <input type="email" id="profEmail" placeholder="email@exemplo.com" required>
                 </div>
+                    <div class="form-group">
+                        <label>Senha *</label>
+                        <input type="password" id="profSenha" required minlength="6">
+                    </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Cadastrar</button>
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
@@ -83,7 +89,10 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
-            if (!token) { window.location.href = '/'; return; }
+            if (!token) { 
+                window.location.href = '/'; 
+                return; 
+            }
 
             perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(token);
             
@@ -100,7 +109,7 @@
 
         async function getPerfil(token) {
             const response = await fetch('/api/session', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             const data = await response.json();
             return data.perfil;
@@ -109,7 +118,7 @@
         async function loadProfessores() {
             const token = localStorage.getItem('token');
             const response = await fetch('/api/professores', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             const professores = await response.json();
 
@@ -137,31 +146,34 @@
             
             const nome = document.getElementById('profNome').value;
             const email = document.getElementById('profEmail').value;
+            const senha = document.getElementById('profSenha').value;
 
             const response = await fetch('/api/professores', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': 'Bearer ' + token
                 },
-                body: JSON.stringify({ nome, email })
+                body: JSON.stringify({ nome, email, senha })
             });
 
             if (response.ok) {
-                alert('Professor cadastrado!');
+                alert('Professor cadastrado com sucesso!\n\nEmail: ' + email + '\nSenha: ' + senha);
                 closeModal();
+                document.getElementById('professorForm').reset();
                 loadProfessores();
             } else {
-                alert('Erro ao cadastrar');
+                const data = await response.json();
+                alert('Erro: ' + data.error);
             }
         });
 
         window.desativarProfessor = async (id) => {
             if (!confirm('Desativar professor?')) return;
             const token = localStorage.getItem('token');
-            await fetch(`/api/professores/${id}`, {
+            await fetch('/api/professores/' + id, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             loadProfessores();
         };
@@ -170,7 +182,7 @@
             const token = localStorage.getItem('token');
             await fetch('/api/logout', { 
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');

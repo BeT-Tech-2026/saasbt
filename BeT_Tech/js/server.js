@@ -76,6 +76,11 @@ app.post('/api/login', async (req, res) => {
             .eq('id', data.user.id)
             .single();
 
+        if (!perfil) {
+            await supabase.auth.signOut();
+            return res.status(401).json({ error: 'Perfil não encontrado' });
+        }
+
         res.json({ 
             user: data.user, 
             perfil: perfil,
@@ -115,8 +120,7 @@ app.get('/api/alunos', async (req, res) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
         
-        // Alterado: Remove filtro .eq('ativo', true) para exibir todos os alunos na hora de matricular
-        const { data } = await supabase.from('alunos').select('*').eq('escola_id', perfil.escola_id).order('nome');
+        const { data } = await supabase.from('alunos').select('*').eq('escola_id', perfil.escola_id).eq('ativo', true).order('nome');
         
         res.json(data || []);
     } catch (error) {
@@ -138,32 +142,80 @@ app.post('/api/alunos', async (req, res) => {
     }
 });
 
+// ALUNOS - EDITAR
+app.put('/api/alunos/:id', async (req, res) => {
+    try {
+        const { nome, telefone, email } = req.body;
+        
+        const { data, error } = await supabase.from('alunos').update({
+            nome, telefone, email
+        }).eq('id', req.params.id).select().single();
+        
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.delete('/api/alunos/:id', async (req, res) => {
     await supabase.from('alunos').update({ ativo: false }).eq('id', req.params.id);
     res.json({ success: true });
 });
 
-// PROFESSORES
+// PROFESSORES - GET (listar)
 app.get('/api/professores', async (req, res) => {
     try {
         const token = req.headers.authorization?.replace('Bearer ', '');
         const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
-        const { data } = await supabase.from('perfis').select('*').eq('escola_id', perfil.escola_id).eq('tipo', 'professor').eq('ativo', true);
+        
+        const { data: perfilAtual } = await supabase.from('perfis').select('escola_id, tipo').eq('id', user.id).single();
+        
+        if (perfilAtual.tipo === 'professor') {
+            const { data } = await supabase.from('perfis').select('*').eq('id', user.id);
+            return res.json(data || []);
+        }
+        
+        const { data } = await supabase.from('perfis').select('*').eq('escola_id', perfilAtual.escola_id).eq('tipo', 'professor').eq('ativo', true);
         res.json(data || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
+// PROFESSORES - POST (criar)
 app.post('/api/professores', async (req, res) => {
     try {
         const token = req.headers.authorization?.replace('Bearer ', '');
         const { data: { user } } = await supabase.auth.getUser(token);
         const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
-        const { nome, email } = req.body;
-        const { data: authData } = await supabase.auth.admin.createUser({ email, email_confirm: true, user_metadata: { nome } });
-        await supabase.from('perfis').insert({ id: authData.user.id, escola_id: perfil.escola_id, nome, email, tipo: 'professor' });
+        
+        const { nome, email, senha } = req.body;
+        
+        if (!senha || senha.length < 6) {
+            return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
+        }
+        
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email: email,
+            password: senha,
+            email_confirm: true,
+            user_metadata: { nome: nome }
+        });
+        
+        if (authError) throw authError;
+
+        const { data: novoPerfil, error: perfilError } = await supabase.from('perfis').insert({
+            id: authData.user.id,
+            escola_id: perfil.escola_id,
+            nome: nome,
+            email: email,
+            tipo: 'professor',
+            ativo: true
+        }).select().single();
+        
+        if (perfilError) throw perfilError;
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -196,39 +248,41 @@ app.post('/api/turmas', async (req, res) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
         
-        const { nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, recorrente } = req.body;
+        const { turmas, nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa } = req.body;
         
-        const turmasToInsert = [];
-        
-        if (recorrente) {
-            // Se for recorrente, cria uma turma para cada dia da semana
-            const dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
-            dias.forEach(dia => {
-                const nomeDia = dia.charAt(0).toUpperCase() + dia.slice(1);
-                turmasToInsert.push({
-                    escola_id: perfil.escola_id,
-                    nome: `${nome} - ${nomeDia}`,
-                    dia_semana: dia,
-                    horario_inicio,
-                    horario_fim,
-                    professor_id,
-                    limite_alunos
-                });
-            });
-        } else {
-            turmasToInsert.push({
-                escola_id: perfil.escola_id, 
-                nome, 
-                dia_semana, 
-                horario_inicio, 
-                horario_fim, 
-                professor_id, 
-                limite_alunos
-            });
+        // Se for array de turmas (múltiplos dias)
+        if (turmas && Array.isArray(turmas)) {
+            const turmasFormatadas = turmas.map(t => ({
+                escola_id: perfil.escola_id,
+                nome: t.nome,
+                dia_semana: t.dia_semana,
+                horario_inicio: t.horario_inicio,
+                horario_fim: t.horario_fim,
+                professor_id: t.professor_id || null,
+                limite_alunos: t.limite_alunos || 4,
+                ativa: true,
+                data_avulsa: t.data_avulsa || null
+            }));
+            
+            const { data, error } = await supabase.from('turmas').insert(turmasFormatadas).select('*, perfis(nome)');
+            if (error) throw error;
+            return res.json(data);
         }
-
-        const { data, error } = await supabase.from('turmas').insert(turmasToInsert).select('*, perfis(nome)');
         
+        // Se for uma única turma (aula avulsa ou edição)
+        const turmaUnica = {
+            escola_id: perfil.escola_id,
+            nome: nome,
+            dia_semana: dia_semana,
+            horario_inicio,
+            horario_fim,
+            professor_id: professor_id || null,
+            limite_alunos: limite_alunos || 4,
+            ativa: true,
+            data_avulsa: data_avulsa || null
+        };
+        
+        const { data, error } = await supabase.from('turmas').insert(turmaUnica).select('*, perfis(nome)').single();
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -236,13 +290,18 @@ app.post('/api/turmas', async (req, res) => {
     }
 });
 
-// Editar Turma
 app.put('/api/turmas/:id', async (req, res) => {
     try {
-        const { nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos } = req.body;
+        const { nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa } = req.body;
         
         const { data, error } = await supabase.from('turmas').update({
-            nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos
+            nome, 
+            dia_semana, 
+            horario_inicio, 
+            horario_fim, 
+            professor_id, 
+            limite_alunos,
+            data_avulsa
         }).eq('id', req.params.id).select('*, perfis(nome)').single();
         
         if (error) throw error;
@@ -271,7 +330,6 @@ app.post('/api/matriculas', async (req, res) => {
     try {
         const { turma_id, aluno_id } = req.body;
         
-        // Verificar limite
         const { data: turma } = await supabase.from('turmas').select('limite_alunos').eq('id', turma_id).single();
         const { count } = await supabase.from('matriculas').select('*', { count: 'exact', head: true }).eq('turma_id', turma_id).eq('ativa', true);
         
@@ -349,7 +407,6 @@ app.post('/api/aulas', async (req, res) => {
     try {
         const { turma_id, data } = req.body;
         
-        // Verificar se aula já existe
         const { data: existente } = await supabase.from('aulas').select('*').eq('turma_id', turma_id).eq('data', data).single();
         if (existente) return res.json(existente);
 
@@ -376,7 +433,13 @@ app.get('/api/dashboard', async (req, res) => {
 
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hoje = diasSemana[new Date().getDay()];
-        let aulasHoje = turmas?.filter(t => t.dia_semana === hoje) || [];
+        const dataHoje = new Date().toISOString().split('T')[0];
+        
+        let aulasHoje = turmas?.filter(t => {
+            // Include regular classes on their day OR single classes on today's date
+            return t.dia_semana === hoje || t.data_avulsa === dataHoje;
+        }) || [];
+        
         if (perfil.tipo === 'professor') aulasHoje = aulasHoje.filter(t => t.professor_id === perfil.id);
 
         res.json({ alunosAtivos, turmasAtivas, aulasHoje });
@@ -394,14 +457,20 @@ app.get('/api/painel', async (req, res) => {
 
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hoje = diasSemana[new Date().getDay()];
+        const dataHoje = new Date().toISOString().split('T')[0];
 
-        let query = supabase.from('turmas').select('*, perfis(nome)').eq('escola_id', perfil.escola_id).eq('dia_semana', hoje).eq('ativa', true);
+        // Busca turmas regulares do dia E aulas avulsas de hoje
+        let query = supabase.from('turmas')
+            .select('*, perfis(nome)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true)
+            .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
+            
         if (perfil.tipo === 'professor') query = query.eq('professor_id', perfil.id);
 
         const { data: turmas } = await query;
 
-        // Criar aulas de hoje se não existirem
-        const dataHoje = new Date().toISOString().split('T')[0];
+        // Cria aulas para hoje
         for (const turma of (turmas || [])) {
             await supabase.from('aulas').upsert({ turma_id: turma.id, data: dataHoje }, { onConflict: 'turma_id,data' });
         }
@@ -429,7 +498,6 @@ app.get('/turmas', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages'
 app.get('/semanal', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'semanal.html')));
 app.get('/painel', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'painel.html')));
 
-// Arquivos estáticos
 app.use('/css', express.static(path.join(__dirname, '..', 'css')));
 
 app.listen(port, () => {
