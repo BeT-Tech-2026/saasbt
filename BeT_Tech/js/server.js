@@ -486,6 +486,12 @@ app.get('/api/painel', async (req, res) => {
     }
 });
 
+require('dotenv').config();
+
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('PORT:', process.env.PORT);
+
+
 // ============================================
 // ROTAS DE PÁGINA
 // ============================================
