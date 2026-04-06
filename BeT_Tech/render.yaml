@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: bet-tech
-    env: node
-    buildCommand: npm install
-    startCommand: node js/server.js
-    rootDirectory: .
