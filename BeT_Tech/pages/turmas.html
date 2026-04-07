@@ -215,58 +215,55 @@
             renderTurmas();
         }
 
-        
-
-
-function renderTurmas() {
-    const container = document.getElementById('turmasList');
-    if (turmasData && turmasData.length > 0) {
-        container.innerHTML = turmasData.map(t => {
-            // Define a cor da borda: usa a cor do professor, ou cinza se não tiver
-            const cardColor = t.perfis?.cor || '#e5e7eb'; 
-            
-            return `
-            <div class="turma-card" style="border-left: 6px solid ${cardColor};">
-                <div class="turma-header">
-                    <h3>${t.nome}</h3>
-                    <!-- O resto do código continua igual... -->
-                    <span class="badge" style="background-color: ${cardColor}; color: white;">${t.data_avulsa ? 'Avulsa' : t.dia_semana}</span>
-                </div>
-                <div class="turma-body">
-                    <p><i class="fas fa-clock"></i> ${t.horario_inicio} - ${t.horario_fim}</p>
-                    <p><i class="fas fa-user"></i> ${t.perfis?.nome || 'Sem professor'}</p>
-                    ${t.data_avulsa ? `<p><i class="fas fa-calendar"></i> ${new Date(t.data_avulsa).toLocaleDateString('pt-BR')}</p>` : ''}
-                    <p><i class="fas fa-users"></i> ${t.alunosMatriculados?.length || 0}/${t.limite_alunos} alunos</p>
+        function renderTurmas() {
+            const container = document.getElementById('turmasList');
+            if (turmasData && turmasData.length > 0) {
+                container.innerHTML = turmasData.map(t => {
+                    // COR DO PROFESSOR: usa a cor definida no cadastro do professor
+                    const cardColor = t.perfis?.cor || '#6b7280'; // Cinza padrão se não tiver cor
                     
-                    <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
-                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">ALUNOS:</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                            ${t.alunosMatriculados?.map(m => `
-                                <span class="aluno-tag">
-                                    ${m.alunos?.nome}
-                                    <button onclick="desmatricular('${m.id}')" title="Remover">&times;</button>
-                                </span>
-                            `).join('') || '<span style="font-size: 12px; color: var(--text-muted);">Nenhum</span>'}
+                    // Formata o dia da semana para exibição
+                    const diaSemana = t.dia_semana ? t.dia_semana.charAt(0).toUpperCase() + t.dia_semana.slice(1) : '';
+                    
+                    return `
+                    <div class="turma-card" style="border-left: 6px solid ${cardColor};">
+                        <div class="turma-header">
+                            <h3>${t.nome}</h3>
+                            <span class="badge" style="background-color: ${cardColor}; color: white;">${t.data_avulsa ? 'Avulsa' : diaSemana}</span>
+                        </div>
+                        <div class="turma-body">
+                            <p><i class="fas fa-clock"></i> ${t.horario_inicio} - ${t.horario_fim}</p>
+                            <p><i class="fas fa-user"></i> ${t.perfis?.nome || 'Sem professor'}</p>
+                            ${t.data_avulsa ? `<p><i class="fas fa-calendar"></i> ${new Date(t.data_avulsa).toLocaleDateString('pt-BR')}</p>` : ''}
+                            <p><i class="fas fa-users"></i> ${t.alunosMatriculados?.length || 0}/${t.limite_alunos} alunos</p>
+                            
+                            <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
+                                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">ALUNOS:</p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    ${t.alunosMatriculados?.map(m => `
+                                        <span class="aluno-tag">
+                                            ${m.alunos?.nome}
+                                            <button onclick="desmatricular('${m.id}')" title="Remover">&times;</button>
+                                        </span>
+                                    `).join('') || '<span style="font-size: 12px; color: var(--text-muted);">Nenhum</span>'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="turma-actions">
+                            <button onclick="matricularAlunos('${t.id}')" class="btn btn-sm btn-primary" style="flex: 1;">
+                                <i class="fas fa-user-plus"></i> Matricular
+                            </button>
+                            <button onclick="editarTurma('${t.id}')" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="excluirTurma('${t.id}')" class="btn btn-sm btn-danger">Excluir</button>
                         </div>
                     </div>
-                </div>
-                <div class="turma-actions">
-                    <button onclick="matricularAlunos('${t.id}')" class="btn btn-sm btn-primary" style="flex: 1;">
-                        <i class="fas fa-user-plus"></i> Matricular
-                    </button>
-                    <button onclick="editarTurma('${t.id}')" class="btn btn-sm btn-secondary">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button onclick="excluirTurma('${t.id}')" class="btn btn-sm btn-danger">Excluir</button>
-                </div>
-            </div>
-        `}).join('');
-    } else {
-        container.innerHTML = '<p class="empty">Nenhuma turma cadastrada</p>';
-    }
-}
-
-
+                `}).join('');
+            } else {
+                container.innerHTML = '<p class="empty">Nenhuma turma cadastrada</p>';
+            }
+        }
 
         async function loadProfessoresSelect() {
             const token = localStorage.getItem('token');
@@ -371,7 +368,7 @@ function renderTurmas() {
                 turmasToInsert.push({
                     escola_id: perfil.escola_id,
                     nome: nome,
-                    dia_semana: null, // ou o dia da semana da data
+                    dia_semana: null,
                     horario_inicio,
                     horario_fim,
                     professor_id,
