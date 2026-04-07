@@ -66,55 +66,78 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 24px;
         }
         @media (max-width: 1024px) {
             .dashboard-grid { grid-template-columns: 1fr; }
         }
 
-        .chart-container {
-            position: relative;
-            height: 250px;
-            margin-top: 16px;
+        .occupancy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
         }
-
-        .turma-occupancy {
-            margin-top: 16px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .occupancy-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
+        .occupancy-card {
             background: var(--bg-dark);
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        .occupancy-info { flex: 1; }
-        .occupancy-name { font-weight: 600; font-size: 14px; }
-        .occupancy-bar {
-            height: 6px;
-            background: var(--border);
-            border-radius: 3px;
-            margin-top: 6px;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            position: relative;
             overflow: hidden;
+        }
+        .occupancy-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--card-color, #3b82f6);
+        }
+        .occupancy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .occupancy-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        .occupancy-percent {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--card-color, #3b82f6);
+        }
+        .occupancy-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
         }
         .occupancy-fill {
             height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s;
+            border-radius: 4px;
+            transition: width 0.5s ease;
         }
-        .occupancy-text {
+        .occupancy-details {
+            display: flex;
+            justify-content: space-between;
             font-size: 12px;
             color: var(--text-muted);
-            text-align: right;
-            min-width: 60px;
         }
+        .occupancy-vagas {
+            font-weight: 600;
+        }
+        .occupancy-vagas.cheio { color: #ef4444; }
+        .occupancy-vagas.lotado { color: #f59e0b; }
+        .occupancy-vagas.disponivel { color: #10b981; }
 
-        .aluno-mini-card {
+        .turma-mini {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -122,28 +145,37 @@
             background: var(--bg-dark);
             border-radius: 8px;
             margin-bottom: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
         }
-        .aluno-mini-card:hover { background: var(--border); }
-        .aluno-mini-avatar {
+        .turma-mini-avatar {
             width: 40px;
             height: 40px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
+            font-weight: 700;
         }
-        .aluno-mini-info { flex: 1; }
-        .aluno-mini-nome { font-weight: 600; font-size: 14px; }
-        .aluno-mini-turma { font-size: 12px; color: var(--text-muted); }
+        .turma-mini-info { flex: 1; }
+        .turma-mini-nome { font-weight: 600; font-size: 14px; }
+        .turma-mini-prof { font-size: 12px; color: var(--text-muted); }
+        .turma-mini-qtd {
+            background: var(--bg-card);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
 
         .empty-state {
             text-align: center;
             padding: 40px;
             color: var(--text-muted);
+        }
+
+        .chart-wrapper {
+            height: 200px;
+            margin-top: 16px;
         }
     </style>
 </head>
@@ -230,37 +262,37 @@
 
             <!-- Grid Principal -->
             <div class="dashboard-grid">
-                <!-- Coluna Esquerda -->
+                <!-- Coluna Esquerda: Ocupação -->
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-chart-pie mr-2"></i>Ocupação das Turmas</h2>
+                        <h2><i class="fas fa-chart-bar mr-2"></i>Ocupação das Turmas</h2>
                     </div>
                     <div class="card-body">
-                        <div class="chart-container">
+                        <div class="chart-wrapper">
                             <canvas id="ocupacaoChart"></canvas>
                         </div>
-                        <div class="turma-occupancy" id="turmaOccupancy"></div>
+                        <div class="occupancy-grid" id="occupancyGrid"></div>
                     </div>
                 </div>
 
-                <!-- Coluna Direita -->
+                <!-- Coluna Direita: Aulas Hoje -->
                 <div class="card">
                     <div class="card-header">
                         <h2><i class="fas fa-clock mr-2"></i>Aulas de Hoje</h2>
                     </div>
-                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
                         <div id="aulasHojeList"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Alunos Recentes -->
+            <!-- Alunos por Dia -->
             <div class="card" style="margin-top: 24px;">
                 <div class="card-header">
-                    <h2><i class="fas fa-users mr-2"></i>Alunos Matriculados por Dia da Semana</h2>
+                    <h2><i class="fas fa-users mr-2"></i>Alunos por Dia da Semana</h2>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container" style="height: 200px;">
+                    <div class="chart-wrapper" style="height: 180px;">
                         <canvas id="alunosDiaChart"></canvas>
                     </div>
                 </div>
@@ -390,7 +422,6 @@
         async function loadDashboard() {
             const token = localStorage.getItem('token');
             
-            // Carrega dados do dashboard
             const response = await fetch('/api/dashboard', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -407,13 +438,13 @@
                 lista.innerHTML = aulasHoje.map(t => {
                     const cor = t.perfis?.cor || '#3b82f6';
                     return `
-                    <div class="aluno-mini-card" style="border-left: 4px solid ${cor};">
-                        <div class="aluno-mini-avatar" style="background: ${cor};">
-                            <i class="fas fa-volleyball-ball"></i>
+                    <div class="turma-mini" style="border-left: 4px solid ${cor};">
+                        <div class="turma-mini-avatar" style="background: ${cor};">
+                            ${t.nome.charAt(0)}
                         </div>
-                        <div class="aluno-mini-info">
-                            <div class="aluno-mini-nome">${t.nome}</div>
-                            <div class="aluno-mini-turma">${t.perfis?.nome || 'Sem professor'} • ${t.horario_inicio} - ${t.horario_fim}</div>
+                        <div class="turma-mini-info">
+                            <div class="turma-mini-nome">${t.nome}</div>
+                            <div class="turma-mini-prof">${t.perfis?.nome || 'Sem professor'} • ${t.horario_inicio} - ${t.horario_fim}</div>
                         </div>
                     </div>
                 `}).join('');
@@ -421,7 +452,6 @@
                 lista.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>Nenhuma aula hoje</p></div>';
             }
 
-            // Carrega turmas para occupancy chart
             await loadTurmasOcupacao();
         }
 
@@ -432,7 +462,6 @@
             });
             turmasData = await response.json();
 
-            // Carrega matrículas de cada turma
             for (let turma of turmasData) {
                 const res = await fetch(`/api/matriculas/${turma.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -442,55 +471,115 @@
             }
 
             renderOccupancyChart();
-            renderOccupancyList();
+            renderOccupancyCards();
             renderAlunosDiaChart();
         }
 
         function renderOccupancyChart() {
             const ctx = document.getElementById('ocupacaoChart').getContext('2d');
             
-            const labels = turmasData.slice(0, 6).map(t => t.nome);
-            const data = turmasData.slice(0, 6).map(t => {
-                return t.limite_alunos > 0 ? Math.round((t.alunosMatriculados / t.limite_alunos) * 100) : 0;
-            });
-            const colors = turmasData.slice(0, 6).map(t => t.perfis?.cor || '#3b82f6');
+            // Ordena turmas por ocupação
+            const sortedTurmas = [...turmasData].sort((a, b) => {
+                const pctA = a.limite_alunos > 0 ? a.alunosMatriculados / a.limite_alunos : 0;
+                const pctB = b.limite_alunos > 0 ? b.alunosMatriculados / b.limite_alunos : 0;
+                return pctB - pctA;
+            }).slice(0, 7);
+
+            const labels = sortedTurmas.map(t => t.nome);
+            const dataOcupados = sortedTurmas.map(t => t.alunosMatriculados);
+            const dataVagas = sortedTurmas.map(t => Math.max(0, t.limite_alunos - t.alunosMatriculados));
+            const colors = sortedTurmas.map(t => t.perfis?.cor || '#3b82f6');
 
             if (chartOcupacao) chartOcupacao.destroy();
 
             chartOcupacao = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderWidth: 0
-                    }]
+                    datasets: [
+                        {
+                            label: 'Ocupados',
+                            data: dataOcupados,
+                            backgroundColor: colors,
+                            borderRadius: 6,
+                            barPercentage: 0.7
+                        },
+                        {
+                            label: 'Vagas',
+                            data: dataVagas,
+                            backgroundColor: '#e5e7eb',
+                            borderRadius: 6,
+                            barPercentage: 0.7
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    indexAxis: 'y',
                     plugins: {
                         legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            max: Math.max(...turmasData.map(t => t.limite_alunos)) + 2,
+                            grid: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { display: false }
+                        }
                     }
                 }
             });
         }
 
-        function renderOccupancyList() {
-            const container = document.getElementById('turmaOccupancy');
-            container.innerHTML = turmasData.map(t => {
+        function renderOccupancyCards() {
+            const container = document.getElementById('occupancyGrid');
+            
+            // Ordena por % de ocupação
+            const sortedTurmas = [...turmasData].sort((a, b) => {
+                const pctA = a.limite_alunos > 0 ? a.alunosMatriculados / a.limite_alunos : 0;
+                const pctB = b.limite_alunos > 0 ? b.alunosMatriculados / b.limite_alunos : 0;
+                return pctB - pctA;
+            });
+
+            container.innerHTML = sortedTurmas.map(t => {
                 const percentual = t.limite_alunos > 0 ? Math.round((t.alunosMatriculados / t.limite_alunos) * 100) : 0;
                 const cor = t.perfis?.cor || '#3b82f6';
+                const vagas = t.limite_alunos - t.alunosMatriculados;
+                
+                let statusClass = 'disponivel';
+                let statusText = `${vagas} vagas`;
+                
+                if (vagas === 0) {
+                    statusClass = 'cheio';
+                    statusText = 'Lotado!';
+                } else if (vagas <= 1) {
+                    statusClass = 'lotado';
+                    statusText = `${vagas} vaga`;
+                }
+
+                // Cor da barra baseada no percentual
+                let barColor = '#10b981'; // verde
+                if (percentual >= 75) barColor = '#f59e0b'; // laranja
+                if (percentual >= 100) barColor = '#ef4444'; // vermelho
+
                 return `
-                <div class="occupancy-item">
-                    <div class="occupancy-info">
-                        <div class="occupancy-name">${t.nome}</div>
-                        <div class="occupancy-bar">
-                            <div class="occupancy-fill" style="width: ${percentual}%; background: ${cor};"></div>
-                        </div>
+                <div class="occupancy-card" style="--card-color: ${cor}">
+                    <div class="occupancy-header">
+                        <div class="occupancy-title">${t.nome}</div>
+                        <div class="occupancy-percent">${percentual}%</div>
                     </div>
-                    <div class="occupancy-text">${t.alunosMatriculados}/${t.limite_alunos}</div>
+                    <div class="occupancy-bar">
+                        <div class="occupancy-fill" style="width: ${Math.min(percentual, 100)}%; background: ${barColor};"></div>
+                    </div>
+                    <div class="occupancy-details">
+                        <span>${t.alunosMatriculados}/${t.limite_alunos} alunos</span>
+                        <span class="occupancy-vagas ${statusClass}">${statusText}</span>
+                    </div>
                 </div>
                 `;
             }).join('');
@@ -499,7 +588,6 @@
         function renderAlunosDiaChart() {
             const ctx = document.getElementById('alunosDiaChart').getContext('2d');
             
-            // Conta alunos por dia da semana baseado nas turmas
             const dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
             const diasLabel = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
             
@@ -508,6 +596,9 @@
                     .filter(t => t.dia_semana === dia)
                     .reduce((acc, t) => acc + (t.alunosMatriculados || 0), 0);
             });
+
+            // Cores gradient para cada barra
+            const colors = dataAlunos.map(v => v > 0 ? '#3b82f6' : '#e5e7eb');
 
             if (chartAlunosDia) chartAlunosDia.destroy();
 
@@ -518,8 +609,9 @@
                     datasets: [{
                         label: 'Alunos',
                         data: dataAlunos,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 6
+                        backgroundColor: colors,
+                        borderRadius: 8,
+                        barPercentage: 0.6
                     }]
                 },
                 options: {
@@ -529,13 +621,20 @@
                         legend: { display: false }
                     },
                     scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { stepSize: 1 },
+                            grid: { color: '#f3f4f6' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
                     }
                 }
             });
         }
 
-        // Funções do Modal Aluno
+        // Funções Modal
         function abrirModalAluno() {
             document.getElementById('modalAluno').classList.remove('hidden');
             document.getElementById('alunoForm').reset();
@@ -561,11 +660,10 @@
                 fecharModalAluno();
                 loadDashboard();
             } else {
-                alert('Erro ao cadastrar aluno');
+                alert('Erro ao cadastrar');
             }
         });
 
-        // Funções do Modal Turma
         async function loadProfessoresSelect() {
             const token = localStorage.getItem('token');
             const response = await fetch('/api/professores', {
@@ -597,9 +695,7 @@
             const response = await fetch('/api/turmas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    nome, horario_inicio, horario_fim, dia_semana, professor_id, limite_alunos
-                })
+                body: JSON.stringify({ nome, horario_inicio, horario_fim, dia_semana, professor_id, limite_alunos })
             });
 
             if (response.ok) {
@@ -607,16 +703,13 @@
                 fecharModalTurma();
                 loadDashboard();
             } else {
-                alert('Erro ao criar turma');
+                alert('Erro ao criar');
             }
         });
 
         async function logout() {
             const token = localStorage.getItem('token');
-            await fetch('/api/logout', { 
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
             window.location.href = '/';
