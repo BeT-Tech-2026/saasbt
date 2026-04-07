@@ -190,7 +190,7 @@ app.post('/api/professores', async (req, res) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
         
-        const { nome, email, senha } = req.body;
+        const { nome, email, senha, cor } = req.body;
         
         if (!senha || senha.length < 6) {
             return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
@@ -211,7 +211,8 @@ app.post('/api/professores', async (req, res) => {
             nome: nome,
             email: email,
             tipo: 'professor',
-            ativo: true
+            ativo: true,
+            cor: cor || '#3b82f6' // Cor padrão azul se não for informada
         }).select().single();
         
         if (perfilError) throw perfilError;
@@ -233,8 +234,11 @@ app.get('/api/turmas', async (req, res) => {
         const token = req.headers.authorization?.replace('Bearer ', '');
         const { data: { user } } = await supabase.auth.getUser(token);
         const { data: perfil } = await supabase.from('perfis').select('escola_id, tipo, id').eq('id', user.id).single();
-        let query = supabase.from('turmas').select('*, perfis(nome)').eq('escola_id', perfil.escola_id).eq('ativa', true);
+        
+        // Alterado para buscar 'cor' do professor
+        let query = supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true);
         if (perfil.tipo === 'professor') query = query.eq('professor_id', perfil.id);
+        
         const { data } = await query;
         res.json(data || []);
     } catch (error) {
@@ -264,7 +268,8 @@ app.post('/api/turmas', async (req, res) => {
                 data_avulsa: t.data_avulsa || null
             }));
             
-            const { data, error } = await supabase.from('turmas').insert(turmasFormatadas).select('*, perfis(nome)');
+            // Alterado para buscar 'cor' do professor
+            const { data, error } = await supabase.from('turmas').insert(turmasFormatadas).select('*, perfis(nome, cor)');
             if (error) throw error;
             return res.json(data);
         }
@@ -282,7 +287,8 @@ app.post('/api/turmas', async (req, res) => {
             data_avulsa: data_avulsa || null
         };
         
-        const { data, error } = await supabase.from('turmas').insert(turmaUnica).select('*, perfis(nome)').single();
+        // Alterado para buscar 'cor' do professor
+        const { data, error } = await supabase.from('turmas').insert(turmaUnica).select('*, perfis(nome, cor)').single();
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -294,6 +300,7 @@ app.put('/api/turmas/:id', async (req, res) => {
     try {
         const { nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa } = req.body;
         
+        // Alterado para buscar 'cor' do professor
         const { data, error } = await supabase.from('turmas').update({
             nome, 
             dia_semana, 
@@ -302,7 +309,7 @@ app.put('/api/turmas/:id', async (req, res) => {
             professor_id, 
             limite_alunos,
             data_avulsa
-        }).eq('id', req.params.id).select('*, perfis(nome)').single();
+        }).eq('id', req.params.id).select('*, perfis(nome, cor)').single();
         
         if (error) throw error;
         res.json(data);
@@ -428,7 +435,8 @@ app.get('/api/dashboard', async (req, res) => {
         const [{ count: alunosAtivos }, { count: turmasAtivas }, { data: turmas }] = await Promise.all([
             supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativo', true),
             supabase.from('turmas').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativa', true),
-            supabase.from('turmas').select('*, perfis(nome)').eq('escola_id', perfil.escola_id).eq('ativa', true)
+            // Alterado para buscar 'cor' do professor
+            supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true)
         ]);
 
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
@@ -436,7 +444,6 @@ app.get('/api/dashboard', async (req, res) => {
         const dataHoje = new Date().toISOString().split('T')[0];
         
         let aulasHoje = turmas?.filter(t => {
-            // Include regular classes on their day OR single classes on today's date
             return t.dia_semana === hoje || t.data_avulsa === dataHoje;
         }) || [];
         
@@ -459,9 +466,9 @@ app.get('/api/painel', async (req, res) => {
         const hoje = diasSemana[new Date().getDay()];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        // Busca turmas regulares do dia E aulas avulsas de hoje
+        // Alterado para buscar 'cor' do professor
         let query = supabase.from('turmas')
-            .select('*, perfis(nome)')
+            .select('*, perfis(nome, cor)')
             .eq('escola_id', perfil.escola_id)
             .eq('ativa', true)
             .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
