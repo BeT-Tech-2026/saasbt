@@ -101,6 +101,27 @@ body {
     left: -100px;
 }
 
+.color-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="color"] {
+    width: 50px;
+    height: 40px;
+    border: none;
+    cursor: pointer;
+    background: none;
+}
+
+.color-preview {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+}
+
 .login-container {
     width: 100%;
     max-width: 400px;

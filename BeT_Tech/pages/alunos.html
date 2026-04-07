@@ -25,6 +25,42 @@
             background: var(--danger-bg);
             color: var(--danger);
         }
+        
+        /* Busca */
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body class="dashboard-body">
@@ -41,6 +77,8 @@
             <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
             <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
             <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+            <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
+
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -78,6 +116,12 @@
                     </button>
                 </div>
                 <div class="card-body">
+                    <!-- Campo de Busca -->
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="buscaAluno" placeholder="Buscar aluno por nome..." onkeyup="filtrarAlunos()">
+                    </div>
+                    
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -181,41 +225,67 @@
                 alunosData = await response.json();
                 document.getElementById('totalAlunos').textContent = alunosData.length;
 
-                const tbody = document.getElementById('alunosTable');
-                
-                if (!alunosData || alunosData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum aluno cadastrado</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = '';
-                
-                for (const a of alunosData) {
-                    let turmas = [];
-                    try {
-                        turmas = await getTurmasDoAluno(a.id);
-                    } catch(e) {
-                        console.error('Erro ao buscar turmas:', e);
-                    }
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${a.nome}</strong></td>
-                        <td>${a.telefone || '-'}</td>
-                        <td>${a.email || '-'}</td>
-                        <td>${turmas.length > 0 ? turmas.map(t => `<span class="badge">${t}</span>`).join(' ') : '-'}</td>
-                        <td>
-                            <button onclick="matricular('${a.id}', '${(a.nome || '').replace(/'/g, "\\'")}')" class="btn-icon" title="Matricular"><i class="fas fa-plus-circle"></i></button>
-                            <button onclick="editarAluno('${a.id}')" class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
-                            <button onclick="excluirAluno('${a.id}')" class="btn-icon btn-danger" title="Excluir"><i class="fas fa-trash"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                }
+                renderAlunos(alunosData);
             } catch (error) {
                 console.error('Erro geral:', error);
                 document.getElementById('alunosTable').innerHTML = '<tr><td colspan="5" class="error">Erro ao carregar alunos</td></tr>';
             }
+        }
+
+        // Renderiza a tabela de alunos
+        function renderAlunos(lista) {
+            const tbody = document.getElementById('alunosTable');
+            
+            if (!lista || lista.length === 0) {
+                const termo = document.getElementById('buscaAluno').value;
+                if (termo) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="no-results">Nenhum aluno encontrado para "' + termo + '"</td></tr>';
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum aluno cadastrado</td></tr>';
+                }
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            for (const a of lista) {
+                let turmas = [];
+                try {
+                    turmas = a.turmas || [];
+                } catch(e) {
+                    console.error('Erro ao buscar turmas:', e);
+                }
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${a.nome}</strong></td>
+                    <td>${a.telefone || '-'}</td>
+                    <td>${a.email || '-'}</td>
+                    <td>${turmas.length > 0 ? turmas.map(t => `<span class="badge">${t}</span>`).join(' ') : '-'}</td>
+                    <td>
+                        <button onclick="matricular('${a.id}', '${(a.nome || '').replace(/'/g, "\\'")}')" class="btn-icon" title="Matricular"><i class="fas fa-plus-circle"></i></button>
+                        <button onclick="editarAluno('${a.id}')" class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirAluno('${a.id}')" class="btn-icon btn-danger" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        // Filtra alunos em tempo real
+        function filtrarAlunos() {
+            const termo = document.getElementById('buscaAluno').value.toLowerCase().trim();
+            
+            if (!termo) {
+                renderAlunos(alunosData);
+                return;
+            }
+            
+            const filtrados = alunosData.filter(aluno => {
+                return aluno.nome && aluno.nome.toLowerCase().includes(termo);
+            });
+            
+            renderAlunos(filtrados);
         }
 
         async function getTurmasDoAluno(alunoId) {

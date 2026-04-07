@@ -6,10 +6,51 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .color-input {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+        .color-input::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-input::-webkit-color-swatch { border: 2px solid var(--border); border-radius: 8px; }
+        .color-preview {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid var(--border);
+            transition: transform 0.2s;
+        }
+        .profile-card {
+            position: relative;
+        }
+        .profile-card .color-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid var(--bg-darker);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+    </style>
 </head>
 <body class="dashboard-body">
 
-    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
@@ -22,6 +63,8 @@
             <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
             <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
             <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+            <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
+
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -35,7 +78,6 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
         <header class="top-header">
             <h1><i class="fas fa-chalkboard-teacher mr-2"></i>Professores</h1>
@@ -56,7 +98,6 @@
         </div>
     </main>
 
-    <!-- Modal -->
     <div id="modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -72,10 +113,18 @@
                     <label><i class="fas fa-envelope"></i> E-mail *</label>
                     <input type="email" id="profEmail" placeholder="email@exemplo.com" required>
                 </div>
-                    <div class="form-group">
-                        <label>Senha *</label>
-                        <input type="password" id="profSenha" required minlength="6">
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Senha *</label>
+                    <input type="password" id="profSenha" required minlength="6" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-palette"></i> Cor do Professor</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="profCor" value="#3b82f6" class="color-input">
+                        <span id="colorPreview" class="color-preview" style="background: #3b82f6;"></span>
+                        <small style="color: var(--text-secondary);">Cor usada na grade de horários</small>
                     </div>
+                </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Cadastrar</button>
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
@@ -104,6 +153,11 @@
             document.getElementById('userName').textContent = perfil.nome;
             document.getElementById('userType').textContent = 'Administrador';
 
+            // Atualiza preview da cor
+            document.getElementById('profCor').addEventListener('input', (e) => {
+                document.getElementById('colorPreview').style.background = e.target.value;
+            });
+
             loadProfessores();
         });
 
@@ -126,6 +180,7 @@
             if (professores && professores.length > 0) {
                 container.innerHTML = professores.map(p => `
                     <div class="profile-card">
+                        <div class="color-indicator" style="background: ${p.cor || '#3b82f6'};"></div>
                         <div class="profile-avatar"><i class="fas fa-user"></i></div>
                         <h3>${p.nome}</h3>
                         <p>${p.email}</p>
@@ -138,7 +193,12 @@
         }
 
         window.openModal = () => document.getElementById('modal').classList.remove('hidden');
-        window.closeModal = () => document.getElementById('modal').classList.add('hidden');
+        window.closeModal = () => {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('professorForm').reset();
+            document.getElementById('profCor').value = '#3b82f6';
+            document.getElementById('colorPreview').style.background = '#3b82f6';
+        };
 
         document.getElementById('professorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -147,6 +207,7 @@
             const nome = document.getElementById('profNome').value;
             const email = document.getElementById('profEmail').value;
             const senha = document.getElementById('profSenha').value;
+            const cor = document.getElementById('profCor').value;
 
             const response = await fetch('/api/professores', {
                 method: 'POST',
@@ -154,13 +215,12 @@
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token
                 },
-                body: JSON.stringify({ nome, email, senha })
+                body: JSON.stringify({ nome, email, senha, cor })
             });
 
             if (response.ok) {
                 alert('Professor cadastrado com sucesso!\n\nEmail: ' + email + '\nSenha: ' + senha);
                 closeModal();
-                document.getElementById('professorForm').reset();
                 loadProfessores();
             } else {
                 const data = await response.json();

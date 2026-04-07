@@ -6,104 +6,92 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Cliente Supabase
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_KEY
 );
 
-// ============================================
-// ROTAS DE API
-// ============================================
-
-// CADASTRO
-app.post('/api/cadastro', async (req, res) => {
+const authenticate = async (req, res, next) => {
     try {
-        const { nome, email, password, nomeEscola } = req.body;
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (!token) return res.status(401).json({ error: 'Token não fornecido' });
 
-        if (!nome || !email || !password || !nomeEscola) {
-            return res.status(400).json({ error: 'Preencha todos os campos' });
-        }
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (error) throw error;
 
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-            email: email,
-            password: password,
-            email_confirm: true
-        });
-        if (authError) throw authError;
-
-        const { data: escola, error: escolaError } = await supabase
-            .from('escolas')
-            .insert({ nome: nomeEscola })
-            .select()
-            .single();
-        if (escolaError) throw escolaError;
-
-        const { data: perfil, error: perfilError } = await supabase
-            .from('perfis')
-            .insert({
-                id: authData.user.id,
-                escola_id: escola.id,
-                nome: nome,
-                email: email,
-                tipo: 'dono'
-            })
-            .select()
-            .single();
-        if (perfilError) throw perfilError;
-
-        res.status(201).json({ message: 'Cadastro realizado!' });
+        req.user = user;
+        next();
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(401).json({ error: 'Token inválido' });
     }
-});
+};
 
+const getPerfil = async (userId) => {
+    const { data } = await supabase
+        .from('perfis')
+        .select('*, escolas(nome)')
+        .eq('id', userId)
+        .single();
+    return data;
+};
 
-// CADASTRO DE PROFESSOR
 app.post('/api/cadastro', async (req, res) => {
     try {
-        const { nome, email, password, escola_id } = req.body;
+        const { nome, email, password, nomeEscola, escola_id, tipo } = req.body;
 
-        if (!nome || !email || !password || !escola_id) {
-            return res.status(400).json({ error: 'Preencha todos os campos' });
+        if (!nome || !email || !password) {
+            return res.status(400).json({ error: 'Preencha todos os campos obrigatórios' });
         }
 
-        // Criar usuário no Auth
+        let escolaId = escola_id;
+        
+        if (tipo === 'dono' || !escola_id) {
+            if (!nomeEscola) return res.status(400).json({ error: 'Nome da escola é obrigatório' });
+            
+            const { data: escola, error: escolaError } = await supabase
+                .from('escolas')
+                .insert({ nome: nomeEscola })
+                .select()
+                .single();
+            
+            if (escolaError) throw escolaError;
+            escolaId = escola.id;
+        }
+
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
             email: email,
             password: password,
-            email_confirm: true
+            email_confirm: true,
+            user_metadata: { nome: nome }
         });
         if (authError) throw authError;
 
-        // Criar perfil como PROFESSOR
         const { data: perfil, error: perfilError } = await supabase
             .from('perfis')
             .insert({
                 id: authData.user.id,
-                escola_id: escola_id,
+                escola_id: escolaId,
                 nome: nome,
                 email: email,
-                tipo: 'professor',
+                tipo: tipo === 'dono' ? 'dono' : 'professor',
                 ativo: true,
-                cor: '#3b82f6' // Cor padrão
+                cor: '#3b82f6'
             })
             .select()
             .single();
         
         if (perfilError) throw perfilError;
 
-        res.status(201).json({ message: 'Cadastro realizado!' });
+        res.status(201).json({ message: 'Cadastro realizado com sucesso!', perfil });
     } catch (error) {
+        console.error('Erro no cadastro:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ROTA PÚBLICA PARA LISTAR ESCOLAS
 app.get('/api/escolas', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -118,7 +106,6 @@ app.get('/api/escolas', async (req, res) => {
     }
 });
 
-// LOGIN
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -126,11 +113,7 @@ app.post('/api/login', async (req, res) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        const { data: perfil } = await supabase
-            .from('perfis')
-            .select('*, escolas(nome)')
-            .eq('id', data.user.id)
-            .single();
+        const perfil = await getPerfil(data.user.id);
 
         if (!perfil) {
             await supabase.auth.signOut();
@@ -140,57 +123,66 @@ app.post('/api/login', async (req, res) => {
         res.json({ 
             user: data.user, 
             perfil: perfil,
-            access_token: data.session?.access_token
+            access_token: data.session.access_token
         });
     } catch (error) {
         res.status(401).json({ error: error.message });
     }
 });
 
-// LOGOUT
 app.post('/api/logout', async (req, res) => {
     await supabase.auth.signOut();
     res.json({ success: true });
 });
 
-// SESSION
-app.get('/api/session', async (req, res) => {
+app.get('/api/session', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase
-            .from('perfis')
-            .select('*, escolas(nome)')
-            .eq('id', user.id)
-            .single();
-        res.json({ user, perfil });
+        const perfil = await getPerfil(req.user.id);
+        res.json({ user: req.user, perfil });
     } catch (error) {
         res.status(401).json({ error: error.message });
     }
 });
 
-// ALUNOS
-app.get('/api/alunos', async (req, res) => {
+app.get('/api/alunos', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
+        const perfil = await getPerfil(req.user.id);
         
-        const { data } = await supabase.from('alunos').select('*').eq('escola_id', perfil.escola_id).eq('ativo', true).order('nome');
+        const { data: alunos } = await supabase
+            .from('alunos')
+            .select('*')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativo', true)
+            .order('nome');
         
-        res.json(data || []);
+        const alunosComTurmas = await Promise.all((alunos || []).map(async (aluno) => {
+            const { data: matriculas } = await supabase
+                .from('matriculas')
+                .select('*, turmas(nome)')
+                .eq('aluno_id', aluno.id)
+                .eq('ativa', true);
+            
+            const turmas = matriculas?.map(m => m.turmas?.nome).filter(Boolean) || [];
+            return { ...aluno, turmas };
+        }));
+        
+        res.json(alunosComTurmas);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-app.post('/api/alunos', async (req, res) => {
+app.post('/api/alunos', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
+        const perfil = await getPerfil(req.user.id);
         const { nome, telefone, email } = req.body;
-        const { data, error } = await supabase.from('alunos').insert({ escola_id: perfil.escola_id, nome, telefone, email }).select().single();
+        
+        const { data, error } = await supabase
+            .from('alunos')
+            .insert({ escola_id: perfil.escola_id, nome, telefone, email })
+            .select()
+            .single();
+        
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -198,14 +190,27 @@ app.post('/api/alunos', async (req, res) => {
     }
 });
 
-// ALUNOS - EDITAR
-app.put('/api/alunos/:id', async (req, res) => {
+app.put('/api/alunos/:id', authenticate, async (req, res) => {
     try {
+        const perfil = await getPerfil(req.user.id);
         const { nome, telefone, email } = req.body;
         
-        const { data, error } = await supabase.from('alunos').update({
-            nome, telefone, email
-        }).eq('id', req.params.id).select().single();
+        const { data: alunoExistente } = await supabase
+            .from('alunos')
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+        
+        if (!alunoExistente || alunoExistente.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const { data, error } = await supabase
+            .from('alunos')
+            .update({ nome, telefone, email })
+            .eq('id', req.params.id)
+            .select()
+            .single();
         
         if (error) throw error;
         res.json(data);
@@ -214,38 +219,57 @@ app.put('/api/alunos/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/alunos/:id', async (req, res) => {
-    await supabase.from('alunos').update({ ativo: false }).eq('id', req.params.id);
-    res.json({ success: true });
+app.delete('/api/alunos/:id', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const { data: alunoExistente } = await supabase
+            .from('alunos')
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+        
+        if (!alunoExistente || alunoExistente.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        await supabase.from('alunos').update({ ativo: false }).eq('id', req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-// PROFESSORES - GET (listar)
-app.get('/api/professores', async (req, res) => {
+app.get('/api/professores', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
+        const perfil = await getPerfil(req.user.id);
         
-        const { data: perfilAtual } = await supabase.from('perfis').select('escola_id, tipo').eq('id', user.id).single();
-        
-        if (perfilAtual.tipo === 'professor') {
-            const { data } = await supabase.from('perfis').select('*').eq('id', user.id);
+        if (perfil.tipo === 'professor') {
+            const { data } = await supabase.from('perfis').select('*').eq('id', req.user.id);
             return res.json(data || []);
         }
         
-        const { data } = await supabase.from('perfis').select('*').eq('escola_id', perfilAtual.escola_id).eq('tipo', 'professor').eq('ativo', true);
+        const { data } = await supabase
+            .from('perfis')
+            .select('*')
+            .eq('escola_id', perfil.escola_id)
+            .eq('tipo', 'professor')
+            .eq('ativo', true);
+        
         res.json(data || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// PROFESSORES - POST (criar)
-app.post('/api/professores', async (req, res) => {
+app.post('/api/professores', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
+        const perfil = await getPerfil(req.user.id);
         
+        if (perfil.tipo !== 'dono') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
         const { nome, email, senha, cor } = req.body;
         
         if (!senha || senha.length < 6) {
@@ -261,39 +285,58 @@ app.post('/api/professores', async (req, res) => {
         
         if (authError) throw authError;
 
-        const { data: novoPerfil, error: perfilError } = await supabase.from('perfis').insert({
+        const { error: perfilError } = await supabase.from('perfis').insert({
             id: authData.user.id,
             escola_id: perfil.escola_id,
             nome: nome,
             email: email,
             tipo: 'professor',
             ativo: true,
-            cor: cor || '#3b82f6' // Cor padrão azul se não for informada
-        }).select().single();
+            cor: cor || '#3b82f6'
+        });
         
         if (perfilError) throw perfilError;
 
+        res.json({ success: true, email, senha });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/professores/:id', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const { data: professorExistente } = await supabase
+            .from('perfis')
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+        
+        if (!professorExistente || professorExistente.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        await supabase.from('perfis').update({ ativo: false }).eq('id', req.params.id);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-app.delete('/api/professores/:id', async (req, res) => {
-    await supabase.from('perfis').update({ ativo: false }).eq('id', req.params.id);
-    res.json({ success: true });
-});
-
-// TURMAS
-app.get('/api/turmas', async (req, res) => {
+app.get('/api/turmas', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id, tipo, id').eq('id', user.id).single();
+        const perfil = await getPerfil(req.user.id);
         
-        // Alterado para buscar 'cor' do professor
-        let query = supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true);
-        if (perfil.tipo === 'professor') query = query.eq('professor_id', perfil.id);
+        let query = supabase
+            .from('turmas')
+            .select('*, perfis(nome, cor)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true);
+        
+        if (perfil.tipo === 'professor') {
+            query = query.eq('professor_id', perfil.id);
+        }
         
         const { data } = await query;
         res.json(data || []);
@@ -302,15 +345,11 @@ app.get('/api/turmas', async (req, res) => {
     }
 });
 
-app.post('/api/turmas', async (req, res) => {
+app.post('/api/turmas', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id').eq('id', user.id).single();
-        
+        const perfil = await getPerfil(req.user.id);
         const { turmas, nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa } = req.body;
         
-        // Se for array de turmas (múltiplos dias)
         if (turmas && Array.isArray(turmas)) {
             const turmasFormatadas = turmas.map(t => ({
                 escola_id: perfil.escola_id,
@@ -324,13 +363,11 @@ app.post('/api/turmas', async (req, res) => {
                 data_avulsa: t.data_avulsa || null
             }));
             
-            // Alterado para buscar 'cor' do professor
             const { data, error } = await supabase.from('turmas').insert(turmasFormatadas).select('*, perfis(nome, cor)');
             if (error) throw error;
             return res.json(data);
         }
         
-        // Se for uma única turma (aula avulsa ou edição)
         const turmaUnica = {
             escola_id: perfil.escola_id,
             nome: nome,
@@ -343,8 +380,12 @@ app.post('/api/turmas', async (req, res) => {
             data_avulsa: data_avulsa || null
         };
         
-        // Alterado para buscar 'cor' do professor
-        const { data, error } = await supabase.from('turmas').insert(turmaUnica).select('*, perfis(nome, cor)').single();
+        const { data, error } = await supabase
+            .from('turmas')
+            .insert(turmaUnica)
+            .select('*, perfis(nome, cor)')
+            .single();
+        
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -352,20 +393,27 @@ app.post('/api/turmas', async (req, res) => {
     }
 });
 
-app.put('/api/turmas/:id', async (req, res) => {
+app.put('/api/turmas/:id', authenticate, async (req, res) => {
     try {
+        const perfil = await getPerfil(req.user.id);
         const { nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa } = req.body;
         
-        // Alterado para buscar 'cor' do professor
-        const { data, error } = await supabase.from('turmas').update({
-            nome, 
-            dia_semana, 
-            horario_inicio, 
-            horario_fim, 
-            professor_id, 
-            limite_alunos,
-            data_avulsa
-        }).eq('id', req.params.id).select('*, perfis(nome, cor)').single();
+        const { data: turmaExistente } = await supabase
+            .from('turmas')
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+        
+        if (!turmaExistente || turmaExistente.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const { data, error } = await supabase
+            .from('turmas')
+            .update({ nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa })
+            .eq('id', req.params.id)
+            .select('*, perfis(nome, cor)')
+            .single();
         
         if (error) throw error;
         res.json(data);
@@ -374,33 +422,79 @@ app.put('/api/turmas/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/turmas/:id', async (req, res) => {
-    await supabase.from('turmas').update({ ativa: false }).eq('id', req.params.id);
-    res.json({ success: true });
+app.delete('/api/turmas/:id', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const { data: turmaExistente } = await supabase
+            .from('turmas')
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+        
+        if (!turmaExistente || turmaExistente.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        await supabase.from('turmas').update({ ativa: false }).eq('id', req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-// MATRÍCULAS
-app.get('/api/matriculas/:turmaId', async (req, res) => {
+app.get('/api/matriculas/:turmaId', authenticate, async (req, res) => {
     try {
-        const { data } = await supabase.from('matriculas').select('*, alunos(*)').eq('turma_id', req.params.turmaId).eq('ativa', true);
+        const { data } = await supabase
+            .from('matriculas')
+            .select('*, alunos(*)')
+            .eq('turma_id', req.params.turmaId)
+            .eq('ativa', true);
+        
         res.json(data || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-app.post('/api/matriculas', async (req, res) => {
+app.post('/api/matriculas', authenticate, async (req, res) => {
     try {
         const { turma_id, aluno_id } = req.body;
         
-        const { data: turma } = await supabase.from('turmas').select('limite_alunos').eq('id', turma_id).single();
-        const { count } = await supabase.from('matriculas').select('*', { count: 'exact', head: true }).eq('turma_id', turma_id).eq('ativa', true);
+        const { data: turma } = await supabase
+            .from('turmas')
+            .select('limite_alunos')
+            .eq('id', turma_id)
+            .single();
+        
+        const { count } = await supabase
+            .from('matriculas')
+            .select('*', { count: 'exact', head: true })
+            .eq('turma_id', turma_id)
+            .eq('ativa', true);
         
         if (count >= turma.limite_alunos) {
             return res.status(400).json({ error: 'Turma lotada' });
         }
 
-        const { data, error } = await supabase.from('matriculas').insert({ turma_id, aluno_id, ativa: true }).select().single();
+        const { data: existente } = await supabase
+            .from('matriculas')
+            .select('*')
+            .eq('turma_id', turma_id)
+            .eq('aluno_id', aluno_id)
+            .eq('ativa', true)
+            .single();
+        
+        if (existente) {
+            return res.status(400).json({ error: 'Aluno já matriculado nesta turma' });
+        }
+
+        const { data, error } = await supabase
+            .from('matriculas')
+            .insert({ turma_id, aluno_id, ativa: true })
+            .select()
+            .single();
+        
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -408,25 +502,57 @@ app.post('/api/matriculas', async (req, res) => {
     }
 });
 
-app.delete('/api/matriculas/:id', async (req, res) => {
-    await supabase.from('matriculas').update({ ativa: false }).eq('id', req.params.id);
-    res.json({ success: true });
+app.delete('/api/matriculas/:id', authenticate, async (req, res) => {
+    try {
+        await supabase.from('matriculas').update({ ativa: false }).eq('id', req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-// PRESENÇAS
-app.get('/api/presencas/:aulaId', async (req, res) => {
+app.get('/api/presencas/:aulaId', authenticate, async (req, res) => {
     try {
-        const { data } = await supabase.from('presencas').select('*, alunos(*)').eq('aula_id', req.params.aulaId);
+        const { data } = await supabase
+            .from('presencas')
+            .select('*, alunos(*)')
+            .eq('aula_id', req.params.aulaId);
+        
         res.json(data || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-app.post('/api/presencas', async (req, res) => {
+app.post('/api/presencas', authenticate, async (req, res) => {
     try {
         const { aula_id, aluno_id, status } = req.body;
-        const { data, error } = await supabase.from('presencas').insert({ aula_id, aluno_id, status }).select().single();
+        
+        const { data: existente } = await supabase
+            .from('presencas')
+            .select('*')
+            .eq('aula_id', aula_id)
+            .eq('aluno_id', aluno_id)
+            .single();
+        
+        if (existente) {
+            const { data, error } = await supabase
+                .from('presencas')
+                .update({ status })
+                .eq('id', existente.id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return res.json(data);
+        }
+
+        const { data, error } = await supabase
+            .from('presencas')
+            .insert({ aula_id, aluno_id, status })
+            .select()
+            .single();
+        
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -434,10 +560,16 @@ app.post('/api/presencas', async (req, res) => {
     }
 });
 
-app.patch('/api/presencas/:id', async (req, res) => {
+app.patch('/api/presencas/:id', authenticate, async (req, res) => {
     try {
         const { status } = req.body;
-        const { data, error } = await supabase.from('presencas').update({ status }).eq('id', req.params.id).select().single();
+        const { data, error } = await supabase
+            .from('presencas')
+            .update({ status })
+            .eq('id', req.params.id)
+            .select()
+            .single();
+        
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -445,18 +577,22 @@ app.patch('/api/presencas/:id', async (req, res) => {
     }
 });
 
-// AULAS
-app.get('/api/aulas', async (req, res) => {
+app.get('/api/aulas', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id, tipo, id').eq('id', user.id).single();
-        
+        const perfil = await getPerfil(req.user.id);
         const hoje = new Date().toISOString().split('T')[0];
         
-        let query = supabase.from('aulas').select('*, turmas(*)').eq('data', hoje);
+        let query = supabase
+            .from('aulas')
+            .select('*, turmas(*)')
+            .eq('data', hoje);
+        
         if (perfil.tipo === 'professor') {
-            query = supabase.from('aulas').select('*, turmas(*)').eq('data', hoje).eq('turmas.professor_id', perfil.id);
+            query = supabase
+                .from('aulas')
+                .select('*, turmas(*)')
+                .eq('data', hoje)
+                .eq('turmas.professor_id', perfil.id);
         }
         
         const { data } = await query;
@@ -466,14 +602,25 @@ app.get('/api/aulas', async (req, res) => {
     }
 });
 
-app.post('/api/aulas', async (req, res) => {
+app.post('/api/aulas', authenticate, async (req, res) => {
     try {
         const { turma_id, data } = req.body;
         
-        const { data: existente } = await supabase.from('aulas').select('*').eq('turma_id', turma_id).eq('data', data).single();
+        const { data: existente } = await supabase
+            .from('aulas')
+            .select('*')
+            .eq('turma_id', turma_id)
+            .eq('data', data)
+            .single();
+        
         if (existente) return res.json(existente);
 
-        const { data: aula, error } = await supabase.from('aulas').insert({ turma_id, data }).select().single();
+        const { data: aula, error } = await supabase
+            .from('aulas')
+            .insert({ turma_id, data })
+            .select()
+            .single();
+        
         if (error) throw error;
         res.json(aula);
     } catch (error) {
@@ -481,38 +628,7 @@ app.post('/api/aulas', async (req, res) => {
     }
 });
 
-// DASHBOARD
-app.get('/api/dashboard', async (req, res) => {
-    try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id, tipo, id').eq('id', user.id).single();
-
-        const [{ count: alunosAtivos }, { count: turmasAtivas }, { data: turmas }] = await Promise.all([
-            supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativo', true),
-            supabase.from('turmas').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativa', true),
-            // Alterado para buscar 'cor' do professor
-            supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true)
-        ]);
-
-        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-        const hoje = diasSemana[new Date().getDay()];
-        const dataHoje = new Date().toISOString().split('T')[0];
-        
-        let aulasHoje = turmas?.filter(t => {
-            return t.dia_semana === hoje || t.data_avulsa === dataHoje;
-        }) || [];
-        
-        if (perfil.tipo === 'professor') aulasHoje = aulasHoje.filter(t => t.professor_id === perfil.id);
-
-        res.json({ alunosAtivos, turmasAtivas, aulasHoje });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// BUSCAR AULA POR TURMA E DATA (adicione antes do app.listen)
-app.get('/api/aulas/buscar', async (req, res) => {
+app.get('/api/aulas/buscar', authenticate, async (req, res) => {
     try {
         const { turma_id, data } = req.query;
         const { data: aula } = await supabase
@@ -528,36 +644,234 @@ app.get('/api/aulas/buscar', async (req, res) => {
     }
 });
 
-
-// PAINEL
-app.get('/api/painel', async (req, res) => {
+app.get('/api/dashboard', authenticate, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        const { data: perfil } = await supabase.from('perfis').select('escola_id, tipo, id').eq('id', user.id).single();
+        const perfil = await getPerfil(req.user.id);
+
+        const [{ count: alunosAtivos }, { count: turmasAtivas }, { data: turmas }] = await Promise.all([
+            supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativo', true),
+            supabase.from('turmas').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativa', true),
+            supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true)
+        ]);
+
+        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const hoje = diasSemana[new Date().getDay()];
+        const dataHoje = new Date().toISOString().split('T')[0];
+        
+        let aulasHoje = turmas?.filter(t => t.dia_semana === hoje || t.data_avulsa === dataHoje) || [];
+        
+        if (perfil.tipo === 'professor') {
+            aulasHoje = aulasHoje.filter(t => t.professor_id === perfil.id);
+        }
+
+        res.json({ alunosAtivos, turmasAtivas, aulasHoje });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+//rota /api/relatorios 
+
+app.get('/api/relatorios', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        const { inicio, fim } = req.query;
+
+        // Se não tiver período, usa o mês atual
+        const periodoInicio = inicio ? new Date(inicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const periodoFim = fim ? new Date(fim) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+
+        // 1. Buscar turmas
+        const { data: turmas } = await supabase
+            .from('turmas')
+            .select('*, perfis(nome, cor)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true);
+
+        // 2. Buscar alunos
+        const { data: alunos } = await supabase
+            .from('alunos')
+            .select('*')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativo', true);
+
+        // 3. Buscar matrículas
+        const { data: matriculas } = await supabase
+            .from('matriculas')
+            .select('*, alunos(nome), turmas(professor_id)')
+            .eq('ativa', true);
+
+        // 4. Buscar aulas no período
+        const { data: aulas } = await supabase
+            .from('aulas')
+            .select('id, turma_id, data')
+            .gte('data', periodoInicio.toISOString().split('T')[0])
+            .lte('data', periodoFim.toISOString().split('T')[0]);
+
+        // 5. Buscar presenças dessas aulas
+        let presencas = [];
+        if (aulas && aulas.length > 0) {
+            const aulaIds = aulas.map(a => a.id);
+            const { data: presencasData } = await supabase
+                .from('presencas')
+                .select('id, aula_id, aluno_id, status')
+                .in('aula_id', aulaIds);
+            
+            presencas = presencasData || [];
+        }
+
+        // Calcular alunos comparecidos (contando aparições, não alunos únicos)
+        // Considera "presente" ou "confirmado" como comparecimento
+        const comparecimentosCount = presencas.filter(p => 
+            p.status === 'presente' || p.status === 'confirmado'
+        ).length;
+
+        // Professores
+        const professoresMap = {};
+        
+        for (const turma of (turmas || [])) {
+            const professorId = turma.professor_id;
+            if (!professorId) continue;
+            
+            if (!professoresMap[professorId]) {
+                professoresMap[professorId] = {
+                    id: professorId,
+                    nome: turma.perfis?.nome || 'Sem professor',
+                    cor: turma.perfis?.cor || '#3b82f6',
+                    totalTurmas: 0,
+                    totalAlunos: 0,
+                    totalComparecimentos: 0,
+                    aulasMes: 0
+                };
+            }
+        }
+
+        // Calcular estatísticas por professor
+        const turmasIds = turmas?.map(t => t.id) || [];
+        const turmasPorProfessor = {};
+        
+        turmas?.forEach(t => {
+            if (t.professor_id) {
+                if (!turmasPorProfessor[t.professor_id]) {
+                    turmasPorProfessor[t.professor_id] = [];
+                }
+                turmasPorProfessor[t.professor_id].push(t);
+            }
+        });
+
+        Object.keys(professoresMap).forEach(profId => {
+            const turmasProf = turmasPorProfessor[profId] || [];
+            professoresMap[profId].totalTurmas = turmasProf.length;
+            
+            // Alunos únicos nas turmas do professor
+            const matriculasProf = matriculas?.filter(m => 
+                m.turmas?.professor_id === profId
+            ) || [];
+            const alunosUnicos = [...new Set(matriculasProf.map(m => m.aluno_id))];
+            professoresMap[profId].totalAlunos = alunosUnicos.length;
+            
+            // Aulas do professor no período
+            const aulasProfIds = [];
+            turmasProf.forEach(t => {
+                const aulasDaTurma = aulas?.filter(a => a.turma_id === t.id) || [];
+                aulasDaTurma.forEach(a => aulasProfIds.push(a.id));
+            });
+
+            // Comparecimentos do professor
+            const comparecimentosProf = presencas.filter(p => 
+                aulasProfIds.includes(p.aula_id) && 
+                (p.status === 'presente' || p.status === 'confirmado')
+            ).length;
+            
+            professoresMap[profId].totalComparecimentos = comparecimentosProf;
+            professoresMap[profId].aulasMes = turmasProf.length * 4;
+        });
+
+        // Turmas com alunos
+        const turmasComAlunos = turmas?.map(turma => {
+            const alunosTurma = matriculas?.filter(m => m.turma_id === turma.id) || [];
+            return { 
+                ...turma, 
+                professor_nome: turma.perfis?.nome, 
+                totalAlunos: alunosTurma.length 
+            };
+        }) || [];
+
+        // Estatísticas gerais
+        const totalTurmas = turmas?.length || 0;
+        const totalAlunos = alunos?.length || 0;
+        
+        // Contar alunos novos no período
+        const alunosNovosPeriodo = alunos?.filter(a => 
+            new Date(a.created_at) >= periodoInicio && new Date(a.created_at) <= periodoFim
+        ).length || 0;
+
+        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const hoje = diasSemana[new Date().getDay()];
+        const dataHoje = new Date().toISOString().split('T')[0];
+        
+        // Turmas/Aulas desta semana
+        const turmasSemana = turmas?.filter(t => t.dia_semana === hoje).length || 0;
+        const aulasSemana = turmasSemana * 4;
+        
+        const totalAulas = aulas?.length || 0;
+        const mediaPresenca = totalAulas > 0 ? (comparecimentosCount / totalAulas).toFixed(1) : 0;
+
+        res.json({
+            estatisticas: {
+                totalTurmas,
+                turmasSemana,
+                totalAlunos,
+                alunosNovosMes: alunosNovosPeriodo,
+                totalAulas,
+                aulasSemana,
+                alunosComparecidos: comparecimentosCount,
+                mediaPresenca: parseFloat(mediaPresenca)
+            },
+            professores: Object.values(professoresMap),
+            turmas: turmasComAlunos
+        });
+    } catch (error) {
+        console.error('Erro relatórios:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+app.get('/api/painel', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
 
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hoje = diasSemana[new Date().getDay()];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        // Alterado para buscar 'cor' do professor
-        let query = supabase.from('turmas')
+        let query = supabase
+            .from('turmas')
             .select('*, perfis(nome, cor)')
             .eq('escola_id', perfil.escola_id)
             .eq('ativa', true)
             .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
             
-        if (perfil.tipo === 'professor') query = query.eq('professor_id', perfil.id);
+        if (perfil.tipo === 'professor') {
+            query = query.eq('professor_id', perfil.id);
+        }
 
         const { data: turmas } = await query;
 
-        // Cria aulas para hoje
         for (const turma of (turmas || [])) {
-            await supabase.from('aulas').upsert({ turma_id: turma.id, data: dataHoje }, { onConflict: 'turma_id,data' });
+            await supabase
+                .from('aulas')
+                .upsert({ turma_id: turma.id, data: dataHoje }, { onConflict: 'turma_id,data' });
         }
 
         let turmasComAlunos = await Promise.all((turmas || []).map(async (turma) => {
-            const { data: matriculas } = await supabase.from('matriculas').select('*, alunos(*)').eq('turma_id', turma.id).eq('ativa', true);
+            const { data: matriculas } = await supabase
+                .from('matriculas')
+                .select('*, alunos(*)')
+                .eq('turma_id', turma.id)
+                .eq('ativa', true);
+            
             return { ...turma, alunos: matriculas || [] };
         }));
 
@@ -567,25 +881,63 @@ app.get('/api/painel', async (req, res) => {
     }
 });
 
-require('dotenv').config();
-
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
-console.log('PORT:', process.env.PORT);
-
-
-// ============================================
 // ROTAS DE PÁGINA
-// ============================================
+const fs = require('fs');
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'index.html')));
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'dashboard.html')));
-app.get('/alunos', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'alunos.html')));
-app.get('/professores', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'professores.html')));
-app.get('/turmas', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'turmas.html')));
-app.get('/semanal', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'semanal.html')));
-app.get('/painel', (req, res) => res.sendFile(path.join(__dirname, '..', 'pages', 'painel.html')));
+app.get('/', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/index.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
 
-app.use('/css', express.static(path.join(__dirname, '..', 'css')));
+app.get('/dashboard', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/dashboard.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
+app.get('/alunos', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/alunos.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
+app.get('/professores', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/professores.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
+app.get('/turmas', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/turmas.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
+app.get('/semanal', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/semanal.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
+app.get('/painel', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/painel.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
+app.get('/relatorios', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/relatorios.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado: ' + filePath);
+});
+
+// CSS
+app.get('/css/style.css', (req, res) => {
+    const filePath = path.resolve(__dirname, '../css/style.css');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('CSS não encontrado');
+});
 
 app.listen(port, () => {
     console.log(`🏐 B&T Tech rodando em http://localhost:${port}`);

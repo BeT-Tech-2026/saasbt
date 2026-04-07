@@ -7,46 +7,62 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-badge.confirmado { background: #d1fae5; color: #065f46; }
-        .status-badge.agardando { background: #fef3c7; color: #92400e; }
-        .status-badge.cancelado { background: #fee2e2; color: #991b1b; }
+        .view-toggle { display: flex; gap: 4px; background: var(--bg-dark); padding: 4px; border-radius: 8px; }
+        .view-btn { padding: 8px 16px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 6px; font-weight: 500; }
+        .view-btn.active { background: var(--primary); color: white; }
         
-        .aluno-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            background: var(--bg-dark);
-            border-radius: 8px;
-            margin-bottom: 8px;
-            border: 1px solid var(--border);
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); }
+        .calendar-header { background: var(--bg-dark); padding: 10px; text-align: center; font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; }
+        .calendar-day { background: var(--bg-darker); min-height: 80px; padding: 6px; }
+        .calendar-day.other-month { opacity: 0.4; }
+        .calendar-day.today { background: rgba(59, 130, 246, 0.1); }
+        .day-number { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+        .calendar-day.today .day-number { color: var(--primary); }
+        .calendar-turma { padding: 4px 6px; margin-bottom: 3px; border-radius: 3px; font-size: 10px; cursor: pointer; border-left: 3px solid; background: var(--bg-dark); }
+        .turma-horario { font-size: 9px; opacity: 0.7; }
+        .turma-nome { font-weight: 500; }
+        
+        .week-wrapper { overflow-x: auto; }
+        .week-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .week-table th, .week-table td { border: 1px solid var(--border); padding: 0; vertical-align: top; }
+        .week-table th { background: var(--bg-dark); padding: 10px; }
+        .week-table th.day-col { text-align: center; }
+        .week-table th .day-name { display: block; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
+        .week-table th .day-num { display: block; font-size: 18px; font-weight: 700; }
+        .week-table th.today { background: rgba(59, 130, 246, 0.15); }
+        .week-table th.today .day-num { color: var(--primary); }
+        
+        .time-label { background: var(--bg-dark); padding: 8px; text-align: center; font-size: 11px; font-weight: 600; width: 60px; }
+        
+        .day-cell { min-height: 50px; background: var(--bg-darker); }
+        .day-cell.empty { background: rgba(0,0,0,0.05); }
+        
+        .aula-card {
+            margin: 2px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            border-left: 4px solid;
         }
-        .aluno-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-        }
-        .aluno-info {
-            flex: 1;
-        }
-        .aluno-nome {
-            font-weight: 500;
-        }
+        .aula-card:hover { transform: scale(1.02); }
+        .aula-nome { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .aula-prof { font-size: 9px; opacity: 0.7; }
+        .aula-time { font-size: 8px; opacity: 0.6; }
+        
+        .grade-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .grade-nav { display: flex; align-items: center; gap: 10px; }
+        .nav-btn { width: 32px; height: 32px; border: none; background: var(--bg-dark); color: var(--text); border-radius: 6px; cursor: pointer; }
+        .nav-btn:hover { background: var(--primary); color: white; }
+        .periodo-label { font-weight: 600; font-size: 15px; min-width: 160px; text-align: center; }
+        
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+        .info-item label { display: block; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
+        .info-item span { font-weight: 500; }
+        
+        .aluno-item { display: flex; align-items: center; padding: 8px; background: var(--bg-dark); border-radius: 4px; margin-bottom: 4px; }
+        .aluno-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 10px; }
+        .aluno-nome { font-weight: 500; font-size: 12px; }
     </style>
 </head>
 <body class="dashboard-body">
@@ -79,9 +95,9 @@
     <main class="main-content">
         <header class="top-header">
             <h1><i class="fas fa-calendar-week mr-2"></i>Grade Semanal</h1>
-            <div style="display: flex; gap: 8px;">
-                <button onclick="changeView('month')" id="btnMonth" class="view-btn active">Mês</button>
-                <button onclick="changeView('week')" id="btnWeek" class="view-btn">Semana</button>
+            <div class="view-toggle">
+                <button onclick="changeView('month')" id="btnMonth" class="view-btn">Mês</button>
+                <button onclick="changeView('week')" id="btnWeek" class="view-btn active">Semana</button>
             </div>
         </header>
 
@@ -92,68 +108,44 @@
                     <span id="periodoLabel" class="periodo-label">Abril 2024</span>
                     <button onclick="navegar(1)" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
                 </div>
+                <button onclick="voltarHoje()" class="btn btn-secondary">Hoje</button>
             </div>
 
-            <div id="viewMonth" class="card">
+            <div id="viewMonth" class="card" style="display: none;">
                 <div class="card-body no-padding">
                     <div class="calendar-grid" id="calendarGrid"></div>
                 </div>
             </div>
 
-            <div id="viewWeek" class="card" style="display: none;">
-                <div class="card-body">
-                    <div class="week-view" id="weekView"></div>
+            <div id="viewWeek" class="card">
+                <div class="card-body no-padding">
+                    <div class="week-wrapper">
+                        <table class="week-table" id="weekTable"></table>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Modal Detalhes da Aula -->
     <div id="modalDetalhesAula" class="modal hidden">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 450px;">
             <div class="modal-header">
-                <h3 id="modalTurmaNome">Detalhes da Aula</h3>
+                <h3 id="modalTurmaNome">Detalhes</h3>
                 <button onclick="fecharModal()" class="close">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="info-grid">
-                    <div class="info-item">
-                        <label>Dia</label>
-                        <span id="modalTurmaDia">-</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Horário</label>
-                        <span id="modalTurmaHorario">-</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Professor</label>
-                        <span id="modalTurmaProfessor">-</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Tipo</label>
-                        <span id="modalTurmaTipo">-</span>
-                    </div>
+                    <div class="info-item"><label>Dia</label><span id="modalTurmaDia">-</span></div>
+                    <div class="info-item"><label>Horário</label><span id="modalTurmaHorario">-</span></div>
+                    <div class="info-item"><label>Professor</label><span id="modalTurmaProfessor">-</span></div>
+                    <div class="info-item"><label>Tipo</label><span id="modalTurmaTipo">-</span></div>
                 </div>
-
-                <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--text-secondary); margin-top: 20px;">
+                <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--text-secondary);">
                     <i class="fas fa-users"></i> Alunos (<span id="countAlunos">0</span>)
                 </h4>
-                
-                <div id="loadingAlunos" class="loading" style="text-align: center; padding: 20px;">
-                    <i class="fas fa-spinner fa-spin"></i> Carregando...
-                </div>
-                
-                <p id="semAlunos" class="empty" style="display: none; text-align: center; padding: 20px;">
-                    Nenhum aluno matriculado
-                </p>
-                
+                <div id="loadingAlunos" style="text-align: center; padding: 15px;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
+                <p id="semAlunos" class="empty" style="display: none;">Nenhum aluno</p>
                 <div id="listaAlunosContainer"></div>
-
-                <div class="modal-footer" style="margin-top: 20px;">
-                    <button onclick="abrirMatricula()" class="btn btn-secondary" style="width: 100%;">
-                        <i class="fas fa-user-plus"></i> Matricular / Desmatricular Alunos
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -161,14 +153,17 @@
     <script>
         let perfil = null;
         let currentDate = new Date();
-        let currentView = 'month';
+        let currentView = 'week';
         let turmas = [];
         let turmaSelecionada = null;
-        let aulaDataSelecionada = null;
 
         const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const diasSemanaFull = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+
+        const HORA_INICIO = 6;
+        const HORA_FIM = 22;
+        const ALTURA_HORA = 50;
 
         function formatarDataLocal(data) {
             const ano = data.getFullYear();
@@ -185,8 +180,8 @@
             
             if (!perfil) {
                 fetch('/api/session', { headers: { 'Authorization': 'Bearer ' + token } })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
+                .then(res => res.json())
+                .then(data => {
                     perfil = data.perfil;
                     localStorage.setItem('perfil', JSON.stringify(perfil));
                     init();
@@ -206,13 +201,10 @@
         function loadTurmas() {
             const token = localStorage.getItem('token');
             fetch('/api/turmas', { headers: { 'Authorization': 'Bearer ' + token } })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
+            .then(res => res.json())
+            .then(data => {
                 turmas = data || [];
                 render();
-            })
-            .catch(function(err) {
-                console.error('Erro ao carregar turmas:', err);
             });
         }
 
@@ -226,10 +218,15 @@
         }
 
         function navegar(direcao) {
-            if (currentView === 'month') currentDate.setMonth(currentDate.getMonth() + direcao);
-            else currentDate.setDate(currentDate.getDate() + (direcao * 7));
+            if (currentView === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + direcao);
+            } else {
+                currentDate.setDate(currentDate.getDate() + (direcao * 7));
+            }
             render();
         }
+
+        function voltarHoje() { currentDate = new Date(); render(); }
 
         function render() {
             const periodoLabel = document.getElementById('periodoLabel');
@@ -246,11 +243,9 @@
             const primeiroDia = getPrimeiroDiaSemana();
             const ultimoDia = new Date(primeiroDia);
             ultimoDia.setDate(ultimoDia.getDate() + 6);
-            const dia1 = primeiroDia.getDate();
-            const dia2 = ultimoDia.getDate();
-            const mes1 = meses[primeiroDia.getMonth()];
-            const mes2 = meses[ultimoDia.getMonth()];
-            return mes1 === mes2 ? dia1 + ' - ' + dia2 + ' de ' + mes1 : dia1 + ' de ' + mes1 + ' - ' + dia2 + ' de ' + mes2;
+            return primeiroDia.toLocaleDateString('pt-BR', { day: 'numeric' }) + ' - ' + 
+                   ultimoDia.toLocaleDateString('pt-BR', { day: 'numeric' }) + ' de ' + 
+                   meses[primeiroDia.getMonth()];
         }
 
         function getPrimeiroDiaSemana() {
@@ -259,17 +254,15 @@
         }
 
         function getTurmasDoDia(diaSemana, data) {
-            const turmasRegulares = turmas.filter(function(t) { 
-                return t.dia_semana === diaSemana && !t.data_avulsa; 
-            });
-            const turmasAvulsas = turmas.filter(function(t) { 
-                return t.data_avulsa === data; 
-            });
-            return [...turmasRegulares, ...turmasAvulsas];
+            const regulares = turmas.filter(t => 
+                t.dia_semana && t.dia_semana.toLowerCase() === diaSemana.toLowerCase() && !t.data_avulsa
+            );
+            const avulsas = turmas.filter(t => t.data_avulsa === data);
+            return [...regulares, ...avulsas];
         }
 
-        function getCorTurma(turma) {
-            return turma.perfis?.cor || '#6b7280';
+        function getCorTurma(t) {
+            return t.perfis?.cor || '#6b7280';
         }
 
         function renderMonth() {
@@ -285,7 +278,9 @@
             for (let i = 0; i < diasSemana.length; i++) html += '<div class="calendar-header">' + diasSemana[i] + '</div>';
             
             const ultimoDiaMesAnterior = new Date(ano, mes, 0).getDate();
-            for (let i = primeiroDiaSemana - 1; i >= 0; i--) html += '<div class="calendar-day other-month"><div class="day-number">' + (ultimoDiaMesAnterior - i) + '</div></div>';
+            for (let i = primeiroDiaSemana - 1; i >= 0; i--) {
+                html += '<div class="calendar-day other-month"><div class="day-number">' + (ultimoDiaMesAnterior - i) + '</div></div>';
+            }
             
             for (let dia = 1; dia <= diasNoMes; dia++) {
                 const dataAtual = new Date(ano, mes, dia);
@@ -295,18 +290,22 @@
                 
                 const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada);
                 
-                let turmasHtml = '';
-                for (let j = 0; j < turmasDoDia.length; j++) {
-                    const t = turmasDoDia[j];
+                let turmasHtml = turmasDoDia.map(t => {
                     const labelHorario = t.data_avulsa ? new Date(t.data_avulsa).toLocaleDateString('pt-BR') : t.horario_inicio;
                     const corTurma = getCorTurma(t);
-                    turmasHtml += '<div class="calendar-turma" onclick="abrirDetalhesTurma(\'' + t.id + '\', \'' + dataFormatada + '\')" style="border-left: 3px solid ' + corTurma + '"><div class="turma-horario">' + labelHorario + '</div><div class="turma-nome">' + (t.data_avulsa ? '⭐ ' : '') + t.nome + '</div></div>';
-                }
+                    return '<div class="calendar-turma" onclick="abrirDetalhesTurma(\'' + t.id + '\', \'' + dataFormatada + '\')" style="border-left-color: ' + corTurma + '; background: ' + corTurma + '20;">' +
+                        '<div class="turma-horario">' + labelHorario + '</div>' +
+                        '<div class="turma-nome">' + (t.data_avulsa ? '⭐ ' : '') + t.nome + '</div>' +
+                    '</div>';
+                }).join('');
+                
                 html += '<div class="calendar-day' + (ehHoje ? ' today' : '') + '"><div class="day-number">' + dia + '</div>' + turmasHtml + '</div>';
             }
             
             const totalCells = Math.ceil((primeiroDiaSemana + diasNoMes) / 7) * 7;
-            for (let dia = 1; dia <= totalCells - (primeiroDiaSemana + diasNoMes); dia++) html += '<div class="calendar-day other-month"><div class="day-number">' + dia + '</div></div>';
+            for (let dia = 1; dia <= totalCells - (primeiroDiaSemana + diasNoMes); dia++) {
+                html += '<div class="calendar-day other-month"><div class="day-number">' + dia + '</div></div>';
+            }
             
             document.getElementById('calendarGrid').innerHTML = html;
         }
@@ -316,45 +315,78 @@
             const hoje = new Date();
             let html = '';
             
+            // Cabeçalho com dias
+            html += '<thead><tr><th class="time-label"></th>';
             for (let i = 0; i < 7; i++) {
                 const dataAtual = new Date(primeiroDia);
                 dataAtual.setDate(primeiroDia.getDate() + i);
-                const diaSemana = diasSemanaFull[dataAtual.getDay()];
-                const dataFormatada = formatarDataLocal(dataAtual);
                 const ehHoje = dataAtual.toDateString() === hoje.toDateString();
-                
-                const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada).sort(function(a, b) { 
-                    return a.horario_inicio.localeCompare(b.horario_inicio); 
-                });
-                
-                let turmasHtml = '';
-                if (turmasDoDia.length === 0) turmasHtml = '<div class="week-empty">Sem aulas</div>';
-                else for (let j = 0; j < turmasDoDia.length; j++) {
-                    const t = turmasDoDia[j];
-                    const labelHora = t.data_avulsa ? new Date(t.data_avulsa).toLocaleDateString('pt-BR') : t.horario_inicio + ' - ' + t.horario_fim;
-                    const corTurma = getCorTurma(t);
-                    turmasHtml += '<div class="week-turma" onclick="abrirDetalhesTurma(\'' + t.id + '\', \'' + dataFormatada + '\')" style="border-left: 4px solid ' + corTurma + '"><div class="hora">' + labelHora + '</div><div class="nome">' + (t.data_avulsa ? '⭐ ' : '') + t.nome + '</div><div class="prof">' + (t.perfis ? t.perfis.nome : '') + '</div></div>';
-                }
-                html += '<div class="week-column"><div class="week-header' + (ehHoje ? ' today' : '') + '"><div class="dia-nome">' + diasSemana[i] + '</div><div class="dia-num">' + dataAtual.getDate() + '</div></div><div class="week-content">' + turmasHtml + '</div></div>';
+                html += '<th class="day-col' + (ehHoje ? ' today' : '') + '">' +
+                    '<span class="day-name">' + diasSemana[i] + '</span>' +
+                    '<span class="day-num">' + dataAtual.getDate() + '</span>' +
+                '</th>';
             }
-            document.getElementById('weekView').innerHTML = html;
+            html += '</tr></thead>';
+            
+            // Corpo da tabela
+            html += '<tbody>';
+            
+            // Linhas de hora em hora
+            for (let h = HORA_INICIO; h <= HORA_FIM; h++) {
+                const hora = h.toString().padStart(2, '0') + ':00';
+                html += '<tr>';
+                html += '<td class="time-label">' + hora + '</td>';
+                
+                for (let i = 0; i < 7; i++) {
+                    const dataAtual = new Date(primeiroDia);
+                    dataAtual.setDate(primeiroDia.getDate() + i);
+                    const diaSemana = diasSemanaFull[dataAtual.getDay()];
+                    const dataFormatada = formatarDataLocal(dataAtual);
+                    
+                    // Turmas neste dia e hora
+                    const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada);
+                    
+                    // Filtrar turmas que começam nesta hora
+                    const turmasNestaHora = turmasDoDia.filter(t => {
+                        const horaInicio = t.horario_inicio.substring(0, 5);
+                        return horaInicio === hora;
+                    });
+                    
+                    if (turmasNestaHora.length > 0) {
+                        html += '<td class="day-cell">';
+                        turmasNestaHora.forEach(t => {
+                            const cor = getCorTurma(t);
+                            html += '<div class="aula-card" onclick="abrirDetalhesTurma(\'' + t.id + '\', \'' + dataFormatada + '\')" ' +
+                                'style="background: ' + cor + '20; border-left-color: ' + cor + ';">' +
+                                '<div class="aula-time">' + t.horario_inicio + ' - ' + t.horario_fim + '</div>' +
+                                '<div class="aula-nome">' + t.nome + '</div>' +
+                                '<div class="aula-prof">' + (t.perfis?.nome || '') + '</div>' +
+                            '</div>';
+                        });
+                        html += '</td>';
+                    } else {
+                        html += '<td class="day-cell empty"></td>';
+                    }
+                }
+                html += '</tr>';
+            }
+            
+            html += '</tbody>';
+            document.getElementById('weekTable').innerHTML = html;
         }
 
         function abrirDetalhesTurma(id, data) {
-            // Busca a turma pelo ID
-            turmaSelecionada = turmas.find(function(t) { return String(t.id) === String(id); });
+            turmaSelecionada = turmas.find(t => String(t.id) === String(id));
             if (!turmaSelecionada) { 
                 alert('Turma não encontrada!'); 
                 return; 
             }
             
-            aulaDataSelecionada = data;
-            
             document.getElementById('modalTurmaNome').textContent = turmaSelecionada.nome;
             
             if (turmaSelecionada.data_avulsa) {
                 document.getElementById('modalTurmaDia').textContent = new Date(turmaSelecionada.data_avulsa).toLocaleDateString('pt-BR');
-                document.getElementById('modalTurmaTipo').textContent = '⭐ Aula Avulsa';
+                document.getElementById('modalTurmaTipo').textContent = 'Aula Avulsa';
             } else {
                 const diaIndex = diasSemanaFull.indexOf(turmaSelecionada.dia_semana);
                 document.getElementById('modalTurmaDia').textContent = diaIndex >= 0 ? diasSemana[diaIndex] : turmaSelecionada.dia_semana;
@@ -362,34 +394,24 @@
             }
             
             document.getElementById('modalTurmaHorario').textContent = turmaSelecionada.horario_inicio + ' às ' + turmaSelecionada.horario_fim;
-            document.getElementById('modalTurmaProfessor').textContent = turmaSelecionada.perfis ? turmaSelecionada.perfis.nome : 'Não definido';
+            document.getElementById('modalTurmaProfessor').textContent = turmaSelecionada.perfis?.nome || 'Não definido';
             
             document.getElementById('listaAlunosContainer').innerHTML = '';
             document.getElementById('loadingAlunos').style.display = 'block';
             document.getElementById('semAlunos').style.display = 'none';
             
             document.getElementById('modalDetalhesAula').classList.remove('hidden');
-            
-            // Carrega alunos
             carregarAlunos();
         }
 
         function carregarAlunos() {
             const token = localStorage.getItem('token');
-            const turmaId = turmaSelecionada.id;
             
-            console.log('Buscando matrícula para turma:', turmaId);
-            
-            fetch('/api/matriculas/' + turmaId, { 
+            fetch('/api/matriculas/' + turmaSelecionada.id, { 
                 headers: { 'Authorization': 'Bearer ' + token } 
             })
-            .then(function(res) { 
-                console.log('Status:', res.status);
-                return res.json(); 
-            })
-            .then(function(matriculas) {
-                console.log('Matrículas retornadas:', matriculas);
-                
+            .then(res => res.json())
+            .then(matriculas => {
                 document.getElementById('loadingAlunos').style.display = 'none';
                 
                 if (!matriculas || matriculas.length === 0) {
@@ -398,11 +420,7 @@
                     return;
                 }
                 
-                // Filtra apenas matrículas ativas e que têm aluno
-                const matriculasAtivas = matriculas.filter(function(m) { 
-                    return m.ativa === true && m.alunos !== null; 
-                });
-                
+                const matriculasAtivas = matriculas.filter(m => m.ativa === true && m.alunos !== null);
                 document.getElementById('countAlunos').textContent = matriculasAtivas.length;
                 
                 if (matriculasAtivas.length === 0) {
@@ -412,8 +430,7 @@
                 
                 renderizarAlunos(matriculasAtivas);
             })
-            .catch(function(err) {
-                console.error('Erro:', err);
+            .catch(err => {
                 document.getElementById('loadingAlunos').style.display = 'none';
                 document.getElementById('semAlunos').style.display = 'block';
             });
@@ -421,36 +438,19 @@
 
         function renderizarAlunos(matriculas) {
             let html = '';
-            
-            for (let i = 0; i < matriculas.length; i++) {
-                const m = matriculas[i];
+            matriculas.forEach(m => {
                 const aluno = m.alunos;
-                
-                // Status fixo como "agardando" por enquanto
-                const status = 'agardando';
-                const badge = 'agardando';
-                const icon = '<i class="fas fa-clock"></i>';
-                
                 html += '<div class="aluno-item">' +
                     '<div class="aluno-avatar"><i class="fas fa-user"></i></div>' +
-                    '<div class="aluno-info">' +
-                        '<div class="aluno-nome">' + (aluno ? aluno.nome : 'Desconhecido') + '</div>' +
-                    '</div>' +
-                    '<span class="status-badge ' + badge + '">' + icon + ' ' + status + '</span>' +
+                    '<div class="aluno-nome">' + (aluno ? aluno.nome : 'Desconhecido') + '</div>' +
                 '</div>';
-            }
-            
+            });
             document.getElementById('listaAlunosContainer').innerHTML = html;
         }
 
         function fecharModal() { 
             document.getElementById('modalDetalhesAula').classList.add('hidden'); 
             turmaSelecionada = null;
-            aulaDataSelecionada = null;
-        }
-        
-        function abrirMatricula() { 
-            window.location.href = '/turmas?matricular=' + turmaSelecionada.id; 
         }
         
         function logout() {
@@ -461,7 +461,9 @@
             window.location.href = '/';
         }
         
-        window.onclick = function(event) { if (event.target.id === 'modalDetalhesAula') fecharModal(); };
+        window.onclick = function(event) { 
+            if (event.target.id === 'modalDetalhesAula') fecharModal(); 
+        };
     </script>
 </body>
 </html>
