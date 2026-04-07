@@ -359,54 +359,74 @@
             carregarDadosAula(turmaId, data);
         }
 
-        function carregarDadosAula(turmaId, data) {
-            const token = localStorage.getItem('token');
-            
-            // Primeiro busca a aula
-            fetch('/api/aulas/buscar?turma_id=' + turmaId + '&data=' + data, { 
-                headers: { 'Authorization': 'Bearer ' + token } 
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(aula) {
-                aulaAtual = aula;
-                // Depois busca as matrículas
-                return fetch('/api/matriculas/' + turmaId, { headers: { 'Authorization': 'Bearer ' + token } });
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(matriculas) {
-                const alunos = matriculas.filter(function(m) { return m.ativa && m.alunos; }).map(function(m) { 
-                    return { ...m.alunos, matriculaId: m.id }; 
-                });
-                
-                document.getElementById('countAlunos').textContent = alunos.length;
-                document.getElementById('loadingAlunos').style.display = 'none';
-                
-                if (alunos.length === 0) { 
-                    document.getElementById('semAlunos').style.display = 'block'; 
-                    return; 
-                }
-                
-                // Se não existe aula, cria automaticamente com status "agardando"
-                if (!aulaAtual) {
-                    return criarAulaAutomatica(turmaId, data, alunos);
-                } else {
-                    // Busca presenças
-                    return fetch('/api/presencas/' + aulaAtual.id, { headers: { 'Authorization': 'Bearer ' + token } });
-                }
-            })
-            .then(function(res) {
-                if (res && res.ok) return res.json();
-                return [];
-            })
-            .then(function(presencas) {
-                renderizarAlunosComStatus(presencas || []);
-            })
-            .catch(function(err) {
-                console.error(err);
-                document.getElementById('loadingAlunos').style.display = 'none';
-                document.getElementById('semAlunos').style.display = 'block';
-            });
+
+        
+function carregarDadosAula(turmaId, data) {
+    const token = localStorage.getItem('token');
+    
+    console.log('Carregando dados para turma:', turmaId, 'data:', data);
+    
+    // Primeiro busca a aula
+    fetch('/api/aulas/buscar?turma_id=' + turmaId + '&data=' + data, { 
+        headers: { 'Authorization': 'Bearer ' + token } 
+    })
+    .then(function(res) { 
+        console.log('Resposta aula:', res.status);
+        return res.json(); 
+    })
+    .then(function(aula) {
+        console.log('Aula encontrada:', aula);
+        aulaAtual = aula;
+        
+        // Depois busca as matrículas
+        return fetch('/api/matriculas/' + turmaId, { headers: { 'Authorization': 'Bearer ' + token } });
+    })
+    .then(function(res) { 
+        console.log('Status matrículas:', res.status);
+        return res.json(); 
+    })
+    .then(function(matriculas) {
+        console.log('Matrículas:', matriculas);
+        
+        const alunos = matriculas.filter(function(m) { 
+            return m.ativa && m.alunos; 
+        }).map(function(m) { 
+            return { ...m.alunos, matriculaId: m.id }; 
+        });
+        
+        console.log('Alunos filtrados:', alunos);
+        
+        document.getElementById('countAlunos').textContent = alunos.length;
+        document.getElementById('loadingAlunos').style.display = 'none';
+        
+        if (alunos.length === 0) { 
+            document.getElementById('semAlunos').style.display = 'block'; 
+            return; 
         }
+        
+        // Se não existe aula, cria automaticamente
+        if (!aulaAtual) {
+            return criarAulaAutomatica(turmaId, data, alunos);
+        } else {
+            // Busca presenças
+            return fetch('/api/presencas/' + aulaAtual.id, { headers: { 'Authorization': 'Bearer ' + token } });
+        }
+    })
+    .then(function(res) {
+        if (res && res.ok) return res.json();
+        return [];
+    })
+    .then(function(presencas) {
+        renderizarAlunosComStatus(presencas || []);
+    })
+    .catch(function(err) {
+        console.error('Erro completo:', err);
+        document.getElementById('loadingAlunos').style.display = 'none';
+        document.getElementById('semAlunos').style.display = 'block';
+    });
+}
+
+
 
         function criarAulaAutomatica(turmaId, data, alunos) {
             const token = localStorage.getItem('token');
