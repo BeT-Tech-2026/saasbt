@@ -7,22 +7,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .presenca-btn { padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; margin-left: 8px; }
-        .presenca-btn.presente { background: #10b981; color: white; }
-        .presenca-btn.falta { background: #ef4444; color: white; }
-        .presenca-btn.ausente { background: #6b7280; color: white; }
-        
-        .status-aula {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
             font-weight: 600;
-            margin-bottom: 12px;
+            text-transform: uppercase;
         }
-        .status-aula.nao-iniciada { background: #f3f4f6; color: #6b7280; }
-        .status-aula.em-andamento { background: #dbeafe; color: #2563eb; }
-        .status-aula.encerrada { background: #fce7f3; color: #db2777; }
+        .status-badge.confirmado { background: #d1fae5; color: #065f46; }
+        .status-badge.agardando { background: #fef3c7; color: #92400e; }
+        .status-badge.cancelado { background: #fee2e2; color: #991b1b; }
+        
+        .aluno-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .aluno-nome {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body class="dashboard-body">
@@ -92,11 +97,6 @@
                 <button onclick="fecharModal()" class="close">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Status da Aula -->
-                <div id="statusAula" class="status-aula nao-iniciada">
-                    <i class="fas fa-clock"></i> Aula não iniciada
-                </div>
-
                 <div class="info-grid">
                     <div class="info-item">
                         <label>Dia</label>
@@ -128,17 +128,11 @@
                     Nenhum aluno matriculado
                 </p>
                 
-                <ul class="aluno-list" id="listaAlunos" style="max-height: 300px; overflow-y: auto;"></ul>
+                <ul class="aluno-list" id="listaAlunos" style="max-height: 400px; overflow-y: auto;"></ul>
 
-                <div class="modal-footer" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button onclick="abrirMatricula()" class="btn btn-secondary" style="flex: 1;">
-                        <i class="fas fa-user-plus"></i> Matricular
-                    </button>
-                    <button onclick="iniciarAula()" id="btnIniciarAula" class="btn btn-primary" style="flex: 1;">
-                        <i class="fas fa-play"></i> Iniciar Aula
-                    </button>
-                    <button onclick="encerrarAula()" id="btnEncerrarAula" class="btn btn-danger" style="flex: 1; display: none;">
-                        <i class="fas fa-stop"></i> Encerrar Aula
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button onclick="abrirMatricula()" class="btn btn-secondary" style="width: 100%;">
+                        <i class="fas fa-user-plus"></i> Matricular / Desmatricular Alunos
                     </button>
                 </div>
             </div>
@@ -152,7 +146,7 @@
         let turmas = [];
         let turmaSelecionadaId = null;
         let aulaAtual = null;
-        let presencasCache = {};
+        let dataAulaSelecionada = null;
 
         const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -334,6 +328,8 @@
 
         function abrirDetalhesTurma(id, data) {
             const turmaId = id;
+            dataAulaSelecionada = data;
+            
             let turma = null;
             for (let i = 0; i < turmas.length; i++) if (String(turmas[i].id) === String(turmaId)) { turma = turmas[i]; break; }
             if (!turma) { alert('Turma não encontrada!'); return; }
@@ -357,23 +353,25 @@
             document.getElementById('loadingAlunos').style.display = 'block';
             document.getElementById('semAlunos').style.display = 'none';
             
-            // Reset botões
-            document.getElementById('btnIniciarAula').style.display = 'inline-block';
-            document.getElementById('btnEncerrarAula').style.display = 'none';
-            document.getElementById('statusAula').className = 'status-aula nao-iniciada';
-            document.getElementById('statusAula').innerHTML = '<i class="fas fa-clock"></i> Aula não iniciada';
-            
             document.getElementById('modalDetalhesAula').classList.remove('hidden');
             
-            // Carrega alunos e verifica se já existe aula
-            carregarAlunosEDadosAula(turmaId, data);
+            // Carrega dados
+            carregarDadosAula(turmaId, data);
         }
 
-        function carregarAlunosEDadosAula(turmaId, data) {
+        function carregarDadosAula(turmaId, data) {
             const token = localStorage.getItem('token');
             
-            // Busca matrícula
-            fetch('/api/matriculas/' + turmaId, { headers: { 'Authorization': 'Bearer ' + token } })
+            // Primeiro busca a aula
+            fetch('/api/aulas/buscar?turma_id=' + turmaId + '&data=' + data, { 
+                headers: { 'Authorization': 'Bearer ' + token } 
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(aula) {
+                aulaAtual = aula;
+                // Depois busca as matrículas
+                return fetch('/api/matriculas/' + turmaId, { headers: { 'Authorization': 'Bearer ' + token } });
+            })
             .then(function(res) { return res.json(); })
             .then(function(matriculas) {
                 const alunos = matriculas.filter(function(m) { return m.ativa && m.alunos; }).map(function(m) { 
@@ -388,218 +386,116 @@
                     return; 
                 }
                 
-                // Busca dados da aula de hoje
-                return fetch('/api/aulas/buscar?turma_id=' + turmaId + '&data=' + data, { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
-                });
+                // Se não existe aula, cria automaticamente com status "agardando"
+                if (!aulaAtual) {
+                    return criarAulaAutomatica(turmaId, data, alunos);
+                } else {
+                    // Busca presenças
+                    return fetch('/api/presencas/' + aulaAtual.id, { headers: { 'Authorization': 'Bearer ' + token } });
+                }
             })
             .then(function(res) {
                 if (res && res.ok) return res.json();
-                return null;
+                return [];
             })
-            .then(function(aula) {
-                aulaAtual = aula;
-                atualizarInterfaceAula(aula);
+            .then(function(presencas) {
+                renderizarAlunosComStatus(presencas || []);
             })
-            .catch(function() {
+            .catch(function(err) {
+                console.error(err);
                 document.getElementById('loadingAlunos').style.display = 'none';
                 document.getElementById('semAlunos').style.display = 'block';
             });
         }
 
-        function atualizarInterfaceAula(aula) {
-            if (aula && aula.status === 'em_andamento') {
-                document.getElementById('statusAula').className = 'status-aula em-andamento';
-                document.getElementById('statusAula').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aula em andamento';
-                document.getElementById('btnIniciarAula').style.display = 'none';
-                document.getElementById('btnEncerrarAula').style.display = 'inline-block';
-                carregarPresencas(aula.id);
-            } else if (aula && aula.status === 'encerrada') {
-                document.getElementById('statusAula').className = 'status-aula encerrada';
-                document.getElementById('statusAula').innerHTML = '<i class="fas fa-check-circle"></i> Aula encerrada';
-                document.getElementById('btnIniciarAula').style.display = 'none';
-                document.getElementById('btnEncerrarAula').style.display = 'none';
-                carregarPresencas(aula.id);
-            } else {
-                renderizarListaAlunosSemAula();
-            }
-        }
-
-        function renderizarListaAlunosSemAula() {
+        function criarAulaAutomatica(turmaId, data, alunos) {
             const token = localStorage.getItem('token');
-            fetch('/api/matriculas/' + turmaSelecionadaId.id, { headers: { 'Authorization': 'Bearer ' + token } })
-            .then(function(res) { return res.json(); })
-            .then(function(matriculas) {
-                const alunos = matriculas.filter(function(m) { return m.ativa && m.alunos; }).map(function(m) { return m.alunos; });
-                let html = '';
-                for (let i = 0; i < alunos.length; i++) {
-                    const a = alunos[i];
-                    html += `<li class="aluno-item">
-                        <div class="aluno-avatar"><i class="fas fa-user"></i></div>
-                        <div class="aluno-nome">${a.nome}</div>
-                        <div style="color: #9ca3af; font-size: 12px;">Aguardando início</div>
-                    </li>`;
-                }
-                document.getElementById('listaAlunos').innerHTML = html;
-            });
-        }
-
-        function carregarPresencas(aulaId) {
-            const token = localStorage.getItem('token');
-            fetch('/api/presencas/' + aulaId, { headers: { 'Authorization': 'Bearer ' + token } })
-            .then(function(res) { return res.json(); })
-            .then(function(presencas) {
-                // Cache das presenças
-                presencasCache = {};
-                presencas.forEach(function(p) { presencasCache[p.aluno_id] = p; });
-                
-                // Recarrega lista de alunos com presença
-                return fetch('/api/matriculas/' + turmaSelecionadaId.id, { headers: { 'Authorization': 'Bearer ' + token } });
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(matriculas) {
-                const alunos = matriculas.filter(function(m) { return m.ativa && m.alunos; }).map(function(m) { return m.alunos; });
-                let html = '';
-                for (let i = 0; i < alunos.length; i++) {
-                    const a = alunos[i];
-                    const presenca = presencasCache[a.id];
-                    const status = presenca ? presenca.status : null;
-                    
-                    let botoes = '';
-                    if (!status) {
-                        botoes = `<button class="presencia-btn presente" onclick="registrarPresenca('${a.id}', 'presente')"><i class="fas fa-check"></i></button>
-                                  <button class="presencia-btn falta" onclick="registrarPresenca('${a.id}', 'falta')"><i class="fas fa-times"></i></button>`;
-                    } else if (status === 'presente') {
-                        botoes = `<span class="presencia-btn presente"><i class="fas fa-check"></i> Presente</span>
-                                  <button class="presencia-btn ausente" onclick="registrarPresenca('${a.id}', 'ausente')"><i class="fas fa-undo"></i></button>`;
-                    } else if (status === 'falta') {
-                        botoes = `<span class="presencia-btn falta"><i class="fas fa-times"></i> Falta</span>
-                                  <button class="presencia-btn presente" onclick="registrarPresenca('${a.id}', 'presente')"><i class="fas fa-undo"></i></button>`;
-                    } else {
-                        botoes = `<span class="presencia-btn ausente"><i class="fas fa-minus-circle"></i> Ausente</span>
-                                  <button class="presencia-btn presente" onclick="registrarPresenca('${a.id}', 'presente')"><i class="fas fa-undo"></i></button>`;
-                    }
-                    
-                    html += `<li class="aluno-item">
-                        <div class="aluno-avatar"><i class="fas fa-user"></i></div>
-                        <div class="aluno-nome">${a.nome}</div>
-                        <div style="display: flex; gap: 4px;">${botoes}</div>
-                    </li>`;
-                }
-                document.getElementById('listaAlunos').innerHTML = html;
-            });
-        }
-
-        function iniciarAula() {
-            const token = localStorage.getItem('token');
-            const data = turmaSelecionadaId.data;
             
-            fetch('/api/aulas', {
+            return fetch('/api/aulas', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token 
                 },
                 body: JSON.stringify({ 
-                    turma_id: turmaSelecionadaId.id, 
+                    turma_id: turmaId, 
                     data: data 
                 })
             })
             .then(function(res) { return res.json(); })
             .then(function(aula) {
                 aulaAtual = aula;
-                // Atualiza status para em_andamento
-                return fetch('/api/aulas/' + aula.id, {
-                    method: 'PATCH',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token 
-                    },
-                    body: JSON.stringify({ status: 'em_andamento' })
+                // Cria presença para cada aluno com status "agardando"
+                const promises = alunos.map(function(aluno) {
+                    return fetch('/api/presencas', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token 
+                        },
+                        body: JSON.stringify({ 
+                            aula_id: aula.id, 
+                            aluno_id: aluno.id, 
+                            status: 'agardando' 
+                        })
+                    });
                 });
+                return Promise.all(promises);
             })
-            .then(function(res) { return res.json(); })
-            .then(function(aula) {
-                aulaAtual = aula;
-                atualizarInterfaceAula(aula);
-                alert('Aula iniciada com sucesso!');
-            })
-            .catch(function(err) {
-                console.error(err);
-                alert('Erro ao iniciar aula');
+            .then(function() {
+                // Retorna array vazia pois todos estão "agardando"
+                return [];
             });
         }
 
-        function encerrarAula() {
-            if (!confirm('Encerrar esta aula?')) return;
-            
+        function renderizarAlunosComStatus(presencas) {
             const token = localStorage.getItem('token');
-            
-            fetch('/api/aulas/' + aulaAtual.id, {
-                method: 'PATCH',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token 
-                },
-                body: JSON.stringify({ status: 'encerrada' })
-            })
+            fetch('/api/matriculas/' + turmaSelecionadaId.id, { headers: { 'Authorization': 'Bearer ' + token } })
             .then(function(res) { return res.json(); })
-            .then(function(aula) {
-                aulaAtual = aula;
-                atualizarInterfaceAula(aula);
-                alert('Aula encerrada!');
-            })
-            .catch(function(err) {
-                console.error(err);
-                alert('Erro ao encerrar aula');
+            .then(function(matriculas) {
+                const alunos = matriculas.filter(function(m) { return m.ativa && m.alunos; }).map(function(m) { return m.alunos; });
+                
+                // Cria map de presenças
+                const presencasMap = {};
+                presencas.forEach(function(p) { presencasMap[p.aluno_id] = p; });
+                
+                let html = '';
+                for (let i = 0; i < alunos.length; i++) {
+                    const a = alunos[i];
+                    const presenca = presencasMap[a.id];
+                    const status = presenca ? presenca.status : 'agardando';
+                    
+                    let badge = '';
+                    let icon = '';
+                    
+                    if (status === 'confirmado') {
+                        badge = 'confirmado';
+                        icon = '<i class="fas fa-check-circle"></i>';
+                    } else if (status === 'cancelado') {
+                        badge = 'cancelado';
+                        icon = '<i class="fas fa-times-circle"></i>';
+                    } else {
+                        badge = 'agardando';
+                        icon = '<i class="fas fa-clock"></i>';
+                    }
+                    
+                    html += `<li class="aluno-item">
+                        <div class="aluno-avatar"><i class="fas fa-user"></i></div>
+                        <div class="aluno-info">
+                            <span class="aluno-nome">${a.nome}</span>
+                        </div>
+                        <span class="status-badge ${badge}">${icon} ${status}</span>
+                    </li>`;
+                }
+                document.getElementById('listaAlunos').innerHTML = html;
             });
-        }
-
-        function registrarPresenca(alunoId, status) {
-            const token = localStorage.getItem('token');
-            
-            // Verifica se já existe presença
-            const presencaExistente = presencasCache[alunoId];
-            
-            if (presencaExistente) {
-                // Atualiza
-                fetch('/api/presencas/' + presencaExistente.id, {
-                    method: 'PATCH',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token 
-                    },
-                    body: JSON.stringify({ status: status })
-                })
-                .then(function(res) { return res.json(); })
-                .then(function() {
-                    carregarPresencas(aulaAtual.id);
-                });
-            } else {
-                // Cria nova
-                fetch('/api/presencas', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token 
-                    },
-                    body: JSON.stringify({ 
-                        aula_id: aulaAtual.id, 
-                        aluno_id: alunoId, 
-                        status: status 
-                    })
-                })
-                .then(function(res) { return res.json(); })
-                .then(function() {
-                    carregarPresencas(aulaAtual.id);
-                });
-            }
         }
 
         function fecharModal() { 
             document.getElementById('modalDetalhesAula').classList.add('hidden'); 
             turmaSelecionadaId = null;
             aulaAtual = null;
+            dataAulaSelecionada = null;
         }
         
         function abrirMatricula() { 
