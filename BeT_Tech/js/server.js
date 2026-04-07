@@ -455,6 +455,24 @@ app.get('/api/dashboard', async (req, res) => {
     }
 });
 
+// BUSCAR AULA POR TURMA E DATA (adicione antes do app.listen)
+app.get('/api/aulas/buscar', async (req, res) => {
+    try {
+        const { turma_id, data } = req.query;
+        const { data: aula } = await supabase
+            .from('aulas')
+            .select('*')
+            .eq('turma_id', turma_id)
+            .eq('data', data)
+            .single();
+        
+        res.json(aula || null);
+    } catch (error) {
+        res.json(null);
+    }
+});
+
+
 // PAINEL
 app.get('/api/painel', async (req, res) => {
     try {
