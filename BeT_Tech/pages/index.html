@@ -74,9 +74,11 @@
 
                 <div class="form-group">
                     <label for="cadEscola">
-                        <i class="fas fa-school"></i> Nome da Escola
+                        <i class="fas fa-school"></i> Escola
                     </label>
-                    <input type="text" id="cadEscola" placeholder="Minha Escola de Beach Tennis" required>
+                    <select id="cadEscola" required>
+                        <option value="">Selecione uma escola...</option>
+                    </select>
                 </div>
 
                 <div id="cadError" class="error-message hidden">
@@ -92,6 +94,26 @@
     </div>
 
     <script>
+        // Carregar escolas ao iniciar
+        async function carregarEscolas() {
+            try {
+                // Busca escolas públicas (sem autenticação)
+                const response = await fetch('/api/escolas');
+                if (response.ok) {
+                    const escolas = await response.json();
+                    const select = document.getElementById('cadEscola');
+                    escolas.forEach(escola => {
+                        const option = document.createElement('option');
+                        option.value = escola.id;
+                        option.textContent = escola.nome;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar escolas:', error);
+            }
+        }
+
         function showTab(tab) {
             const loginForm = document.getElementById('loginForm');
             const cadastroForm = document.getElementById('cadastroForm');
@@ -107,6 +129,8 @@
                 cadastroForm.classList.remove('hidden');
                 tabs[0].classList.remove('active');
                 tabs[1].classList.add('active');
+                // Carrega escolas ao abrir a aba de cadastro
+                carregarEscolas();
             }
         }
 
@@ -160,10 +184,16 @@
             const nome = document.getElementById('cadNome').value;
             const email = document.getElementById('cadEmail').value;
             const password = document.getElementById('cadPassword').value;
-            const nomeEscola = document.getElementById('cadEscola').value;
+            const escolaId = document.getElementById('cadEscola').value;
             const btn = document.getElementById('cadBtn');
             const errorDiv = document.getElementById('cadError');
             const errorText = document.getElementById('cadErrorText');
+
+            if (!escolaId) {
+                errorDiv.classList.remove('hidden');
+                errorText.textContent = 'Selecione uma escola';
+                return;
+            }
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
@@ -173,7 +203,12 @@
                 const response = await fetch('/api/cadastro', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, email, password, nomeEscola })
+                    body: JSON.stringify({ 
+                        nome, 
+                        email, 
+                        password,
+                        escola_id: escolaId
+                    })
                 });
 
                 const data = await response.json();

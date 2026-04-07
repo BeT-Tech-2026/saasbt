@@ -62,6 +62,62 @@ app.post('/api/cadastro', async (req, res) => {
     }
 });
 
+
+// CADASTRO DE PROFESSOR
+app.post('/api/cadastro', async (req, res) => {
+    try {
+        const { nome, email, password, escola_id } = req.body;
+
+        if (!nome || !email || !password || !escola_id) {
+            return res.status(400).json({ error: 'Preencha todos os campos' });
+        }
+
+        // Criar usuário no Auth
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email: email,
+            password: password,
+            email_confirm: true
+        });
+        if (authError) throw authError;
+
+        // Criar perfil como PROFESSOR
+        const { data: perfil, error: perfilError } = await supabase
+            .from('perfis')
+            .insert({
+                id: authData.user.id,
+                escola_id: escola_id,
+                nome: nome,
+                email: email,
+                tipo: 'professor',
+                ativo: true,
+                cor: '#3b82f6' // Cor padrão
+            })
+            .select()
+            .single();
+        
+        if (perfilError) throw perfilError;
+
+        res.status(201).json({ message: 'Cadastro realizado!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ROTA PÚBLICA PARA LISTAR ESCOLAS
+app.get('/api/escolas', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('escolas')
+            .select('id, nome')
+            .order('nome');
+        
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // LOGIN
 app.post('/api/login', async (req, res) => {
     try {

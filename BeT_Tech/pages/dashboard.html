@@ -6,6 +6,146 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .quick-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover { transform: translateY(-2px); }
+        .quick-btn.primary { background: var(--primary); color: white; }
+        .quick-btn.secondary { background: var(--secondary); color: white; }
+        .quick-btn i { font-size: 16px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border: 1px solid var(--border);
+        }
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+        .stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+        .stat-info .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        .stat-info .stat-label { font-size: 13px; color: var(--text-muted); }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-top: 16px;
+        }
+
+        .turma-occupancy {
+            margin-top: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .occupancy-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .occupancy-info { flex: 1; }
+        .occupancy-name { font-weight: 600; font-size: 14px; }
+        .occupancy-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .occupancy-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .occupancy-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: right;
+            min-width: 60px;
+        }
+
+        .aluno-mini-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .aluno-mini-card:hover { background: var(--border); }
+        .aluno-mini-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .aluno-mini-info { flex: 1; }
+        .aluno-mini-nome { font-weight: 600; font-size: 14px; }
+        .aluno-mini-turma { font-size: 12px; color: var(--text-muted); }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 <body class="dashboard-body">
 
@@ -43,47 +183,177 @@
         </header>
 
         <div class="content">
+            <!-- Ações Rápidas -->
+            <div class="quick-actions">
+                <button class="quick-btn primary" onclick="abrirModalAluno()">
+                    <i class="fas fa-user-plus"></i> Novo Aluno
+                </button>
+                <button class="quick-btn secondary" onclick="abrirModalTurma()">
+                    <i class="fas fa-school"></i> Nova Turma
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon green"><i class="fas fa-users"></i></div>
                     <div class="stat-info">
-                        <p class="stat-label">Alunos Ativos</p>
                         <p class="stat-value" id="totalAlunos">0</p>
+                        <p class="stat-label">Alunos Ativos</p>
                     </div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-icon blue"><i class="fas fa-school"></i></div>
                     <div class="stat-info">
-                        <p class="stat-label">Turmas Ativas</p>
                         <p class="stat-value" id="totalTurmas">0</p>
+                        <p class="stat-label">Turmas Ativas</p>
                     </div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-icon purple"><i class="fas fa-calendar-day"></i></div>
                     <div class="stat-info">
-                        <p class="stat-label">Aulas Hoje</p>
                         <p class="stat-value" id="aulasHoje">0</p>
+                        <p class="stat-label">Aulas Hoje</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fas fa-user-check"></i></div>
+                    <div class="stat-info">
+                        <p class="stat-value" id="alunosDia">0</p>
+                        <p class="stat-label">Alunos no Dia</p>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
+            <!-- Grid Principal -->
+            <div class="dashboard-grid">
+                <!-- Coluna Esquerda -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-pie mr-2"></i>Ocupação das Turmas</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="ocupacaoChart"></canvas>
+                        </div>
+                        <div class="turma-occupancy" id="turmaOccupancy"></div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-clock mr-2"></i>Aulas de Hoje</h2>
+                    </div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <div id="aulasHojeList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alunos Recentes -->
+            <div class="card" style="margin-top: 24px;">
                 <div class="card-header">
-                    <h2><i class="fas fa-clock"></i> Aulas de Hoje</h2>
+                    <h2><i class="fas fa-users mr-2"></i>Alunos Matriculados por Dia da Semana</h2>
                 </div>
                 <div class="card-body">
-                    <div id="aulasHojeList" class="aulas-list">
-                        <p class="loading">Carregando...</p>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="alunosDiaChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- Modal Novo Aluno -->
+    <div id="modalAluno" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Novo Aluno</h3>
+                <button onclick="fecharModalAluno()" class="close">&times;</button>
+            </div>
+            <form id="alunoForm" class="modal-body">
+                <div class="form-group">
+                    <label>Nome *</label>
+                    <input type="text" id="alunoNome" required placeholder="Nome completo">
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" id="alunoTelefone" placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="alunoEmail" placeholder="email@exemplo.com">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" onclick="fecharModalAluno()" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nova Turma -->
+    <div id="modalTurma" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nova Turma</h3>
+                <button onclick="fecharModalTurma()" class="close">&times;</button>
+            </div>
+            <form id="turmaForm" class="modal-body">
+                <div class="form-group">
+                    <label>Nome da Turma *</label>
+                    <input type="text" id="turmaNome" required placeholder="Ex: Avançado A">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Início *</label>
+                        <input type="time" id="turmaInicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fim *</label>
+                        <input type="time" id="turmaFim" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Dia da Semana *</label>
+                    <select id="turmaDia" required>
+                        <option value="">Selecione...</option>
+                        <option value="segunda">Segunda</option>
+                        <option value="terca">Terça</option>
+                        <option value="quarta">Quarta</option>
+                        <option value="quinta">Quinta</option>
+                        <option value="sexta">Sexta</option>
+                        <option value="sabado">Sábado</option>
+                        <option value="domingo">Domingo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Professor</label>
+                    <select id="turmaProfessor">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Limite de Alunos</label>
+                    <input type="number" id="turmaLimite" value="4" min="1" max="20">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" onclick="fecharModalTurma()" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let perfil = null;
+        let turmasData = [];
+        let chartOcupacao = null;
+        let chartAlunosDia = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
@@ -113,39 +383,233 @@
                 document.querySelector('a[href="/professores"]').style.display = 'none';
             }
 
-            loadDashboard();
+            await loadDashboard();
+            await loadProfessoresSelect();
         });
 
         async function loadDashboard() {
             const token = localStorage.getItem('token');
+            
+            // Carrega dados do dashboard
             const response = await fetch('/api/dashboard', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            
             const { alunosAtivos, turmasAtivas, aulasHoje } = await response.json();
 
             document.getElementById('totalAlunos').textContent = alunosAtivos || 0;
             document.getElementById('totalTurmas').textContent = turmasAtivas || 0;
             document.getElementById('aulasHoje').textContent = aulasHoje?.length || 0;
+            document.getElementById('alunosDia').textContent = aulasHoje?.length || 0;
 
+            // Lista aulas de hoje
             const lista = document.getElementById('aulasHojeList');
             if (aulasHoje && aulasHoje.length > 0) {
-                lista.innerHTML = aulasHoje.map(t => `
-                    <div class="aula-item">
-                        <div class="aula-info">
-                            <strong>${t.nome}</strong>
-                            <span>${t.perfis?.nome || 'Sem professor'}</span>
+                lista.innerHTML = aulasHoje.map(t => {
+                    const cor = t.perfis?.cor || '#3b82f6';
+                    return `
+                    <div class="aluno-mini-card" style="border-left: 4px solid ${cor};">
+                        <div class="aluno-mini-avatar" style="background: ${cor};">
+                            <i class="fas fa-volleyball-ball"></i>
                         </div>
-                        <div class="aula-horario">
-                            <span class="time">${t.horario_inicio}</span>
-                            <span class="end">${t.horario_fim}</span>
+                        <div class="aluno-mini-info">
+                            <div class="aluno-mini-nome">${t.nome}</div>
+                            <div class="aluno-mini-turma">${t.perfis?.nome || 'Sem professor'} • ${t.horario_inicio} - ${t.horario_fim}</div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } else {
-                lista.innerHTML = '<p class="empty">Nenhuma aula agendada para hoje</p>';
+                lista.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>Nenhuma aula hoje</p></div>';
             }
+
+            // Carrega turmas para occupancy chart
+            await loadTurmasOcupacao();
         }
+
+        async function loadTurmasOcupacao() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/turmas', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            turmasData = await response.json();
+
+            // Carrega matrículas de cada turma
+            for (let turma of turmasData) {
+                const res = await fetch(`/api/matriculas/${turma.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const matriculas = await res.json();
+                turma.alunosMatriculados = matriculas.filter(m => m.ativa).length;
+            }
+
+            renderOccupancyChart();
+            renderOccupancyList();
+            renderAlunosDiaChart();
+        }
+
+        function renderOccupancyChart() {
+            const ctx = document.getElementById('ocupacaoChart').getContext('2d');
+            
+            const labels = turmasData.slice(0, 6).map(t => t.nome);
+            const data = turmasData.slice(0, 6).map(t => {
+                return t.limite_alunos > 0 ? Math.round((t.alunosMatriculados / t.limite_alunos) * 100) : 0;
+            });
+            const colors = turmasData.slice(0, 6).map(t => t.perfis?.cor || '#3b82f6');
+
+            if (chartOcupacao) chartOcupacao.destroy();
+
+            chartOcupacao = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function renderOccupancyList() {
+            const container = document.getElementById('turmaOccupancy');
+            container.innerHTML = turmasData.map(t => {
+                const percentual = t.limite_alunos > 0 ? Math.round((t.alunosMatriculados / t.limite_alunos) * 100) : 0;
+                const cor = t.perfis?.cor || '#3b82f6';
+                return `
+                <div class="occupancy-item">
+                    <div class="occupancy-info">
+                        <div class="occupancy-name">${t.nome}</div>
+                        <div class="occupancy-bar">
+                            <div class="occupancy-fill" style="width: ${percentual}%; background: ${cor};"></div>
+                        </div>
+                    </div>
+                    <div class="occupancy-text">${t.alunosMatriculados}/${t.limite_alunos}</div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderAlunosDiaChart() {
+            const ctx = document.getElementById('alunosDiaChart').getContext('2d');
+            
+            // Conta alunos por dia da semana baseado nas turmas
+            const dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+            const diasLabel = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            
+            const dataAlunos = dias.map(dia => {
+                return turmasData
+                    .filter(t => t.dia_semana === dia)
+                    .reduce((acc, t) => acc + (t.alunosMatriculados || 0), 0);
+            });
+
+            if (chartAlunosDia) chartAlunosDia.destroy();
+
+            chartAlunosDia = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: diasLabel,
+                    datasets: [{
+                        label: 'Alunos',
+                        data: dataAlunos,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+        }
+
+        // Funções do Modal Aluno
+        function abrirModalAluno() {
+            document.getElementById('modalAluno').classList.remove('hidden');
+            document.getElementById('alunoForm').reset();
+        }
+        function fecharModalAluno() {
+            document.getElementById('modalAluno').classList.add('hidden');
+        }
+        document.getElementById('alunoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const nome = document.getElementById('alunoNome').value;
+            const telefone = document.getElementById('alunoTelefone').value;
+            const email = document.getElementById('alunoEmail').value;
+
+            const response = await fetch('/api/alunos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ nome, telefone, email })
+            });
+
+            if (response.ok) {
+                alert('Aluno cadastrado com sucesso!');
+                fecharModalAluno();
+                loadDashboard();
+            } else {
+                alert('Erro ao cadastrar aluno');
+            }
+        });
+
+        // Funções do Modal Turma
+        async function loadProfessoresSelect() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/professores', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const professores = await response.json();
+            const select = document.getElementById('turmaProfessor');
+            select.innerHTML = '<option value="">Selecione...</option>' + 
+                professores.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+        }
+
+        function abrirModalTurma() {
+            document.getElementById('modalTurma').classList.remove('hidden');
+            document.getElementById('turmaForm').reset();
+        }
+        function fecharModalTurma() {
+            document.getElementById('modalTurma').classList.add('hidden');
+        }
+        document.getElementById('turmaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const nome = document.getElementById('turmaNome').value;
+            const horario_inicio = document.getElementById('turmaInicio').value;
+            const horario_fim = document.getElementById('turmaFim').value;
+            const dia_semana = document.getElementById('turmaDia').value;
+            const professor_id = document.getElementById('turmaProfessor').value || null;
+            const limite_alunos = parseInt(document.getElementById('turmaLimite').value);
+
+            const response = await fetch('/api/turmas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    nome, horario_inicio, horario_fim, dia_semana, professor_id, limite_alunos
+                })
+            });
+
+            if (response.ok) {
+                alert('Turma criada com sucesso!');
+                fecharModalTurma();
+                loadDashboard();
+            } else {
+                alert('Erro ao criar turma');
+            }
+        });
 
         async function logout() {
             const token = localStorage.getItem('token');
