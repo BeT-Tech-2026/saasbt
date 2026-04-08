@@ -23,6 +23,7 @@
         .stat-card-relatorio.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
         .stat-card-relatorio.orange::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
         .stat-card-relatorio.purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .stat-card-relatorio.red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
         
         .stat-card-relatorio .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
         .stat-card-relatorio .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
@@ -60,6 +61,10 @@
         .empty-relatorio { text-align: center; padding: 40px; color: var(--text-muted); }
         .empty-relatorio i { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
         
+        /* Financeiro */
+        .financeiro-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        @media (max-width: 768px) { .financeiro-stats { grid-template-columns: 1fr; } }
+
         /* Modal */
         .modal-relatorio { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
         .modal-relatorio.hidden { display: none; }
@@ -110,6 +115,7 @@
             <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
             <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
             <a href="/relatorios" class="menu-item active"><i class="fas fa-chart-bar"></i> Relatórios</a>
+            <a href="/financeiro" class="menu-item"><i class="fas fa-dollar-sign"></i> Financeiro</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -142,9 +148,8 @@
                 </button>
             </div>
 
-            <!-- Stats Gerais - NOVA ORDEM -->
+            <!-- Stats Gerais -->
             <div class="stats-grid-relatorio" id="statsGrid">
-                <!-- Card 1: Total de Turmas -->
                 <div class="stat-card-relatorio blue">
                     <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;"><i class="fas fa-school"></i></div>
                     <div class="stat-label">Total de Turmas</div>
@@ -152,7 +157,6 @@
                     <div class="stat-sub" id="turmasSemana">0 esta semana</div>
                 </div>
 
-                <!-- Card 2: Total de Aulas (movido para cá) -->
                 <div class="stat-card-relatorio purple">
                     <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;"><i class="fas fa-calendar-check"></i></div>
                     <div class="stat-label">Total de Aulas</div>
@@ -160,7 +164,6 @@
                     <div class="stat-sub" id="aulasSemana">0 esta semana</div>
                 </div>
 
-                <!-- Card 3: Total de Alunos (Únicos) -->
                 <div class="stat-card-relatorio green">
                     <div class="stat-icon" style="background: var(--success-bg); color: var(--success);"><i class="fas fa-users"></i></div>
                     <div class="stat-label">Total de Alunos</div>
@@ -168,12 +171,47 @@
                     <div class="stat-sub" id="alunosNovos">+0 novos este mês</div>
                 </div>
 
-                <!-- Card 4: Alunos Comparecidos (NOVO - Substitui Média) -->
                 <div class="stat-card-relatorio orange">
                     <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);"><i class="fas fa-user-check"></i></div>
                     <div class="stat-label">Alunos Comparecidos</div>
                     <div class="stat-value" id="alunosComparecidos">0</div>
                     <div class="stat-sub" id="mediaPresenca">Média 0 alunos/aula</div>
+                </div>
+            </div>
+
+            <!-- Resumo Financeiro (aparece somente se houver planejamento salvo) -->
+            <div class="relatorio-section" id="secaoFinanceira" style="display:none;">
+                <div class="relatorio-section-header">
+                    <h3><i class="fas fa-dollar-sign"></i> Planejamento Financeiro</h3>
+                    <span id="mesPlanejamento" style="font-size: 12px; color: var(--text-muted);"></span>
+                </div>
+                <div class="relatorio-section-body">
+                    <div class="financeiro-stats">
+                        <div class="stat-card-relatorio green" style="margin-bottom:0;">
+                            <div class="stat-icon" style="background: rgba(16,185,129,0.15); color: #34d399;">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="stat-label">Receita Mensal</div>
+                            <div class="stat-value" id="finReceita" style="font-size: 26px;">R$ 0</div>
+                            <div class="stat-sub">Estimada</div>
+                        </div>
+                        <div class="stat-card-relatorio red" style="margin-bottom:0;">
+                            <div class="stat-icon" style="background: rgba(239,68,68,0.15); color: #f87171;">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div class="stat-label">Custos Fixos</div>
+                            <div class="stat-value" id="finCustos" style="font-size: 26px;">R$ 0</div>
+                            <div class="stat-sub">Mensais</div>
+                        </div>
+                        <div class="stat-card-relatorio blue" style="margin-bottom:0;">
+                            <div class="stat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="stat-label">Lucro Líquido</div>
+                            <div class="stat-value" id="finLucro" style="font-size: 26px;">R$ 0</div>
+                            <div class="stat-sub">Estimado</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -303,6 +341,7 @@
                 document.querySelector('a[href="/professores"]').style.display = 'none';
             }
 
+            carregarResumoFinanceiro();
             await loadRelatorios();
         });
 
@@ -310,6 +349,31 @@
             const response = await fetch('/api/session', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await response.json();
             return data.perfil;
+        }
+
+        function carregarResumoFinanceiro() {
+            const raw = localStorage.getItem('planejamentoFinanceiro');
+            if (!raw) return;
+
+            const dados = JSON.parse(raw);
+            const fmt = v => 'R$ ' + parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById('finReceita').textContent = fmt(dados.receitaMensal);
+            document.getElementById('finCustos').textContent  = fmt(dados.custosMensais);
+
+            const lucroEl = document.getElementById('finLucro');
+            lucroEl.textContent = fmt(dados.lucroLiquido);
+            lucroEl.style.color = dados.lucroLiquido >= 0 ? 'var(--success)' : 'var(--danger)';
+
+            // Formata o mês de referência (ex: "2025-04" → "Abril/2025")
+            if (dados.mes) {
+                const [ano, mes] = dados.mes.split('-');
+                const nomeMes = new Date(ano, mes - 1).toLocaleString('pt-BR', { month: 'long' });
+                document.getElementById('mesPlanejamento').textContent =
+                    `Referência: ${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}/${ano}`;
+            }
+
+            document.getElementById('secaoFinanceira').style.display = 'block';
         }
 
         async function loadRelatorios() {
@@ -358,7 +422,6 @@
             const d = dadosRelatorio;
             if (!d) return;
 
-            // Cards superiores
             document.getElementById('totalTurmas').textContent = d.estatisticas.totalTurmas || 0;
             document.getElementById('turmasSemana').textContent = `${d.estatisticas.turmasSemana || 0} esta semana`;
             
@@ -368,7 +431,6 @@
             document.getElementById('totalAlunos').textContent = d.estatisticas.totalAlunos || 0;
             document.getElementById('alunosNovos').textContent = `+${d.estatisticas.alunosNovosMes || 0} novos este mês`;
             
-            // NOVO: Alunos Comparecidos
             const comparecidos = d.estatisticas.alunosComparecidos || 0;
             const totalAulas = d.estatisticas.totalAulas || 1;
             const media = comparecidos > 0 ? (comparecidos / totalAulas).toFixed(1) : 0;
@@ -445,8 +507,6 @@
             const turmasProfessor = dadosRelatorio.turmas.filter(t => t.professor_id === professorId);
             const cor = professor.cor || coresProfessores[0];
             const ocupacao = professor.totalTurmas > 0 ? Math.round((professor.totalAlunos / (professor.totalTurmas * 4)) * 100) : 0;
-
-            // NOVO: Comparências do professor
             const comparecimentos = professor.totalComparecimentos || 0;
 
             document.getElementById('modalProfessorNome').textContent = professor.nome;
@@ -460,7 +520,6 @@
             document.getElementById('modalComparecimentos').textContent = comparecimentos;
             document.getElementById('modalOcupacao').textContent = `${ocupacao}%`;
 
-            // Turmas
             const turmasList = document.getElementById('modalTurmasList');
             if (turmasProfessor.length > 0) {
                 turmasList.innerHTML = turmasProfessor.map(t => {
@@ -506,10 +565,25 @@
             doc.text(`Turmas: ${d.estatisticas.totalTurmas} | Aulas: ${d.estatisticas.totalAulas}`, 14, 40);
             doc.text(`Alunos: ${d.estatisticas.totalAlunos} | Comparecimentos: ${d.estatisticas.alunosComparecidos}`, 14, 46);
 
+            // Financeiro no PDF se disponível
+            const rawFin = localStorage.getItem('planejamentoFinanceiro');
+            let yStart = 55;
+            if (rawFin) {
+                const fin = JSON.parse(rawFin);
+                const fmt = v => 'R$ ' + parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                doc.setFontSize(12);
+                doc.setTextColor(37, 99, 235);
+                doc.text('Planejamento Financeiro', 14, 54);
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+                doc.text(`Receita: ${fmt(fin.receitaMensal)}   Custos: ${fmt(fin.custosMensais)}   Lucro: ${fmt(fin.lucroLiquido)}`, 14, 61);
+                yStart = 70;
+            }
+
             const dados = d.professores.map(p => [p.nome, p.totalTurmas, p.totalAlunos, `${Math.round((p.totalAlunos / (p.totalTurmas * 4 || 1)) * 100)}%`]);
             
             doc.autoTable({
-                startY: 55,
+                startY: yStart,
                 head: [['Professor', 'Turmas', 'Alunos', 'Ocupação']],
                 body: dados,
                 theme: 'striped',

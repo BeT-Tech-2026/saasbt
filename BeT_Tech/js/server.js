@@ -670,6 +670,82 @@ app.get('/api/dashboard', authenticate, async (req, res) => {
     }
 });
 
+// CONFIGURAÇÕES FINANCEIRAS
+app.get('/api/config-financeiras', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const { data, error } = await supabase
+            .from('configuracoes_financeiras')
+            .select('*')
+            .eq('escola_id', perfil.escola_id);
+        
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/config-financeiras', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        const { tipo, valor, quantidade, descricao } = req.body;
+        
+        // Remove registros antigos desse tipo antes de inserir novo
+        if (tipo === 'mensalidade_fixa' || tipo === 'mensalidade_variavel') {
+            await supabase
+                .from('configuracoes_financeiras')
+                .delete()
+                .eq('escola_id', perfil.escola_id)
+                .eq('tipo', tipo);
+        }
+        
+        const { data, error } = await supabase
+            .from('configuracoes_financeiras')
+            .insert({
+                escola_id: perfil.escola_id,
+                tipo,
+                valor: parseFloat(valor),
+                quantidade: quantidade || 1,
+                descricao
+            })
+            .select()
+            .single();
+        
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/config-financeiras/:id', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const { data: existing } = await supabase
+            .from('configuracoes_financeiras')
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+        
+        if (!existing || existing.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+        
+        await supabase
+            .from('configuracoes_financeiras')
+            .delete()
+            .eq('id', req.params.id);
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 //rota /api/relatorios 
 
 app.get('/api/relatorios', authenticate, async (req, res) => {
@@ -931,6 +1007,13 @@ app.get('/relatorios', (req, res) => {
     if (fs.existsSync(filePath)) res.sendFile(filePath);
     else res.status(404).send('Arquivo não encontrado: ' + filePath);
 });
+
+app.get('/financeiro', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/financeiro.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
 
 // CSS
 app.get('/css/style.css', (req, res) => {

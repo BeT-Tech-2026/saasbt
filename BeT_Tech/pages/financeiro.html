@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Planejamento Financeiro - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .financeiro-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+        }
+        
+        @media (max-width: 900px) {
+            .financeiro-grid { grid-template-columns: 1fr; }
+        }
+        
+        .finance-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+        }
+        
+        .finance-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .finance-card h3 i { color: var(--primary); }
+        
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 10px 14px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .input-group .btn {
+            padding: 10px 16px;
+        }
+        
+        .mensalidade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-dark);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .mensalidade-item .info strong {
+            display: block;
+            font-size: 14px;
+        }
+        
+        .mensalidade-item .info span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .mensalidade-item .actions button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .mensalidade-item .actions button:hover {
+            color: var(--danger);
+        }
+        
+        /* Cards de Resultado */
+        .resultados-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .resultado-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .resultado-card.green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .resultado-card.orange {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .resultado-card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.85;
+            margin-bottom: 4px;
+        }
+        
+        .resultado-card .valor {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .resultado-card .sub {
+            font-size: 11px;
+            opacity: 0.75;
+            margin-top: 4px;
+        }
+        
+        .projetao-anual {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+        }
+        
+        .projetao-anual h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .projetao-anual h3 i { color: var(--primary); }
+        
+        .vazio {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <span>B&T Tech</span>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
+            <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
+            <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
+            <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
+            <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
+            <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+            <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
+            <a href="/financeiro" class="menu-item active"><i class="fas fa-dollar-sign"></i> Financeiro</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Carregando...</p>
+                    <p class="user-type" id="userType">Carregando...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1><i class="fas fa-dollar-sign mr-2"></i>Planejamento Financeiro</h1>
+        </header>
+
+        <div class="content">
+            <!-- Resultados -->
+            <div class="resultados-grid">
+                <div class="resultado-card">
+                    <div class="label">Receita Semanal</div>
+                    <div class="valor" id="receitaSemanal">R$ 0</div>
+                    <div class="sub">Estimada</div>
+                </div>
+                <div class="resultado-card green">
+                    <div class="label">Receita Mensal</div>
+                    <div class="valor" id="receitaMensal">R$ 0</div>
+                    <div class="sub">Estimada</div>
+                </div>
+            </div>
+
+            <div class="financeiro-grid">
+                <!-- Coluna 1: Mensalidades -->
+                <div class="finance-card">
+                    <h3><i class="fas fa-money-bill-wave"></i> Mensalidades</h3>
+                    
+                    <div class="input-group">
+                        <input type="number" id="mensalidadeValor" placeholder="Valor (R$)" min="0" step="0.01">
+                        <input type="number" id="mensalidadeQtd" placeholder="Qtd alunos" min="1" value="1">
+                        <button onclick="adicionarMensalidade()" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                    </div>
+                    
+                    <div id="listaMensalidades">
+                        <div class="vazio">Nenhuma mensalidade cadastrada</div>
+                    </div>
+                </div>
+
+                <!-- Coluna 2: Custos Fixos -->
+                <div class="finance-card">
+                    <h3><i class="fas fa-file-invoice-dollar"></i> Custos Fixos Mensais</h3>
+                    
+                    <div class="input-group">
+                        <input type="text" id="custoDesc" placeholder="Descrição (ex: Aluguel)">
+                        <input type="number" id="custoValor" placeholder="Valor (R$)" min="0">
+                        <button onclick="adicionarCusto()" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                    </div>
+                    
+                    <div id="listaCustos">
+                        <div class="vazio">Nenhum custo fixo cadastrado</div>
+                    </div>
+
+                    <!-- Projeção Próximo Mês -->
+                    <div class="projetao-anual" style="margin-top: 24px;">
+                        <h3><i class="fas fa-chart-line"></i> Projeção Próximo Mês</h3>
+                        <div style="text-align: center; padding: 20px 0 12px;">
+                            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Lucro Líquido Estimado</div>
+                            <div id="lucroProximoMes" style="font-size: 36px; font-weight: 700; color: var(--success);">R$ 0</div>
+                            <div id="lucroSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">receita R$ 0 — custos R$ 0</div>
+                        </div>
+                        <button onclick="salvarPlanejamento()" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                            <i class="fas fa-save"></i> Salvar Planejamento do Mês
+                        </button>
+                        <div id="savedMsg" style="display:none; text-align:center; font-size:12px; color:var(--success); margin-top:8px;">
+                            <i class="fas fa-check-circle"></i> Planejamento salvo!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let perfil = null;
+        let configFinanceiras = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/'; return; }
+
+            perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(token);
+            if (!perfil) { window.location.href = '/'; return; }
+
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+
+            if (perfil.tipo !== 'dono') {
+                alert('Acesso restrito ao administrador');
+                window.location.href = '/dashboard';
+                return;
+            }
+
+            await loadConfiguracoes();
+        });
+
+        async function getPerfil(token) {
+            const response = await fetch('/api/session', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await response.json();
+            return data.perfil;
+        }
+
+        async function loadConfiguracoes() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/config-financeiras', { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            configFinanceiras = await response.json();
+            render();
+            calcular();
+        }
+
+        function render() {
+            const mensalidades = configFinanceiras.filter(c => c.tipo === 'mensalidade_fixa' || c.tipo === 'mensalidade_variavel');
+            const custos = configFinanceiras.filter(c => c.tipo === 'custo_fixo');
+            
+            const listaMensalidades = document.getElementById('listaMensalidades');
+            if (mensalidades.length === 0) {
+                listaMensalidades.innerHTML = '<div class="vazio">Nenhuma mensalidade cadastrada</div>';
+            } else {
+                listaMensalidades.innerHTML = mensalidades.map(m => `
+                    <div class="mensalidade-item">
+                        <div class="info">
+                            <strong>R$ ${parseFloat(m.valor).toFixed(2)}</strong>
+                            <span>${m.quantidade} aluno(s)</span>
+                        </div>
+                        <div class="actions">
+                            <button onclick="excluirConfig('${m.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const listaCustos = document.getElementById('listaCustos');
+            if (custos.length === 0) {
+                listaCustos.innerHTML = '<div class="vazio">Nenhum custo fixo cadastrado</div>';
+            } else {
+                listaCustos.innerHTML = custos.map(c => `
+                    <div class="mensalidade-item">
+                        <div class="info">
+                            <strong>${c.descricao}</strong>
+                            <span>R$ ${parseFloat(c.valor).toFixed(2)}/mês</span>
+                        </div>
+                        <div class="actions">
+                            <button onclick="excluirConfig('${c.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function calcular() {
+            const mensalidades = configFinanceiras.filter(c => c.tipo === 'mensalidade_fixa' || c.tipo === 'mensalidade_variavel');
+            const custos = configFinanceiras.filter(c => c.tipo === 'custo_fixo');
+            
+            // Receita mensal
+            let receitaMensal = 0;
+            mensalidades.forEach(m => {
+                receitaMensal += parseFloat(m.valor) * m.quantidade;
+            });
+            
+            // Receita semanal
+            const receitaSemanal = receitaMensal / 4;
+            
+            // Custos mensais
+            let custosMensais = 0;
+            custos.forEach(c => {
+                custosMensais += parseFloat(c.valor);
+            });
+
+            // Lucro líquido
+            const lucroMensal = receitaMensal - custosMensais;
+            
+            // Atualiza cards de receita
+            document.getElementById('receitaSemanal').textContent = formatMoney(receitaSemanal);
+            document.getElementById('receitaMensal').textContent = formatMoney(receitaMensal);
+
+            // Atualiza projeção próximo mês
+            const lucroEl = document.getElementById('lucroProximoMes');
+            lucroEl.textContent = formatMoney(lucroMensal);
+            lucroEl.style.color = lucroMensal >= 0 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('lucroSubtitle').textContent = 
+                `receita ${formatMoney(receitaMensal)} — custos ${formatMoney(custosMensais)}`;
+        }
+
+        function formatMoney(value) {
+            return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        async function adicionarMensalidade() {
+            const valor = document.getElementById('mensalidadeValor').value;
+            const quantidade = document.getElementById('mensalidadeQtd').value;
+            
+            if (!valor || valor <= 0) {
+                alert('Digite um valor válido');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/config-financeiras', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    tipo: 'mensalidade_variavel',
+                    valor: valor,
+                    quantidade: parseInt(quantidade) || 1,
+                    descricao: 'Mensalidade'
+                })
+            });
+
+            if (response.ok) {
+                document.getElementById('mensalidadeValor').value = '';
+                document.getElementById('mensalidadeQtd').value = '1';
+                await loadConfiguracoes();
+            }
+        }
+
+        async function adicionarCusto() {
+            const descricao = document.getElementById('custoDesc').value;
+            const valor = document.getElementById('custoValor').value;
+            
+            if (!descricao || !valor || valor <= 0) {
+                alert('Digite descrição e valor válidos');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/config-financeiras', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    tipo: 'custo_fixo',
+                    valor: valor,
+                    quantidade: 1,
+                    descricao: descricao
+                })
+            });
+
+            if (response.ok) {
+                document.getElementById('custoDesc').value = '';
+                document.getElementById('custoValor').value = '';
+                await loadConfiguracoes();
+            }
+        }
+
+        async function excluirConfig(id) {
+            if (!confirm('Tem certeza que deseja excluir?')) return;
+            
+            const token = localStorage.getItem('token');
+            await fetch(`/api/config-financeiras/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            await loadConfiguracoes();
+        }
+
+        async function salvarPlanejamento() {
+            const mensalidades = configFinanceiras.filter(c => c.tipo === 'mensalidade_fixa' || c.tipo === 'mensalidade_variavel');
+            const custos = configFinanceiras.filter(c => c.tipo === 'custo_fixo');
+
+            let receitaMensal = 0;
+            mensalidades.forEach(m => receitaMensal += parseFloat(m.valor) * m.quantidade);
+            let custosMensais = 0;
+            custos.forEach(c => custosMensais += parseFloat(c.valor));
+
+            const snapshot = {
+                receitaMensal: receitaMensal,
+                custosMensais: custosMensais,
+                lucroLiquido: receitaMensal - custosMensais,
+                mes: new Date().toISOString().slice(0, 7)
+            };
+
+            localStorage.setItem('planejamentoFinanceiro', JSON.stringify(snapshot));
+
+            // Descomente para salvar também na API:
+            // const token = localStorage.getItem('token');
+            // await fetch('/api/planejamento-financeiro', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            //     body: JSON.stringify(snapshot)
+            // });
+
+            const msg = document.getElementById('savedMsg');
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            localStorage.removeItem('token');
+            localStorage.removeItem('perfil');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
