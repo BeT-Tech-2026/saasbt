@@ -26,6 +26,23 @@
             color: var(--danger);
         }
         
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+        .btn-whatsapp:hover {
+            transform: scale(1.1);
+            color: white;
+        }
+        
         /* Busca */
         .search-box {
             position: relative;
@@ -67,7 +84,7 @@
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <div class="logo"><i class="fas fa-racquet"></i></div>
             <span>B&T Tech</span>
         </div>
         <nav class="sidebar-menu">
@@ -189,6 +206,32 @@
         let perfil = null;
         let alunosData = [];
 
+        // Mensagem padrão do WhatsApp
+        const mensagemWhatsApp = "Olá! Gostaria de informações sobre as aulas de Beach Tennis.";
+
+        // Formatar telefone para WhatsApp
+        function formatarTelefone(telefone) {
+            if (!telefone) return null;
+            // Remove tudo que não é número
+            let nums = telefone.replace(/\D/g, '');
+            // Se não tiver código do país, adiciona 55
+            if (!nums.startsWith('55')) {
+                nums = '55' + nums;
+            }
+            return nums;
+        }
+
+        // Abrir WhatsApp
+        function abrirWhatsApp(telefone, mensagem) {
+            const nums = formatarTelefone(telefone);
+            if (!nums) {
+                alert('Telefone não cadastrado para este aluno!');
+                return;
+            }
+            const msg = encodeURIComponent(mensagem || mensagemWhatsApp);
+            window.open(`https://wa.me/${nums}?text=${msg}`, '_blank');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             if (!token) { window.location.href = '/'; return; }
@@ -258,12 +301,17 @@
                 }
                 
                 const tr = document.createElement('tr');
+                
+                // Verifica se tem telefone
+                const temTelefone = a.telefone && a.telefone.length > 0;
+                
                 tr.innerHTML = `
                     <td><strong>${a.nome}</strong></td>
                     <td>${a.telefone || '-'}</td>
                     <td>${a.email || '-'}</td>
                     <td>${turmas.length > 0 ? turmas.map(t => `<span class="badge">${t}</span>`).join(' ') : '-'}</td>
-                    <td>
+                    <td style="display: flex; gap: 4px;">
+                        ${temTelefone ? `<a href="#" onclick="abrirWhatsApp('${a.telefone}', '${mensagemWhatsApp}')" class="btn-icon btn-whatsapp" title="Enviar WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
                         <button onclick="matricular('${a.id}', '${(a.nome || '').replace(/'/g, "\\'")}')" class="btn-icon" title="Matricular"><i class="fas fa-plus-circle"></i></button>
                         <button onclick="editarAluno('${a.id}')" class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
                         <button onclick="excluirAluno('${a.id}')" class="btn-icon btn-danger" title="Excluir"><i class="fas fa-trash"></i></button>
@@ -446,5 +494,5 @@
             window.location.href = '/';
         }
     </script>
-</body>
+</body> 
 </html>

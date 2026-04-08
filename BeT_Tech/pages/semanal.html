@@ -22,99 +22,231 @@
         .turma-horario { font-size: 9px; opacity: 0.7; }
         .turma-nome { font-weight: 500; }
 
+        .week-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .week-nav { display: flex; align-items: center; gap: 10px; }
-        .nav-btn { width: 32px; height: 32px; border: none; background: var(--bg-dark); color: var(--text); border-radius: 6px; cursor: pointer; }
+        .nav-btn { width: 36px; height: 36px; border: none; background: var(--bg-dark); color: var(--text); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .nav-btn:hover { background: var(--primary); color: white; }
+        .periodo-titulo { font-size: 18px; font-weight: 600; }
         
-        .day-card {
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        
+        .day-column {
             background: var(--bg-darker);
             border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            border-left: 4px solid var(--primary);
+            min-height: 400px;
+            overflow: hidden;
         }
-        .day-card.today {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid var(--primary);
-        }
-        .day-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
+        
+        .day-header {
+            background: var(--bg-dark);
+            padding: 12px;
+            text-align: center;
             border-bottom: 1px solid var(--border);
         }
-        .day-card-date {
-            font-size: 14px;
-            font-weight: 600;
+        
+        .day-header.dia-hoje {
+            background: rgba(59, 130, 246, 0.15);
         }
-        .day-card.today .day-card-date {
+        
+        .day-header .dia-nome {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+        
+        .day-header.dia-hoje .dia-nome {
             color: var(--primary);
         }
-        .day-card-badge {
-            font-size: 11px;
-            padding: 4px 8px;
-            background: var(--primary);
-            color: white;
-            border-radius: 12px;
+        
+        .day-header .dia-num {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
         }
         
-        .aula-item {
-            display: flex;
-            align-items: center;
-            background: var(--bg-dark);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: transform 0.2s;
-            border-left: 4px solid;
+        .day-header.dia-hoje .dia-num {
+            color: var(--primary);
         }
-        .aula-item:hover {
-            transform: translateX(4px);
-        }
-        .aula-horario {
-            min-width: 80px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-        .aula-info {
-            flex: 1;
-            padding: 0 12px;
-        }
-        .aula-nome {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-        .aula-prof {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .aula-alunos {
-            min-width: 40px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .aula-alunos i { margin-right: 4px; }
         
-        .no-classes {
+        .day-body {
+            padding: 8px;
+            min-height: 300px;
+        }
+        
+        .day-empty {
             text-align: center;
             padding: 20px;
             color: var(--text-secondary);
+            font-size: 12px;
             font-style: italic;
         }
         
-        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .info-item label { display: block; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
-        .info-item span { font-weight: 500; }
+        /* Status do aluno na card */
+        .aula-status-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+            font-size: 10px;
+        }
         
-        .aluno-item { display: flex; align-items: center; padding: 8px; background: var(--bg-dark); border-radius: 4px; margin-bottom: 4px; }
-        .aluno-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 10px; }
-        .aluno-nome { font-weight: 500; font-size: 12px; }
+        .aula-status-row .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .aula-status-row .status-dot.confirmado { background: #22c55e; }
+        .aula-status-row .status-dot.aguardando { background: #f97316; }
+        .aula-status-row .status-dot.cancelado { background: #ef4444; }
+        
+        .aula-status-row .status-text {
+            font-weight: 500;
+        }
+        
+        .aula-status-row .status-text.confirmado { color: #22c55e; }
+        .aula-status-row .status-text.aguardando { color: #f97316; }
+        .aula-status-row .status-text.cancelado { color: #ef4444; }
+        
+        .aula-card {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border-left: 4px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .aula-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .aula-card .aula-horario {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .aula-card .aula-nome {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+        
+        .aula-card .aula-prof {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Modal */
+        .modal-aula-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .info-box {
+            background: var(--bg-dark);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .info-box label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .info-box span {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .aluno-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .aluno-row .aluno-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .aluno-row .aluno-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .aluno-row .aluno-nome {
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .aluno-row .aluno-telefone {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .whatsapp-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #25D366;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+        
+        .whatsapp-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .status-select {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: none;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        
+        .status-select.confirmado { background: #dcfce7; color: #166534; }
+        .status-select.aguardando { background: #fed7aa; color: #9a3412; }
+        .status-select.cancelado { background: #fee2e2; color: #991b1b; }
     </style>
 </head>
 <body class="dashboard-body">
@@ -156,10 +288,10 @@
         </header>
 
         <div class="content">
-            <div class="grade-controls">
-                <div class="grade-nav">
+            <div class="week-controls">
+                <div class="week-nav">
                     <button onclick="navegar(-1)" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
-                    <span id="periodoLabel" class="periodo-label">Abril 2024</span>
+                    <span id="periodoLabel" class="periodo-titulo">Abril 2024</span>
                     <button onclick="navegar(1)" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
                 </div>
                 <button onclick="voltarHoje()" class="btn btn-secondary">Hoje</button>
@@ -172,31 +304,45 @@
             </div>
 
             <div id="viewWeek" class="card">
-                <div class="card-body" id="weekView">
-                    <!-- Semana será renderizada aqui -->
+                <div class="card-body">
+                    <div class="week-grid" id="weekGrid"></div>
                 </div>
             </div>
         </div>
     </main>
 
     <div id="modalDetalhesAula" class="modal hidden">
-        <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-content" style="max-width: 550px;">
             <div class="modal-header">
-                <h3 id="modalTurmaNome">Detalhes</h3>
+                <h3 id="modalTurmaNome">Detalhes da Aula</h3>
                 <button onclick="fecharModal()" class="close">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="info-grid">
-                    <div class="info-item"><label>Dia</label><span id="modalTurmaDia">-</span></div>
-                    <div class="info-item"><label>Horário</label><span id="modalTurmaHorario">-</span></div>
-                    <div class="info-item"><label>Professor</label><span id="modalTurmaProfessor">-</span></div>
-                    <div class="info-item"><label>Tipo</label><span id="modalTurmaTipo">-</span></div>
+                <div class="modal-aula-info">
+                    <div class="info-box">
+                        <label>Dia</label>
+                        <span id="modalTurmaDia">-</span>
+                    </div>
+                    <div class="info-box">
+                        <label>Horário</label>
+                        <span id="modalTurmaHorario">-</span>
+                    </div>
+                    <div class="info-box">
+                        <label>Professor</label>
+                        <span id="modalTurmaProfessor">-</span>
+                    </div>
+                    <div class="info-box">
+                        <label>Tipo</label>
+                        <span id="modalTurmaTipo">-</span>
+                    </div>
                 </div>
-                <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--text-secondary);">
+                
+                <h4 style="font-size: 13px; margin-bottom: 12px; color: var(--text-secondary);">
                     <i class="fas fa-users"></i> Alunos (<span id="countAlunos">0</span>)
                 </h4>
+                
                 <div id="loadingAlunos" style="text-align: center; padding: 15px;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
-                <p id="semAlunos" class="empty" style="display: none;">Nenhum aluno</p>
+                <p id="semAlunos" class="empty" style="display: none;">Nenhum aluno matriculado</p>
                 <div id="listaAlunosContainer"></div>
             </div>
         </div>
@@ -208,21 +354,46 @@
         let currentView = 'week';
         let turmas = [];
         let turmaSelecionada = null;
+        let dataSelecionada = null;
+        let aulaAtual = null;
+        let turmasComStatus = {};
+        
+        // Mensagem padrão do WhatsApp
+        const mensagemWhatsApp = "Olá! Confirme sua presença na aula de Beach Tennis.";
 
         const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        // Dias sem acento para comparar com o banco de dados
         const diasSemanaFull = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const diasSemanaNome = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-
-        const HORA_INICIO = 6;
-        const HORA_FIM = 22;
 
         function formatarDataLocal(data) {
             const ano = data.getFullYear();
             const mes = String(data.getMonth() + 1).padStart(2, '0');
             const dia = String(data.getDate()).padStart(2, '0');
             return `${ano}-${mes}-${dia}`;
+        }
+
+        // Formatar telefone para WhatsApp
+        function formatarTelefone(telefone) {
+            if (!telefone) return null;
+            // Remove tudo que não é número
+            let nums = telefone.replace(/\D/g, '');
+            // Se não tiver código do país, adiciona 55
+            if (!nums.startsWith('55')) {
+                nums = '55' + nums;
+            }
+            return nums;
+        }
+
+        // Abrir WhatsApp
+        function abrirWhatsApp(telefone, mensagem) {
+            const nums = formatarTelefone(telefone);
+            if (!nums) {
+                alert('Telefone não cadastrado para este aluno!');
+                return;
+            }
+            const msg = encodeURIComponent(mensagem || mensagemWhatsApp);
+            window.open(`https://wa.me/${nums}?text=${msg}`, '_blank');
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -296,9 +467,8 @@
             const primeiroDia = getPrimeiroDiaSemana();
             const ultimoDia = new Date(primeiroDia);
             ultimoDia.setDate(ultimoDia.getDate() + 6);
-            return primeiroDia.toLocaleDateString('pt-BR', { day: 'numeric' }) + ' - ' + 
-                   ultimoDia.toLocaleDateString('pt-BR', { day: 'numeric' }) + ' de ' + 
-                   meses[primeiroDia.getMonth()];
+            return primeiroDia.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' }) + ' - ' + 
+                   ultimoDia.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
         }
 
         function getPrimeiroDiaSemana() {
@@ -316,6 +486,117 @@
 
         function getCorTurma(t) {
             return t.perfis?.cor || '#6b7280';
+        }
+
+        async function getStatusAlunosAula(turmaId, data) {
+            const token = localStorage.getItem('token');
+            const key = `${turmaId}_${data}`;
+            
+            try {
+                const aulaResponse = await fetch(`/api/aulas/buscar?turma_id=${turmaId}&data=${data}`, { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                const aula = await aulaResponse.json();
+                
+                if (!aula) {
+                    turmasComStatus[key] = [];
+                    return [];
+                }
+                
+                const presencaResponse = await fetch('/api/presencas/' + aula.id, { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                const presencas = await presencaResponse.json();
+                
+                turmasComStatus[key] = presencas || [];
+                return presencas || [];
+            } catch (error) {
+                turmasComStatus[key] = [];
+                return [];
+            }
+        }
+
+        async function renderWeek() {
+            const primeiroDia = getPrimeiroDiaSemana();
+            const hoje = new Date();
+            
+            // Carrega os status
+            for (const t of turmas) {
+                for (let i = 0; i < 7; i++) {
+                    const dataAtual = new Date(primeiroDia);
+                    dataAtual.setDate(primeiroDia.getDate() + i);
+                    const dataFormatada = formatarDataLocal(dataAtual);
+                    await getStatusAlunosAula(t.id, dataFormatada);
+                }
+            }
+            
+            let html = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const dataAtual = new Date(primeiroDia);
+                dataAtual.setDate(primeiroDia.getDate() + i);
+                const diaSemana = diasSemanaFull[dataAtual.getDay()];
+                const dataFormatada = formatarDataLocal(dataAtual);
+                const ehHoje = dataAtual.toDateString() === hoje.toDateString();
+                
+                const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada);
+                const turmasOrdenadas = turmasDoDia.sort((a, b) => a.horario_inicio.localeCompare(b.horario_inicio));
+                
+                html += `
+                <div class="day-column">
+                    <div class="day-header ${ehHoje ? 'dia-hoje' : ''}">
+                        <div class="dia-nome">${diasSemana[i]}</div>
+                        <div class="dia-num">${dataAtual.getDate()}</div>
+                    </div>
+                    <div class="day-body">
+                `;
+                
+                if (turmasOrdenadas.length === 0) {
+                    html += `<div class="day-empty">Nenhuma aula</div>`;
+                } else {
+                    for (const t of turmasOrdenadas) {
+                        const cor = getCorTurma(t);
+                        const key = `${t.id}_${dataFormatada}`;
+                        const statusAlunos = turmasComStatus[key] || [];
+                        
+                        const confirmados = statusAlunos.filter(s => s.status === 'confirmado').length;
+                        const cancelados = statusAlunos.filter(s => s.status === 'cancelado').length;
+                        const total = statusAlunos.length;
+                        
+                        let statusDisplay = 'aguardando';
+                        let statusText = 'Aguardando';
+                        
+                        if (total > 0) {
+                            if (confirmados > 0) {
+                                statusDisplay = 'confirmado';
+                                statusText = `${confirmados} confirmado(s)`;
+                            } else if (cancelados > 0) {
+                                statusDisplay = 'cancelado';
+                                statusText = `${cancelados} cancelado(s)`;
+                            } else {
+                                statusDisplay = 'aguardando';
+                                statusText = `${total} aguardando`;
+                            }
+                        }
+                        
+                        html += `
+                        <div class="aula-card" onclick="abrirDetalhesTurma('${t.id}', '${dataFormatada}')" style="border-left-color: ${cor};">
+                            <div class="aula-horario">${t.horario_inicio} - ${t.horario_fim}</div>
+                            <div class="aula-nome">${t.data_avulsa ? '⭐ ' : ''}${t.nome}</div>
+                            <div class="aula-prof">${t.perfis?.nome || 'Sem professor'}</div>
+                            <div class="aula-status-row">
+                                <span class="status-dot ${statusDisplay}"></span>
+                                <span class="status-text ${statusDisplay}">${statusText}</span>
+                            </div>
+                        </div>
+                        `;
+                    }
+                }
+                
+                html += '</div></div>';
+            }
+            
+            document.getElementById('weekGrid').innerHTML = html;
         }
 
         function renderMonth() {
@@ -363,71 +644,14 @@
             document.getElementById('calendarGrid').innerHTML = html;
         }
 
-        function renderWeek() {
-            const primeiroDia = getPrimeiroDiaSemana();
-            const hoje = new Date();
-            let html = '';
-            
-            // Renderiza cada dia da semana
-            for (let i = 0; i < 7; i++) {
-                const dataAtual = new Date(primeiroDia);
-                dataAtual.setDate(primeiroDia.getDate() + i);
-                const diaSemana = diasSemanaFull[dataAtual.getDay()];
-                const dataFormatada = formatarDataLocal(dataAtual);
-                const ehHoje = dataAtual.toDateString() === hoje.toDateString();
-                
-                // Formata a data para exibição
-                const diaMes = dataAtual.getDate();
-                const nomeDia = diasSemanaNome[dataAtual.getDay()];
-                const dataExibicao = dataAtual.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
-                
-                // Busca as turmas desse dia
-                const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada);
-                
-                // Ordena por horário de início
-                const turmasOrdenadas = turmasDoDia.sort((a, b) => {
-                    return a.horario_inicio.localeCompare(b.horario_inicio);
-                });
-                
-                html += `
-                <div class="day-card ${ehHoje ? 'today' : ''}">
-                    <div class="day-card-header">
-                        <div>
-                            <div class="day-card-date">${nomeDia}, ${diaMes} de ${dataExibicao}</div>
-                        </div>
-                        ${ehHoje ? '<span class="day-card-badge">Hoje</span>' : ''}
-                    </div>
-                `;
-                
-                if (turmasOrdenadas.length === 0) {
-                    html += `<div class="no-classes">Nenhuma aula neste dia</div>`;
-                } else {
-                    turmasOrdenadas.forEach(t => {
-                        const cor = getCorTurma(t);
-                        html += `
-                        <div class="aula-item" onclick="abrirDetalhesTurma('${t.id}', '${dataFormatada}')" style="border-left-color: ${cor};">
-                            <div class="aula-horario">${t.horario_inicio}</div>
-                            <div class="aula-info">
-                                <div class="aula-nome">${t.data_avulsa ? '⭐ ' : ''}${t.nome}</div>
-                                <div class="aula-prof">${t.perfis?.nome || 'Professor não definido'}</div>
-                            </div>
-                        </div>
-                        `;
-                    });
-                }
-                
-                html += '</div>';
-            }
-            
-            document.getElementById('weekView').innerHTML = html;
-        }
-
-        function abrirDetalhesTurma(id, data) {
+        async function abrirDetalhesTurma(id, data) {
             turmaSelecionada = turmas.find(t => String(t.id) === String(id));
             if (!turmaSelecionada) { 
                 alert('Turma não encontrada!'); 
                 return; 
             }
+            
+            dataSelecionada = data;
             
             document.getElementById('modalTurmaNome').textContent = turmaSelecionada.nome;
             
@@ -440,7 +664,7 @@
                 document.getElementById('modalTurmaTipo').textContent = 'Turma Regular';
             }
             
-            document.getElementById('modalTurmaHorario').textContent = turmaSelecionada.horario_inicio + ' às ' + turmaSelecionada.horario_fim;
+            document.getElementById('modalTurmaHorario').textContent = turmaSelecionada.horario_inicio + ' - ' + turmaSelecionada.horario_fim;
             document.getElementById('modalTurmaProfessor').textContent = turmaSelecionada.perfis?.nome || 'Não definido';
             
             document.getElementById('listaAlunosContainer').innerHTML = '';
@@ -448,7 +672,23 @@
             document.getElementById('semAlunos').style.display = 'none';
             
             document.getElementById('modalDetalhesAula').classList.remove('hidden');
+            
+            await carregarAula();
             carregarAlunos();
+        }
+
+        async function carregarAula() {
+            const token = localStorage.getItem('token');
+            const url = `/api/aulas/buscar?turma_id=${turmaSelecionada.id}&data=${dataSelecionada}`;
+            
+            try {
+                const response = await fetch(url, { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                aulaAtual = await response.json();
+            } catch (error) {
+                aulaAtual = null;
+            }
         }
 
         function carregarAlunos() {
@@ -458,7 +698,7 @@
                 headers: { 'Authorization': 'Bearer ' + token } 
             })
             .then(res => res.json())
-            .then(matriculas => {
+            .then(async (matriculas) => {
                 document.getElementById('loadingAlunos').style.display = 'none';
                 
                 if (!matriculas || matriculas.length === 0) {
@@ -475,7 +715,7 @@
                     return;
                 }
                 
-                renderizarAlunos(matriculasAtivas);
+                await buscarPresencas(matriculasAtivas);
             })
             .catch(err => {
                 document.getElementById('loadingAlunos').style.display = 'none';
@@ -483,21 +723,122 @@
             });
         }
 
-        function renderizarAlunos(matriculas) {
+        async function buscarPresencas(matriculas) {
+            const token = localStorage.getItem('token');
+            
+            if (!aulaAtual) {
+                renderizarAlunos(matriculas, []);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/presencas/' + aulaAtual.id, { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                const presencas = await response.json();
+                renderizarAlunos(matriculas, presencas || []);
+            } catch (error) {
+                renderizarAlunos(matriculas, []);
+            }
+        }
+
+        function renderizarAlunos(matriculas, presencas) {
             let html = '';
+            
             matriculas.forEach(m => {
                 const aluno = m.alunos;
-                html += '<div class="aluno-item">' +
-                    '<div class="aluno-avatar"><i class="fas fa-user"></i></div>' +
-                    '<div class="aluno-nome">' + (aluno ? aluno.nome : 'Desconhecido') + '</div>' +
-                '</div>';
+                const presenca = presencas.find(p => p.aluno_id === aluno.id);
+                const status = presenca?.status || 'aguardando';
+                
+                const inicial = aluno.nome ? aluno.nome.charAt(0).toUpperCase() : '?';
+                
+                // Verifica se tem telefone
+                const temTelefone = aluno.telefone && aluno.telefone.length > 0;
+                
+                html += `
+                <div class="aluno-row">
+                    <div class="aluno-info">
+                        <div class="aluno-avatar">${inicial}</div>
+                        <div>
+                            <div class="aluno-nome">${aluno.nome || 'Desconhecido'}</div>
+                            ${aluno.telefone ? `<div class="aluno-telefone">${aluno.telefone}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        ${temTelefone ? `<a href="#" onclick="abrirWhatsApp('${aluno.telefone}', '${mensagemWhatsApp}')" class="whatsapp-btn" title="Enviar WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
+                        <select class="status-select ${status}" onchange="alterarStatus('${aluno.id}', this.value)">
+                            <option value="aguardando" ${status === 'aguardando' ? 'selected' : ''}>Aguardando</option>
+                            <option value="confirmado" ${status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
+                            <option value="cancelado" ${status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+                `;
             });
+            
             document.getElementById('listaAlunosContainer').innerHTML = html;
+        }
+
+        async function alterarStatus(alunoId, status) {
+            const token = localStorage.getItem('token');
+            
+            if (!aulaAtual) {
+                const createResponse = await fetch('/api/aulas', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify({
+                        turma_id: turmaSelecionada.id,
+                        data: dataSelecionada
+                    })
+                });
+                
+                if (!createResponse.ok) {
+                    alert('Erro ao criar aula');
+                    return;
+                }
+                
+                aulaAtual = await createResponse.json();
+            }
+            
+            try {
+                await fetch('/api/presencas', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify({
+                        aula_id: aulaAtual.id,
+                        aluno_id: alunoId,
+                        status: status
+                    })
+                });
+                
+                const key = `${turmaSelecionada.id}_${dataSelecionada}`;
+                if (!turmasComStatus[key]) turmasComStatus[key] = [];
+                
+                const existingIndex = turmasComStatus[key].findIndex(p => p.aluno_id === alunoId);
+                if (existingIndex >= 0) {
+                    turmasComStatus[key][existingIndex].status = status;
+                } else {
+                    turmasComStatus[key].push({ aluno_id: alunoId, status: status });
+                }
+                
+                renderWeek();
+                
+            } catch (error) {
+                console.error('Erro ao salvar presença:', error);
+            }
         }
 
         function fecharModal() { 
             document.getElementById('modalDetalhesAula').classList.add('hidden'); 
             turmaSelecionada = null;
+            dataSelecionada = null;
+            aulaAtual = null;
         }
         
         function logout() {
