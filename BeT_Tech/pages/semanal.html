@@ -21,40 +21,92 @@
         .calendar-turma { padding: 4px 6px; margin-bottom: 3px; border-radius: 3px; font-size: 10px; cursor: pointer; border-left: 3px solid; background: var(--bg-dark); }
         .turma-horario { font-size: 9px; opacity: 0.7; }
         .turma-nome { font-weight: 500; }
-        
-        .week-wrapper { overflow-x: auto; }
-        .week-table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        .week-table th, .week-table td { border: 1px solid var(--border); padding: 0; vertical-align: top; }
-        .week-table th { background: var(--bg-dark); padding: 10px; }
-        .week-table th.day-col { text-align: center; }
-        .week-table th .day-name { display: block; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
-        .week-table th .day-num { display: block; font-size: 18px; font-weight: 700; }
-        .week-table th.today { background: rgba(59, 130, 246, 0.15); }
-        .week-table th.today .day-num { color: var(--primary); }
-        
-        .time-label { background: var(--bg-dark); padding: 8px; text-align: center; font-size: 11px; font-weight: 600; width: 60px; }
-        
-        .day-cell { min-height: 50px; background: var(--bg-darker); }
-        .day-cell.empty { background: rgba(0,0,0,0.05); }
-        
-        .aula-card {
-            margin: 2px;
-            padding: 4px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            border-left: 4px solid;
-        }
-        .aula-card:hover { transform: scale(1.02); }
-        .aula-nome { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .aula-prof { font-size: 9px; opacity: 0.7; }
-        .aula-time { font-size: 8px; opacity: 0.6; }
-        
-        .grade-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .grade-nav { display: flex; align-items: center; gap: 10px; }
+
+        .week-nav { display: flex; align-items: center; gap: 10px; }
         .nav-btn { width: 32px; height: 32px; border: none; background: var(--bg-dark); color: var(--text); border-radius: 6px; cursor: pointer; }
         .nav-btn:hover { background: var(--primary); color: white; }
-        .periodo-label { font-weight: 600; font-size: 15px; min-width: 160px; text-align: center; }
+        
+        .day-card {
+            background: var(--bg-darker);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 4px solid var(--primary);
+        }
+        .day-card.today {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--primary);
+        }
+        .day-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .day-card-date {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .day-card.today .day-card-date {
+            color: var(--primary);
+        }
+        .day-card-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .aula-item {
+            display: flex;
+            align-items: center;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border-left: 4px solid;
+        }
+        .aula-item:hover {
+            transform: translateX(4px);
+        }
+        .aula-horario {
+            min-width: 80px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .aula-info {
+            flex: 1;
+            padding: 0 12px;
+        }
+        .aula-nome {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .aula-prof {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .aula-alunos {
+            min-width: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .aula-alunos i { margin-right: 4px; }
+        
+        .no-classes {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
         
         .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
         .info-item label { display: block; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
@@ -69,7 +121,7 @@
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <div class="logo"><i class="fas fa-racquet"></i></div>
             <span>B&T Tech</span>
         </div>
         <nav class="sidebar-menu">
@@ -120,10 +172,8 @@
             </div>
 
             <div id="viewWeek" class="card">
-                <div class="card-body no-padding">
-                    <div class="week-wrapper">
-                        <table class="week-table" id="weekTable"></table>
-                    </div>
+                <div class="card-body" id="weekView">
+                    <!-- Semana será renderizada aqui -->
                 </div>
             </div>
         </div>
@@ -161,11 +211,12 @@
 
         const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        const diasSemanaFull = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+        // Dias sem acento para comparar com o banco de dados
+        const diasSemanaFull = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const diasSemanaNome = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
         const HORA_INICIO = 6;
         const HORA_FIM = 22;
-        const ALTURA_HORA = 50;
 
         function formatarDataLocal(data) {
             const ano = data.getFullYear();
@@ -317,64 +368,58 @@
             const hoje = new Date();
             let html = '';
             
-            // Cabeçalho com dias
-            html += '<thead><tr><th class="time-label"></th>';
+            // Renderiza cada dia da semana
             for (let i = 0; i < 7; i++) {
                 const dataAtual = new Date(primeiroDia);
                 dataAtual.setDate(primeiroDia.getDate() + i);
+                const diaSemana = diasSemanaFull[dataAtual.getDay()];
+                const dataFormatada = formatarDataLocal(dataAtual);
                 const ehHoje = dataAtual.toDateString() === hoje.toDateString();
-                html += '<th class="day-col' + (ehHoje ? ' today' : '') + '">' +
-                    '<span class="day-name">' + diasSemana[i] + '</span>' +
-                    '<span class="day-num">' + dataAtual.getDate() + '</span>' +
-                '</th>';
-            }
-            html += '</tr></thead>';
-            
-            // Corpo da tabela
-            html += '<tbody>';
-            
-            // Linhas de hora em hora
-            for (let h = HORA_INICIO; h <= HORA_FIM; h++) {
-                const hora = h.toString().padStart(2, '0') + ':00';
-                html += '<tr>';
-                html += '<td class="time-label">' + hora + '</td>';
                 
-                for (let i = 0; i < 7; i++) {
-                    const dataAtual = new Date(primeiroDia);
-                    dataAtual.setDate(primeiroDia.getDate() + i);
-                    const diaSemana = diasSemanaFull[dataAtual.getDay()];
-                    const dataFormatada = formatarDataLocal(dataAtual);
-                    
-                    // Turmas neste dia e hora
-                    const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada);
-                    
-                    // Filtrar turmas que começam nesta hora
-                    const turmasNestaHora = turmasDoDia.filter(t => {
-                        const horaInicio = t.horario_inicio.substring(0, 5);
-                        return horaInicio === hora;
+                // Formata a data para exibição
+                const diaMes = dataAtual.getDate();
+                const nomeDia = diasSemanaNome[dataAtual.getDay()];
+                const dataExibicao = dataAtual.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+                
+                // Busca as turmas desse dia
+                const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada);
+                
+                // Ordena por horário de início
+                const turmasOrdenadas = turmasDoDia.sort((a, b) => {
+                    return a.horario_inicio.localeCompare(b.horario_inicio);
+                });
+                
+                html += `
+                <div class="day-card ${ehHoje ? 'today' : ''}">
+                    <div class="day-card-header">
+                        <div>
+                            <div class="day-card-date">${nomeDia}, ${diaMes} de ${dataExibicao}</div>
+                        </div>
+                        ${ehHoje ? '<span class="day-card-badge">Hoje</span>' : ''}
+                    </div>
+                `;
+                
+                if (turmasOrdenadas.length === 0) {
+                    html += `<div class="no-classes">Nenhuma aula neste dia</div>`;
+                } else {
+                    turmasOrdenadas.forEach(t => {
+                        const cor = getCorTurma(t);
+                        html += `
+                        <div class="aula-item" onclick="abrirDetalhesTurma('${t.id}', '${dataFormatada}')" style="border-left-color: ${cor};">
+                            <div class="aula-horario">${t.horario_inicio}</div>
+                            <div class="aula-info">
+                                <div class="aula-nome">${t.data_avulsa ? '⭐ ' : ''}${t.nome}</div>
+                                <div class="aula-prof">${t.perfis?.nome || 'Professor não definido'}</div>
+                            </div>
+                        </div>
+                        `;
                     });
-                    
-                    if (turmasNestaHora.length > 0) {
-                        html += '<td class="day-cell">';
-                        turmasNestaHora.forEach(t => {
-                            const cor = getCorTurma(t);
-                            html += '<div class="aula-card" onclick="abrirDetalhesTurma(\'' + t.id + '\', \'' + dataFormatada + '\')" ' +
-                                'style="background: ' + cor + '20; border-left-color: ' + cor + ';">' +
-                                '<div class="aula-time">' + t.horario_inicio + ' - ' + t.horario_fim + '</div>' +
-                                '<div class="aula-nome">' + t.nome + '</div>' +
-                                '<div class="aula-prof">' + (t.perfis?.nome || '') + '</div>' +
-                            '</div>';
-                        });
-                        html += '</td>';
-                    } else {
-                        html += '<td class="day-cell empty"></td>';
-                    }
                 }
-                html += '</tr>';
+                
+                html += '</div>';
             }
             
-            html += '</tbody>';
-            document.getElementById('weekTable').innerHTML = html;
+            document.getElementById('weekView').innerHTML = html;
         }
 
         function abrirDetalhesTurma(id, data) {
@@ -391,7 +436,7 @@
                 document.getElementById('modalTurmaTipo').textContent = 'Aula Avulsa';
             } else {
                 const diaIndex = diasSemanaFull.indexOf(turmaSelecionada.dia_semana);
-                document.getElementById('modalTurmaDia').textContent = diaIndex >= 0 ? diasSemana[diaIndex] : turmaSelecionada.dia_semana;
+                document.getElementById('modalTurmaDia').textContent = diaIndex >= 0 ? diasSemanaNome[diaIndex] : turmaSelecionada.dia_semana;
                 document.getElementById('modalTurmaTipo').textContent = 'Turma Regular';
             }
             

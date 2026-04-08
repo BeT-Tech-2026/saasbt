@@ -40,7 +40,7 @@ const getPerfil = async (userId) => {
 
 app.post('/api/cadastro', async (req, res) => {
     try {
-        const { nome, email, password, nomeEscola, escola_id, tipo } = req.body;
+        const { nome, email, password, nomeEscola, escola_id, tipo, cor } = req.body;
 
         if (!nome || !email || !password) {
             return res.status(400).json({ error: 'Preencha todos os campos obrigatórios' });
@@ -48,17 +48,29 @@ app.post('/api/cadastro', async (req, res) => {
 
         let escolaId = escola_id;
         
-        if (tipo === 'dono' || !escola_id) {
-            if (!nomeEscola) return res.status(400).json({ error: 'Nome da escola é obrigatório' });
-            
-            const { data: escola, error: escolaError } = await supabase
-                .from('escolas')
-                .insert({ nome: nomeEscola })
-                .select()
+        // Se não tem escola_id, busca a escola do DONO (admin)
+        if (!escolaId) {
+            // Busca primeiro o usuário dono para pegar a escola_id
+            const { data: donoExistente } = await supabase
+                .from('perfis')
+                .select('escola_id')
+                .eq('tipo', 'dono')
+                .limit(1)
                 .single();
             
-            if (escolaError) throw escolaError;
-            escolaId = escola.id;
+            if (donoExistente) {
+                escolaId = donoExistente.escola_id;
+            } else {
+                // Se não existe dono, cria escola padrão (para primeiro acesso)
+                const { data: escola, error: escolaError } = await supabase
+                    .from('escolas')
+                    .insert({ nome: nomeEscola || 'Minha Escola' })
+                    .select()
+                    .single();
+                
+                if (escolaError) throw escolaError;
+                escolaId = escola.id;
+            }
         }
 
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -78,7 +90,7 @@ app.post('/api/cadastro', async (req, res) => {
                 email: email,
                 tipo: tipo === 'dono' ? 'dono' : 'professor',
                 ativo: true,
-                cor: '#3b82f6'
+                cor: cor || '#3b82f6'
             })
             .select()
             .single();
@@ -328,19 +340,24 @@ app.get('/api/turmas', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         
-        let query = supabase
+        // Busca todas as turmas ativas da escola
+        const { data: turmas, error } = await supabase
             .from('turmas')
             .select('*, perfis(nome, cor)')
             .eq('escola_id', perfil.escola_id)
             .eq('ativa', true);
         
+        if (error) throw error;
+        
+        // Se for professor, filtra apenas as turmas dele
         if (perfil.tipo === 'professor') {
-            query = query.eq('professor_id', perfil.id);
+            const turmasDoProfessor = (turmas || []).filter(t => t.professor_id === perfil.id);
+            return res.json(turmasDoProfessor);
         }
         
-        const { data } = await query;
-        res.json(data || []);
+        res.json(turmas || []);
     } catch (error) {
+        console.error('Erro ao buscar turmas:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -582,21 +599,34 @@ app.get('/api/aulas', authenticate, async (req, res) => {
         const perfil = await getPerfil(req.user.id);
         const hoje = new Date().toISOString().split('T')[0];
         
-        let query = supabase
-            .from('aulas')
-            .select('*, turmas(*)')
-            .eq('data', hoje);
+        // Busca as turmas primeiro
+        const { data: turmas } = await supabase
+            .from('turmas')
+            .select('*, perfis(nome, cor)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true);
         
+        let turmasFiltradas = turmas || [];
+        
+        // Se for professor, filtra apenas as turmas dele
         if (perfil.tipo === 'professor') {
-            query = supabase
-                .from('aulas')
-                .select('*, turmas(*)')
-                .eq('data', hoje)
-                .eq('turmas.professor_id', perfil.id);
+            turmasFiltradas = turmasFiltradas.filter(t => t.professor_id === perfil.id);
         }
         
-        const { data } = await query;
-        res.json(data || []);
+        const turmaIds = turmasFiltradas.map(t => t.id);
+        
+        if (turmaIds.length === 0) {
+            return res.json([]);
+        }
+        
+        // Busca aulas do dia para essas turmas
+        const { data: aulas } = await supabase
+            .from('aulas')
+            .select('*, turmas(*)')
+            .eq('data', hoje)
+            .in('turma_id', turmaIds);
+        
+        res.json(aulas || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -922,26 +952,28 @@ app.get('/api/painel', authenticate, async (req, res) => {
         const hoje = diasSemana[new Date().getDay()];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        let query = supabase
+        // Busca as turmas primeiro
+        const { data: turmas } = await supabase
             .from('turmas')
             .select('*, perfis(nome, cor)')
             .eq('escola_id', perfil.escola_id)
             .eq('ativa', true)
             .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
-            
+        
+        let turmasFiltradas = turmas || [];
+        
+        // Se for professor, filtra apenas as turmas dele
         if (perfil.tipo === 'professor') {
-            query = query.eq('professor_id', perfil.id);
+            turmasFiltradas = turmasFiltradas.filter(t => t.professor_id === perfil.id);
         }
 
-        const { data: turmas } = await query;
-
-        for (const turma of (turmas || [])) {
+        for (const turma of (turmasFiltradas || [])) {
             await supabase
                 .from('aulas')
                 .upsert({ turma_id: turma.id, data: dataHoje }, { onConflict: 'turma_id,data' });
         }
 
-        let turmasComAlunos = await Promise.all((turmas || []).map(async (turma) => {
+        let turmasComAlunos = await Promise.all((turmasFiltradas || []).map(async (turma) => {
             const { data: matriculas } = await supabase
                 .from('matriculas')
                 .select('*, alunos(*)')
