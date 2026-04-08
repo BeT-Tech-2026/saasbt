@@ -148,6 +148,12 @@
                 <button onclick="fecharModalMatricular()" class="close">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- Campo de Busca -->
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="buscaAlunoMatricula" placeholder="Buscar aluno por nome..." onkeyup="filtrarAlunosModal()">
+                </div>
+                
                 <p>Selecione os alunos:</p>
                 <div id="alunosCheckboxes" style="margin-top: 16px; max-height: 300px; overflow-y: auto;"></div>
                 <div class="modal-footer" style="margin-top: 20px;">
@@ -163,6 +169,7 @@
         let turmasData = [];
         let turmaSelecionada = null;
         let turmaEmEdicao = null;
+        let alunosData = []; // Lista original de alunos para busca
 
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
@@ -315,6 +322,8 @@
 
         function fecharModalMatricular() {
             document.getElementById('modalMatricular').classList.add('hidden');
+            // Limpa o campo de busca ao fechar
+            document.getElementById('buscaAlunoMatricula').value = '';
         }
 
         window.editarTurma = async (id) => {
@@ -426,6 +435,52 @@
             }
         });
 
+        // Função para renderizar a lista de alunos no modal
+        function renderAlunosModal(alunos, matriculados) {
+            const container = document.getElementById('alunosCheckboxes');
+            
+            if (!alunos || alunos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Nenhum aluno encontrado</p>';
+                return;
+            }
+            
+            container.innerHTML = alunos.map(a => `
+                <label style="display: flex; align-items: center; padding: 12px; background: ${matriculados.includes(a.id) ? 'var(--success-bg)' : 'var(--bg-dark)'}; border-radius: 8px; cursor: pointer; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <input type="checkbox" value="${a.id}" ${matriculados.includes(a.id) ? 'checked' : ''} style="margin-right: 12px;">
+                    <span>${a.nome}</span>
+                </label>
+            `).join('');
+        }
+
+        // Função para filtrar alunos na busca
+        window.filtrarAlunosModal = function() {
+            const termo = document.getElementById('buscaAlunoMatricula').value.toLowerCase().trim();
+            
+            // Mantém os checkboxes marcados atualmente
+            const checkboxes = document.querySelectorAll('#alunosCheckboxes input[type="checkbox"]');
+            const marcados = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            
+            if (!termo) {
+                // Se não tiver termo, mostra todos os alunos originais
+                const turma = turmaSelecionada;
+                const matriculados = turma.alunosMatriculados?.map(m => m.aluno_id) || [];
+                renderAlunosModal(alunosData, matriculados);
+                return;
+            }
+            
+            // Filtra localmente baseado no array alunosData
+            const filtrados = alunosData.filter(aluno => {
+                return aluno.nome && aluno.nome.toLowerCase().includes(termo);
+            });
+            
+            const turma = turmaSelecionada;
+            const matriculados = turma.alunosMatriculados?.map(m => m.aluno_id) || [];
+            
+            renderAlunosModal(filtrados, matriculados);
+        };
+
         window.matricularAlunos = async (turmaId) => {
             turmaSelecionada = turmasData.find(t => t.id === turmaId);
             const token = localStorage.getItem('token');
@@ -435,16 +490,15 @@
             });
             const alunos = await response.json();
             
+            // GUARDA OS ALUNOS NA VARIÁVEL GLOBAL PARA PODER FILTRAR
+            alunosData = alunos;
+            
             const matriculados = turmaSelecionada.alunosMatriculados?.map(m => m.aluno_id) || [];
             
-            const container = document.getElementById('alunosCheckboxes');
-            container.innerHTML = alunos.map(a => `
-                <label style="display: flex; align-items: center; padding: 12px; background: ${matriculados.includes(a.id) ? 'var(--success-bg)' : 'var(--bg-dark)'}; border-radius: 8px; cursor: pointer; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <input type="checkbox" value="${a.id}" ${matriculados.includes(a.id) ? 'checked' : ''} style="margin-right: 12px;">
-                    <span>${a.nome}</span>
-                </label>
-            `).join('') || '<p style="text-align: center; color: var(--text-muted);">Nenhum aluno</p>';
+            // Limpa o campo de busca ao abrir
+            document.getElementById('buscaAlunoMatricula').value = '';
             
+            renderAlunosModal(alunos, matriculados);
             abrirModalMatricular();
         };
 
