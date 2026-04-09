@@ -17,7 +17,7 @@ const supabase = createClient(
     process.env.SUPABASE_KEY
 );
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = (process.env.BASE_URL || '').trim() || 'http://localhost:3000';
 
 console.log('Servidor iniciado...');
 console.log('__dirname:', __dirname);
