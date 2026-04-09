@@ -468,7 +468,7 @@
             const telefone    = aluno.telefone.replace(/\D/g, '');
             const horario     = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '-';
             const horarioFim  = aula.horario_fim    ? aula.horario_fim.substring(0, 5)    : '-';
-            const linkConfirm = `/confirmar?aluno=${aluno.id}`;
+            const linkConfirm = `https://saasbt.vercel.app/confirmar?aluno=${aluno.id}`;
 
             // Lista de colegas (sem incluir o próprio aluno)
             const colegas = aula.alunos
