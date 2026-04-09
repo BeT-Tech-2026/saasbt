@@ -17,9 +17,10 @@ const supabase = createClient(
     process.env.SUPABASE_KEY
 );
 
-const BASE_URL = process.env.BASE_URL || 'https://saasbt.vercel.app';
+const BASE_URL = (process.env.BASE_URL || '').trim() || 'https://saasbt.vercel.app';
 
 console.log('Servidor iniciado...');
+console.log('BASE_URL:', BASE_URL);
 console.log('__dirname:', __dirname);
 
 // ==================== AUTENTICAÇÃO ====================
@@ -49,29 +50,24 @@ const getPerfil = async (userId) => {
 
 // ==================== ROTAS PÚBLICAS ====================
 
-// ROTA DA PÁGINA DE CONFIRMAÇÃO - CORRIGIDA COM MÚLTIPLOS CAMINHOS
 app.get('/confirmar', (req, res) => {
     console.log('>>> Acessando /confirmar');
     console.log('>>> Query:', req.query);
     
-    // Lista de possíveis caminhos onde o arquivo pode estar
     const possiveisCaminhos = [
         path.join(__dirname, 'pages', 'confirmar.html'),
         path.join(__dirname, '..', 'pages', 'confirmar.html'),
         path.join(__dirname, '..', '..', 'pages', 'confirmar.html'),
         path.join(process.cwd(), 'pages', 'confirmar.html'),
         path.join(process.cwd(), 'src', 'pages', 'confirmar.html'),
-        '/app/pages/confirmar.html', // Render específico
-        '/opt/render/project/src/pages/confirmar.html' // Outro caminho comum no Render
+        '/app/pages/confirmar.html',
+        '/opt/render/project/src/pages/confirmar.html'
     ];
     
     let arquivoEncontrado = null;
-    
     for (const caminho of possiveisCaminhos) {
-        console.log('>>> Verificando:', caminho);
         if (fs.existsSync(caminho)) {
             arquivoEncontrado = caminho;
-            console.log('>>> ENCONTRADO:', caminho);
             break;
         }
     }
@@ -80,16 +76,11 @@ app.get('/confirmar', (req, res) => {
         return res.sendFile(arquivoEncontrado);
     }
     
-    // Se não encontrou, retorna erro detalhado
-    console.log('>>> ARQUIVO NÃO ENCONTRADO!');
     res.status(404).send(`
         <h1>Erro 404 - Página não encontrada</h1>
         <p>O arquivo confirmar.html não foi encontrado.</p>
         <p><strong>Diretório atual:</strong> ${__dirname}</p>
-        <p><strong>Caminhos tentados:</strong></p>
-        <ul>
-            ${possiveisCaminhos.map(c => `<li>${c}</li>`).join('')}
-        </ul>
+        <ul>${possiveisCaminhos.map(c => `<li>${c}</li>`).join('')}</ul>
     `);
 });
 
@@ -99,13 +90,11 @@ app.get('/api/aulas-aluno', async (req, res) => {
     if (!aluno) return res.json({ success: false, error: 'ID do aluno não fornecido' });
 
     try {
-        // 1. Busca o aluno
         const { data: alunoData, error: alunoError } = await supabase
             .from('alunos').select('nome').eq('id', aluno).single();
         if (alunoError || !alunoData)
             return res.json({ success: false, error: 'Aluno não encontrado' });
 
-        // 2. Busca matrículas ativas com dados da turma
         const { data: matriculas } = await supabase
             .from('matriculas')
             .select('*, turmas(id, nome, dia_semana, horario_inicio, horario_fim, escola_id)')
@@ -125,7 +114,6 @@ app.get('/api/aulas-aluno', async (req, res) => {
             const turma = mat.turmas;
             if (!turma) continue;
 
-            // Procura a próxima ocorrência desta turma (hoje + 14 dias)
             for (let i = 0; i <= 14; i++) {
                 const dataFutura = new Date(hoje);
                 dataFutura.setDate(hoje.getDate() + i);
@@ -135,17 +123,14 @@ app.get('/api/aulas-aluno', async (req, res) => {
                 const dataStr = dataFutura.toISOString().split('T')[0];
                 const aulaId  = `${turma.id}_${dataStr}`;
 
-                // Verifica se já existe registro de presença
                 const { data: presencaExistente } = await supabase
                     .from('presencas').select('id, status')
                     .eq('aula_id', aulaId).eq('aluno_id', aluno).single();
 
-                // Se já foi respondido (confirmado/cancelado), pula
                 if (presencaExistente && presencaExistente.status !== 'pendente') break;
 
                 let presencaId = presencaExistente?.id;
 
-                // Se não existe, cria o registro de presença agora
                 if (!presencaExistente) {
                     const { data: nova } = await supabase
                         .from('presencas')
@@ -175,7 +160,7 @@ app.get('/api/aulas-aluno', async (req, res) => {
                     status:         'pendente'
                 });
 
-                break; // Pega só a próxima ocorrência de cada turma
+                break;
             }
         }
 
@@ -186,7 +171,7 @@ app.get('/api/aulas-aluno', async (req, res) => {
     }
 });
 
-// API - Confirmar presença (por presenca_id)
+// API - Confirmar presença
 app.post('/api/confirmar-presenca', async (req, res) => {
     const { presenca_id, status } = req.body;
     
@@ -548,8 +533,8 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         const dataAula = data || turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
         const aulaId = `${turma_id}_${dataAula}`;
         
-        // Gera link com ID do aluno
-        const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${aluno_id}`;
+        // ✅ CORRIGIDO: era `$https://...` (faltava as chaves)
+        const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${aluno_id}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
             aula_id: aulaId,
@@ -565,7 +550,6 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         }
         
         console.log('Link gerado:', linkConfirmacao);
-        
         res.json({ success: true, link: linkConfirmacao });
     } catch (error) {
         console.error('Erro:', error);
@@ -607,7 +591,6 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
             for (const mat of (matriculas || [])) {
                 if (!mat.alunos?.telefone) continue;
                 
-                // Cria presença se não existir
                 await supabase.from('presencas').upsert({
                     aula_id: aulaId,
                     aluno_id: mat.aluno_id,
@@ -617,22 +600,10 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                     expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
                 }, { onConflict: 'aula_id,aluno_id' });
                 
-                // Gera link com ID do aluno
-                const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${mat.aluno_id}`;
-
+                // ✅ CORRIGIDO: era `$https://...` (faltava as chaves)
+                const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`;
                 
-                const mensagem = `Confirmacao de Aula
-
-Olá ${mat.alunos.nome}!
-
-Aula: ${turma.nome}
-Data: ${dataFormatada}
-Horario: ${horario}
-
-Confirme sua presenca:
-${linkConfirmacao}
-
-B&T Tech`;
+                const mensagem = `Confirmacao de Aula\n\nOlá ${mat.alunos.nome}!\n\nAula: ${turma.nome}\nData: ${dataFormatada}\nHorario: ${horario}\n\nConfirme sua presenca:\n${linkConfirmacao}\n\nB&T Tech`;
                 
                 links.push({
                     id: mat.aluno_id,
@@ -687,6 +658,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                     nome: mat.alunos?.nome,
                     telefone: mat.alunos?.telefone,
                     status: conf?.status || 'pendente',
+                    // ✅ CORRIGIDO: era window.location.origin (não existe no Node.js)
                     link: `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`
                 };
             });
@@ -859,4 +831,5 @@ app.use((req, res) => {
 
 app.listen(port, () => {
     console.log(`🏐 B&T Tech rodando em http://localhost:${port}`);
+    console.log(`🔗 BASE_URL: ${BASE_URL}`);
 });
