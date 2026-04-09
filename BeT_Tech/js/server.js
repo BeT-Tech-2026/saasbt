@@ -1,4 +1,4 @@
-// server.js - Código completo corrigido
+// server.js - Versão corrigida e testada
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -16,6 +16,8 @@ const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_KEY
 );
+
+console.log('Servidor iniciado...');
 
 // ==================== AUTENTICAÇÃO ====================
 const authenticate = async (req, res, next) => {
@@ -44,7 +46,26 @@ const getPerfil = async (userId) => {
 
 // ==================== FUNÇÕES AUXILIARES ====================
 function paginaErro(titulo, mensagem) {
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Erro</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.c{background:#fff;border-radius:20px;padding:40px;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}h1{color:#ef4444;margin-bottom:10px}p{color:#666}</style></head><body><div class="c"><h1>⚠️ ${titulo}</h1><p>${mensagem}</p></div></body></html>`;
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erro</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .c { background: #fff; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        h1 { color: #ef4444; margin-bottom: 10px; }
+        p { color: #666; }
+    </style>
+</head>
+<body>
+    <div class="c">
+        <h1>⚠️ ${titulo}</h1>
+        <p>${mensagem}</p>
+    </div>
+</body>
+</html>`;
 }
 
 function paginaConfirmacao(presenca, dataFormatada) {
@@ -93,8 +114,8 @@ function paginaConfirmacao(presenca, dataFormatada) {
         </div>
         <div class="content">
             <div class="info-card">
-                <div class="info-row"><span class="info-label">Aluno</span><span class="info-value">${presenca.alunos?.nome}</span></div>
-                <div class="info-row"><span class="info-label">Aula</span><span class="info-value">${presenca.turmas?.nome}</span></div>
+                <div class="info-row"><span class="info-label">Aluno</span><span class="info-value">${presenca.alunos?.nome || 'N/A'}</span></div>
+                <div class="info-row"><span class="info-label">Aula</span><span class="info-value">${presenca.turmas?.nome || 'N/A'}</span></div>
                 <div class="info-row"><span class="info-label">Data</span><span class="info-value">${dataFormatada}</span></div>
                 <div class="info-row"><span class="info-label">Horário</span><span class="info-value">${horario}</span></div>
             </div>
@@ -127,21 +148,20 @@ function paginaConfirmacao(presenca, dataFormatada) {
 </html>`;
 }
 
-// ==================== ROTAS PÚBLICAS (sem autenticação) ====================
+// ==================== ROTAS PÚBLICAS ====================
 
-// 🔥 ROTA DE CONFIRMAÇÃO - DEVE SER A PRIMEIRA ROTA GET!
+// ROTA DE CONFIRMAÇÃO
 app.get('/confirmar', async (req, res) => {
-    console.log('[CONFIRMAR] Rota chamada com token:', req.query.token);
+    console.log('>>> /confirmar chamado com token:', req.query.token);
+    
+    const { token } = req.query;
+    
+    if (!token) {
+        console.log('>>> Sem token');
+        return res.status(400).send(paginaErro('Link inválido', 'Este link não é válido.'));
+    }
+    
     try {
-        const { token } = req.query;
-        
-        if (!token) {
-            console.log('[CONFIRMAR] Token não fornecido');
-            return res.status(400).send(paginaErro('Link inválido', 'Este link não é válido.'));
-        }
-        
-        console.log('[CONFIRMAR] Buscando token no banco:', token);
-        
         const { data: presenca, error } = await supabase
             .from('presencas')
             .select('*, alunos(nome), turmas(nome, horario_inicio)')
@@ -149,11 +169,11 @@ app.get('/confirmar', async (req, res) => {
             .single();
         
         if (error || !presenca) {
-            console.log('[CONFIRMAR] Presença não encontrada. Erro:', error);
+            console.log('>>> Token não encontrado no banco. Erro:', error);
             return res.status(404).send(paginaErro('Link expirado', 'Este link já foi usado ou expirou.'));
         }
         
-        console.log('[CONFIRMAR] Presença encontrada:', presenca.id);
+        console.log('>>> Presença encontrada:', presenca.id);
         
         const dataAula = presenca.aula_id.split('_')[1];
         const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', {
@@ -161,37 +181,32 @@ app.get('/confirmar', async (req, res) => {
         });
         
         res.send(paginaConfirmacao(presenca, dataFormatada));
-    } catch (error) {
-        console.error('[CONFIRMAR] Erro:', error);
-        res.status(500).send('Erro: ' + error.message);
+    } catch (err) {
+        console.error('>>> Erro:', err);
+        res.status(500).send('Erro: ' + err.message);
     }
 });
 
 // API confirmar presença
 app.post('/api/confirmar-presenca', async (req, res) => {
-    console.log('[CONFIRMAR-API] Recebida requisição');
+    console.log('>>> /api/confirmar-presenca chamado');
     try {
         const { token, status } = req.body;
         
-        console.log('[CONFIRMAR-API] Token:', token, 'Status:', status);
-        
         const { error } = await supabase
             .from('presencas')
-            .update({ 
-                status: status, 
-                updated_at: new Date().toISOString() 
-            })
+            .update({ status: status, updated_at: new Date().toISOString() })
             .eq('token_confirmacao', token);
         
         if (error) {
-            console.error('[CONFIRMAR-API] Erro ao atualizar:', error);
+            console.error('>>> Erro ao confirmar:', error);
             return res.status(500).json({ error: error.message });
         }
         
-        console.log('[CONFIRMAR-API] Presença atualizada com sucesso');
+        console.log('>>> Presença atualizada para:', status);
         res.json({ success: true });
     } catch (error) {
-        console.error('[CONFIRMAR-API] Erro:', error);
+        console.error('>>> Erro:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -201,17 +216,13 @@ app.post('/api/confirmar-presenca', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-
         const perfil = await getPerfil(data.user.id);
-
         if (!perfil) {
             await supabase.auth.signOut();
             return res.status(401).json({ error: 'Perfil não encontrado' });
         }
-
         res.json({ user: data.user, perfil: perfil, access_token: data.session.access_token });
     } catch (error) {
         res.status(401).json({ error: error.message });
@@ -226,59 +237,33 @@ app.post('/api/logout', async (req, res) => {
 app.post('/api/cadastro', async (req, res) => {
     try {
         const { nome, email, password, nomeEscola, escola_id, tipo, cor } = req.body;
-
         if (!nome || !email || !password) {
             return res.status(400).json({ error: 'Preencha todos os campos obrigatórios' });
         }
 
         let escolaId = escola_id;
-        
         if (!escolaId) {
-            const { data: donoExistente } = await supabase
-                .from('perfis')
-                .select('escola_id')
-                .eq('tipo', 'dono')
-                .limit(1)
-                .single();
-            
+            const { data: donoExistente } = await supabase.from('perfis').select('escola_id').eq('tipo', 'dono').limit(1).single();
             if (donoExistente) {
                 escolaId = donoExistente.escola_id;
             } else {
-                const { data: escola, error: escolaError } = await supabase
-                    .from('escolas')
-                    .insert({ nome: nomeEscola || 'Minha Escola' })
-                    .select()
-                    .single();
-                
+                const { data: escola, error: escolaError } = await supabase.from('escolas').insert({ nome: nomeEscola || 'Minha Escola' }).select().single();
                 if (escolaError) throw escolaError;
                 escolaId = escola.id;
             }
         }
 
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-            email: email,
-            password: password,
-            email_confirm: true,
-            user_metadata: { nome: nome }
+            email: email, password: password, email_confirm: true, user_metadata: { nome: nome }
         });
         if (authError) throw authError;
 
-        const { data: perfil, error: perfilError } = await supabase
-            .from('perfis')
-            .insert({
-                id: authData.user.id,
-                escola_id: escolaId,
-                nome: nome,
-                email: email,
-                tipo: tipo === 'dono' ? 'dono' : 'professor',
-                ativo: true,
-                cor: cor || '#3b82f6'
-            })
-            .select()
-            .single();
-        
-        if (perfilError) throw perfilError;
+        const { data: perfil, error: perfilError } = await supabase.from('perfis').insert({
+            id: authData.user.id, escola_id: escolaId, nome: nome, email: email,
+            tipo: tipo === 'dono' ? 'dono' : 'professor', ativo: true, cor: cor || '#3b82f6'
+        }).select().single();
 
+        if (perfilError) throw perfilError;
         res.status(201).json({ message: 'Cadastro realizado com sucesso!', perfil });
     } catch (error) {
         console.error('Erro no cadastro:', error);
@@ -297,11 +282,7 @@ app.get('/api/session', authenticate, async (req, res) => {
 
 app.get('/api/escolas', async (req, res) => {
     try {
-        const { data, error } = await supabase
-            .from('escolas')
-            .select('id, nome')
-            .order('nome');
-        
+        const { data, error } = await supabase.from('escolas').select('id, nome').order('nome');
         if (error) throw error;
         res.json(data || []);
     } catch (error) {
@@ -314,21 +295,10 @@ app.get('/api/escolas', async (req, res) => {
 app.get('/api/alunos', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
-        const { data: alunos } = await supabase
-            .from('alunos')
-            .select('*')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativo', true)
-            .order('nome');
+        const { data: alunos } = await supabase.from('alunos').select('*').eq('escola_id', perfil.escola_id).eq('ativo', true).order('nome');
         
         const alunosComTurmas = await Promise.all((alunos || []).map(async (aluno) => {
-            const { data: matriculas } = await supabase
-                .from('matriculas')
-                .select('*, turmas(nome)')
-                .eq('aluno_id', aluno.id)
-                .eq('ativa', true);
-            
+            const { data: matriculas } = await supabase.from('matriculas').select('*, turmas(nome)').eq('aluno_id', aluno.id).eq('ativa', true);
             const turmas = matriculas?.map(m => m.turmas?.nome).filter(Boolean) || [];
             return { ...aluno, turmas };
         }));
@@ -343,13 +313,7 @@ app.post('/api/alunos', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         const { nome, telefone, email } = req.body;
-        
-        const { data, error } = await supabase
-            .from('alunos')
-            .insert({ escola_id: perfil.escola_id, nome, telefone, email })
-            .select()
-            .single();
-        
+        const { data, error } = await supabase.from('alunos').insert({ escola_id: perfil.escola_id, nome, telefone, email }).select().single();
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -361,24 +325,11 @@ app.put('/api/alunos/:id', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         const { nome, telefone, email } = req.body;
-        
-        const { data: alunoExistente } = await supabase
-            .from('alunos')
-            .select('escola_id')
-            .eq('id', req.params.id)
-            .single();
-        
+        const { data: alunoExistente } = await supabase.from('alunos').select('escola_id').eq('id', req.params.id).single();
         if (!alunoExistente || alunoExistente.escola_id !== perfil.escola_id) {
             return res.status(403).json({ error: 'Acesso negado' });
         }
-
-        const { data, error } = await supabase
-            .from('alunos')
-            .update({ nome, telefone, email })
-            .eq('id', req.params.id)
-            .select()
-            .single();
-        
+        const { data, error } = await supabase.from('alunos').update({ nome, telefone, email }).eq('id', req.params.id).select().single();
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -389,17 +340,10 @@ app.put('/api/alunos/:id', authenticate, async (req, res) => {
 app.delete('/api/alunos/:id', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
-        const { data: alunoExistente } = await supabase
-            .from('alunos')
-            .select('escola_id')
-            .eq('id', req.params.id)
-            .single();
-        
+        const { data: alunoExistente } = await supabase.from('alunos').select('escola_id').eq('id', req.params.id).single();
         if (!alunoExistente || alunoExistente.escola_id !== perfil.escola_id) {
             return res.status(403).json({ error: 'Acesso negado' });
         }
-
         await supabase.from('alunos').update({ ativo: false }).eq('id', req.params.id);
         res.json({ success: true });
     } catch (error) {
@@ -412,19 +356,11 @@ app.delete('/api/alunos/:id', authenticate, async (req, res) => {
 app.get('/api/professores', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
         if (perfil.tipo === 'professor') {
             const { data } = await supabase.from('perfis').select('*').eq('id', req.user.id);
             return res.json(data || []);
         }
-        
-        const { data } = await supabase
-            .from('perfis')
-            .select('*')
-            .eq('escola_id', perfil.escola_id)
-            .eq('tipo', 'professor')
-            .eq('ativo', true);
-        
+        const { data } = await supabase.from('perfis').select('*').eq('escola_id', perfil.escola_id).eq('tipo', 'professor').eq('ativo', true);
         res.json(data || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -434,38 +370,22 @@ app.get('/api/professores', authenticate, async (req, res) => {
 app.post('/api/professores', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
         if (perfil.tipo !== 'dono') {
             return res.status(403).json({ error: 'Acesso negado' });
         }
-
         const { nome, email, senha, cor } = req.body;
-        
         if (!senha || senha.length < 6) {
             return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
         }
-        
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-            email: email,
-            password: senha,
-            email_confirm: true,
-            user_metadata: { nome: nome }
+            email: email, password: senha, email_confirm: true, user_metadata: { nome: nome }
         });
-        
         if (authError) throw authError;
-
         const { error: perfilError } = await supabase.from('perfis').insert({
-            id: authData.user.id,
-            escola_id: perfil.escola_id,
-            nome: nome,
-            email: email,
-            tipo: 'professor',
-            ativo: true,
-            cor: cor || '#3b82f6'
+            id: authData.user.id, escola_id: perfil.escola_id, nome: nome, email: email,
+            tipo: 'professor', ativo: true, cor: cor || '#3b82f6'
         });
-        
         if (perfilError) throw perfilError;
-
         res.json({ success: true, email, senha });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -475,17 +395,10 @@ app.post('/api/professores', authenticate, async (req, res) => {
 app.delete('/api/professores/:id', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
-        const { data: professorExistente } = await supabase
-            .from('perfis')
-            .select('escola_id')
-            .eq('id', req.params.id)
-            .single();
-        
+        const { data: professorExistente } = await supabase.from('perfis').select('escola_id').eq('id', req.params.id).single();
         if (!professorExistente || professorExistente.escola_id !== perfil.escola_id) {
             return res.status(403).json({ error: 'Acesso negado' });
         }
-
         await supabase.from('perfis').update({ ativo: false }).eq('id', req.params.id);
         res.json({ success: true });
     } catch (error) {
@@ -498,20 +411,12 @@ app.delete('/api/professores/:id', authenticate, async (req, res) => {
 app.get('/api/turmas', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
-        const { data: turmas, error } = await supabase
-            .from('turmas')
-            .select('*, perfis(nome, cor)')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativa', true);
-        
+        const { data: turmas, error } = await supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true);
         if (error) throw error;
-        
         if (perfil.tipo === 'professor') {
             const turmasDoProfessor = (turmas || []).filter(t => t.professor_id === perfil.id);
             return res.json(turmasDoProfessor);
         }
-        
         res.json(turmas || []);
     } catch (error) {
         console.error('Erro ao buscar turmas:', error);
@@ -526,40 +431,23 @@ app.post('/api/turmas', authenticate, async (req, res) => {
         
         if (turmas && Array.isArray(turmas)) {
             const turmasFormatadas = turmas.map(t => ({
-                escola_id: perfil.escola_id,
-                nome: t.nome,
-                dia_semana: t.dia_semana,
-                horario_inicio: t.horario_inicio,
-                horario_fim: t.horario_fim,
-                professor_id: t.professor_id || null,
-                limite_alunos: t.limite_alunos || 4,
-                ativa: true,
-                data_avulsa: t.data_avulsa || null
+                escola_id: perfil.escola_id, nome: t.nome, dia_semana: t.dia_semana,
+                horario_inicio: t.horario_inicio, horario_fim: t.horario_fim,
+                professor_id: t.professor_id || null, limite_alunos: t.limite_alunos || 4,
+                ativa: true, data_avulsa: t.data_avulsa || null
             }));
-            
             const { data, error } = await supabase.from('turmas').insert(turmasFormatadas).select('*, perfis(nome, cor)');
             if (error) throw error;
             return res.json(data);
         }
         
         const turmaUnica = {
-            escola_id: perfil.escola_id,
-            nome: nome,
-            dia_semana: dia_semana,
-            horario_inicio,
-            horario_fim,
-            professor_id: professor_id || null,
-            limite_alunos: limite_alunos || 4,
-            ativa: true,
-            data_avulsa: data_avulsa || null
+            escola_id: perfil.escola_id, nome: nome, dia_semana: dia_semana,
+            horario_inicio, horario_fim, professor_id: professor_id || null,
+            limite_alunos: limite_alunos || 4, ativa: true, data_avulsa: data_avulsa || null
         };
         
-        const { data, error } = await supabase
-            .from('turmas')
-            .insert(turmaUnica)
-            .select('*, perfis(nome, cor)')
-            .single();
-        
+        const { data, error } = await supabase.from('turmas').insert(turmaUnica).select('*, perfis(nome, cor)').single();
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -571,24 +459,11 @@ app.put('/api/turmas/:id', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         const { nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa } = req.body;
-        
-        const { data: turmaExistente } = await supabase
-            .from('turmas')
-            .select('escola_id')
-            .eq('id', req.params.id)
-            .single();
-        
+        const { data: turmaExistente } = await supabase.from('turmas').select('escola_id').eq('id', req.params.id).single();
         if (!turmaExistente || turmaExistente.escola_id !== perfil.escola_id) {
             return res.status(403).json({ error: 'Acesso negado' });
         }
-
-        const { data, error } = await supabase
-            .from('turmas')
-            .update({ nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa })
-            .eq('id', req.params.id)
-            .select('*, perfis(nome, cor)')
-            .single();
-        
+        const { data, error } = await supabase.from('turmas').update({ nome, dia_semana, horario_inicio, horario_fim, professor_id, limite_alunos, data_avulsa }).eq('id', req.params.id).select('*, perfis(nome, cor)').single();
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -599,17 +474,10 @@ app.put('/api/turmas/:id', authenticate, async (req, res) => {
 app.delete('/api/turmas/:id', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
-        const { data: turmaExistente } = await supabase
-            .from('turmas')
-            .select('escola_id')
-            .eq('id', req.params.id)
-            .single();
-        
+        const { data: turmaExistente } = await supabase.from('turmas').select('escola_id').eq('id', req.params.id).single();
         if (!turmaExistente || turmaExistente.escola_id !== perfil.escola_id) {
             return res.status(403).json({ error: 'Acesso negado' });
         }
-
         await supabase.from('turmas').update({ ativa: false }).eq('id', req.params.id);
         res.json({ success: true });
     } catch (error) {
@@ -621,12 +489,7 @@ app.delete('/api/turmas/:id', authenticate, async (req, res) => {
 
 app.get('/api/matriculas/:turmaId', authenticate, async (req, res) => {
     try {
-        const { data } = await supabase
-            .from('matriculas')
-            .select('*, alunos(*)')
-            .eq('turma_id', req.params.turmaId)
-            .eq('ativa', true);
-        
+        const { data } = await supabase.from('matriculas').select('*, alunos(*)').eq('turma_id', req.params.turmaId).eq('ativa', true);
         res.json(data || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -636,41 +499,16 @@ app.get('/api/matriculas/:turmaId', authenticate, async (req, res) => {
 app.post('/api/matriculas', authenticate, async (req, res) => {
     try {
         const { turma_id, aluno_id } = req.body;
-        
-        const { data: turma } = await supabase
-            .from('turmas')
-            .select('limite_alunos')
-            .eq('id', turma_id)
-            .single();
-        
-        const { count } = await supabase
-            .from('matriculas')
-            .select('*', { count: 'exact', head: true })
-            .eq('turma_id', turma_id)
-            .eq('ativa', true);
-        
+        const { data: turma } = await supabase.from('turmas').select('limite_alunos').eq('id', turma_id).single();
+        const { count } = await supabase.from('matriculas').select('*', { count: 'exact', head: true }).eq('turma_id', turma_id).eq('ativa', true);
         if (count >= turma.limite_alunos) {
             return res.status(400).json({ error: 'Turma lotada' });
         }
-
-        const { data: existente } = await supabase
-            .from('matriculas')
-            .select('*')
-            .eq('turma_id', turma_id)
-            .eq('aluno_id', aluno_id)
-            .eq('ativa', true)
-            .single();
-        
+        const { data: existente } = await supabase.from('matriculas').select('*').eq('turma_id', turma_id).eq('aluno_id', aluno_id).eq('ativa', true).single();
         if (existente) {
             return res.status(400).json({ error: 'Aluno já matriculado nesta turma' });
         }
-
-        const { data, error } = await supabase
-            .from('matriculas')
-            .insert({ turma_id, aluno_id, ativa: true })
-            .select()
-            .single();
-        
+        const { data, error } = await supabase.from('matriculas').insert({ turma_id, aluno_id, ativa: true }).select().single();
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -689,11 +527,10 @@ app.delete('/api/matriculas/:id', authenticate, async (req, res) => {
 
 // ==================== ROTAS DE CONFIRMAÇÕES ====================
 
-// Rota para gerar link único de confirmação
 app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        const { turma_id, aluno_id, aluno_nome, telefone, data, horario } = req.body;
+        const { turma_id, aluno_id, data, horario } = req.body;
         
         if (!turma_id || !aluno_id) {
             return res.status(400).json({ error: 'Dados incompletos' });
@@ -709,14 +546,9 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hojeDia = diasSemana[hoje.getDay()];
         
-        const { data: turma, error: turmaError } = await supabase
-            .from('turmas')
-            .select('*')
-            .eq('id', turma_id)
-            .single();
+        const { data: turma } = await supabase.from('turmas').select('*').eq('id', turma_id).single();
         
-        if (turmaError || !turma) {
-            console.log('Erro ao buscar turma:', turmaError);
+        if (!turma) {
             return res.status(400).json({ error: 'Turma não encontrada' });
         }
         
@@ -725,33 +557,22 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         
         const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
         
-        const { data: presenca, error: presencaError } = await supabase
-            .from('presencas')
-            .upsert({
-                aula_id: aulaId,
-                aluno_id: aluno_id,
-                turma_id: turma_id,
-                escola_id: perfil.escola_id,
-                status: 'pendente',
-                token_confirmacao: token,
-                expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
-            }, { onConflict: 'aula_id,aluno_id' })
-            .select()
-            .single();
+        const { error: presencaError } = await supabase.from('presencas').upsert({
+            aula_id: aulaId, aluno_id: aluno_id, turma_id: turma_id,
+            escola_id: perfil.escola_id, status: 'pendente', token_confirmacao: token,
+            expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
+        }, { onConflict: 'aula_id,aluno_id' });
         
         if (presencaError) {
             console.log('Erro ao salvar presenca:', presencaError);
             return res.status(500).json({ error: presencaError.message });
         }
         
-        console.log('Link gerado para', aluno_nome, ':', linkConfirmacao);
+        console.log('Link gerado:', linkConfirmacao);
         
-        res.json({ 
-            success: true, 
-            link: linkConfirmacao
-        });
+        res.json({ success: true, link: linkConfirmacao });
     } catch (error) {
-        console.error('Erro geral em gerar-link-unico:', error);
+        console.error('Erro:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -769,35 +590,22 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
         const hojeDia = diasSemana[hoje.getDay()];
         const amanhaDia = diasSemana[amanha.getDay()];
         
-        const { data: turmas } = await supabase
-            .from('turmas')
-            .select('*')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativa', true);
+        const { data: turmas } = await supabase.from('turmas').select('*').eq('escola_id', perfil.escola_id).eq('ativa', true);
         
         const turmasFiltradas = (turmas || []).filter(t => 
-            t.dia_semana === hojeDia || 
-            t.dia_semana === amanhaDia ||
-            t.data_avulsa === dataHoje ||
-            t.data_avulsa === dataAmanha
+            t.dia_semana === hojeDia || t.dia_semana === amanhaDia ||
+            t.data_avulsa === dataHoje || t.data_avulsa === dataAmanha
         );
         
         let links = [];
         
         for (const turma of turmasFiltradas) {
-            const { data: matriculas } = await supabase
-                .from('matriculas')
-                .select('*, alunos(*)')
-                .eq('turma_id', turma.id)
-                .eq('ativa', true);
+            const { data: matriculas } = await supabase.from('matriculas').select('*, alunos(*)').eq('turma_id', turma.id).eq('ativa', true);
             
             const dataAula = turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
             const aulaId = `${turma.id}_${dataAula}`;
             
-            const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', {
-                weekday: 'long', day: 'numeric', month: 'long'
-            });
-            
+            const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
             const horario = turma.horario_inicio ? String(turma.horario_inicio).substring(0, 5) : '00:00';
             
             for (const mat of (matriculas || [])) {
@@ -806,35 +614,18 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                 const token = crypto.randomBytes(32).toString('hex');
                 const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
                 
-                await supabase
-                    .from('presencas')
-                    .upsert({
-                        aula_id: aulaId,
-                        aluno_id: mat.aluno_id,
-                        turma_id: turma.id,
-                        escola_id: perfil.escola_id,
-                        status: 'pendente',
-                        token_confirmacao: token,
-                        expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
-                    }, { onConflict: 'aula_id,aluno_id' });
+                await supabase.from('presencas').upsert({
+                    aula_id: aulaId, aluno_id: mat.aluno_id, turma_id: turma.id,
+                    escola_id: perfil.escola_id, status: 'pendente', token_confirmacao: token,
+                    expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
+                }, { onConflict: 'aula_id,aluno_id' });
                 
-                const mensagem = `Confirmacao de Aula\n\n` +
-                    `Olá ${mat.alunos.nome}!\n\n` +
-                    `Aula: ${turma.nome}\n` +
-                    `Data: ${dataFormatada}\n` +
-                    `Horario: ${horario}\n\n` +
-                    `Confirme sua presenca:\n${linkConfirmacao}\n\n` +
-                    `B&T Tech`;
+                const mensagem = `Confirmacao de Aula\n\nOlá ${mat.alunos.nome}!\n\nAula: ${turma.nome}\nData: ${dataFormatada}\nHorario: ${horario}\n\nConfirme sua presenca:\n${linkConfirmacao}\n\nB&T Tech`;
                 
                 links.push({
-                    id: mat.aluno_id,
-                    aluno: mat.alunos.nome,
-                    telefone: mat.alunos.telefone,
-                    turma: turma.nome,
-                    data: dataFormatada,
-                    horario: horario,
-                    link: linkConfirmacao,
-                    mensagem: mensagem
+                    id: mat.aluno_id, aluno: mat.alunos.nome, telefone: mat.alunos.telefone,
+                    turma: turma.nome, data: dataFormatada, horario: horario,
+                    link: linkConfirmacao, mensagem: mensagem
                 });
             }
         }
@@ -846,7 +637,6 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
     }
 });
 
-// API aulas para página de confirmações
 app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
@@ -860,31 +650,17 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
         const hojeDia = diasSemana[hoje.getDay()];
         const amanhaDia = diasSemana[amanha.getDay()];
         
-        const { data: turmas } = await supabase
-            .from('turmas')
-            .select('*, perfis(nome)')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativa', true);
+        const { data: turmas } = await supabase.from('turmas').select('*, perfis(nome)').eq('escola_id', perfil.escola_id).eq('ativa', true);
         
         async function getAlunosComStatus(turmaId, aulaId) {
-            const { data: matriculas } = await supabase
-                .from('matriculas')
-                .select('*, alunos(id, nome, telefone)')
-                .eq('turma_id', turmaId)
-                .eq('ativa', true);
-            
+            const { data: matriculas } = await supabase.from('matriculas').select('*, alunos(id, nome, telefone)').eq('turma_id', turmaId).eq('ativa', true);
             if (!matriculas || matriculas.length === 0) return [];
             
-            const { data: presencas } = await supabase
-                .from('presencas')
-                .select('aluno_id, status, token_confirmacao')
-                .eq('aula_id', aulaId);
+            const { data: presencas } = await supabase.from('presencas').select('aluno_id, status, token_confirmacao').eq('aula_id', aulaId);
             
             const presencasMap = {};
             if (presencas) {
-                presencas.forEach(p => {
-                    presencasMap[p.aluno_id] = p;
-                });
+                presencas.forEach(p => { presencasMap[p.aluno_id] = p; });
             }
             
             return matriculas.map(mat => {
@@ -910,11 +686,8 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             if (turma.dia_semana === hojeDia || turma.data_avulsa === dataHoje) {
                 const alunos = await getAlunosComStatus(turma.id, aulaIdHoje);
                 aulasHoje.push({
-                    id: turma.id,
-                    nome: turma.nome,
-                    professor: turma.perfis?.nome,
-                    horario_inicio: turma.horario_inicio,
-                    horario_fim: turma.horario_fim,
+                    id: turma.id, nome: turma.nome, professor: turma.perfis?.nome,
+                    horario_inicio: turma.horario_inicio, horario_fim: turma.horario_fim,
                     data_formatada: hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
                     alunos: alunos
                 });
@@ -923,11 +696,8 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             if (turma.dia_semana === amanhaDia || turma.data_avulsa === dataAmanha) {
                 const alunos = await getAlunosComStatus(turma.id, aulaIdAmanha);
                 aulasAmanha.push({
-                    id: turma.id,
-                    nome: turma.nome,
-                    professor: turma.perfis?.nome,
-                    horario_inicio: turma.horario_inicio,
-                    horario_fim: turma.horario_fim,
+                    id: turma.id, nome: turma.nome, professor: turma.perfis?.nome,
+                    horario_inicio: turma.horario_inicio, horario_fim: turma.horario_fim,
                     data_formatada: amanha.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
                     alunos: alunos
                 });
@@ -942,11 +712,8 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                     const aulaId = `${turma.id}_${dataFuturaStr}`;
                     const alunos = await getAlunosComStatus(turma.id, aulaId);
                     aulasProximos.push({
-                        id: turma.id,
-                        nome: turma.nome,
-                        professor: turma.perfis?.nome,
-                        horario_inicio: turma.horario_inicio,
-                        horario_fim: turma.horario_fim,
+                        id: turma.id, nome: turma.nome, professor: turma.perfis?.nome,
+                        horario_inicio: turma.horario_inicio, horario_fim: turma.horario_fim,
                         data_formatada: dataFutura.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
                         alunos: alunos
                     });
@@ -967,17 +734,11 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
 app.get('/api/painel', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hoje = diasSemana[new Date().getDay()];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        const { data: turmas } = await supabase
-            .from('turmas')
-            .select('*, perfis(nome, cor)')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativa', true)
-            .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
+        const { data: turmas } = await supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true).or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
         
         let turmasFiltradas = turmas || [];
         
@@ -986,17 +747,10 @@ app.get('/api/painel', authenticate, async (req, res) => {
         }
 
         let turmasComAlunos = await Promise.all((turmasFiltradas || []).map(async (turma) => {
-            const { data: matriculas } = await supabase
-                .from('matriculas')
-                .select('*, alunos(*)')
-                .eq('turma_id', turma.id)
-                .eq('ativa', true);
+            const { data: matriculas } = await supabase.from('matriculas').select('*, alunos(*)').eq('turma_id', turma.id).eq('ativa', true);
             
             const aulaId = `${turma.id}_${turma.data_avulsa || dataHoje}`;
-            const { data: presencas } = await supabase
-                .from('presencas')
-                .select('*')
-                .eq('aula_id', aulaId);
+            const { data: presencas } = await supabase.from('presencas').select('*').eq('aula_id', aulaId);
             
             const alunos = (matriculas || []).map(m => {
                 const presenca = presencas?.find(p => p.aluno_id === m.aluno_id);
@@ -1080,9 +834,9 @@ app.get('/css/style.css', (req, res) => {
     else res.status(404).send('CSS não encontrado');
 });
 
-// Middleware para rotas não encontradas
+// Rota 404
 app.use((req, res) => {
-    console.log('[404] Rota não encontrada:', req.method, req.url);
+    console.log('[404] Rota não encontrada:', req.url);
     res.status(404).send('Página não encontrada');
 });
 
