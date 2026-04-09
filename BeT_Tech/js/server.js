@@ -1,6 +1,9 @@
+// server.js - Código completo corrigido
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -14,6 +17,7 @@ const supabase = createClient(
     process.env.SUPABASE_KEY
 );
 
+// ==================== AUTENTICAÇÃO ====================
 const authenticate = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.replace('Bearer ', '');
@@ -38,7 +42,186 @@ const getPerfil = async (userId) => {
     return data;
 };
 
+// ==================== FUNÇÕES AUXILIARES ====================
+function paginaErro(titulo, mensagem) {
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Erro</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.c{background:#fff;border-radius:20px;padding:40px;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}h1{color:#ef4444;margin-bottom:10px}p{color:#666}</style></head><body><div class="c"><h1>⚠️ ${titulo}</h1><p>${mensagem}</p></div></body></html>`;
+}
 
+function paginaConfirmacao(presenca, dataFormatada) {
+    const horario = presenca.turmas?.horario_inicio ? presenca.turmas.horario_inicio.substring(0, 5) : '';
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar Presença - B&T Tech</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .container { background: white; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 450px; width: 100%; overflow: hidden; animation: slideUp 0.5s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+        .header p { opacity: 0.9; font-size: 0.9rem; }
+        .content { padding: 30px; }
+        .info-card { background: #f8f9fa; border-radius: 16px; padding: 20px; margin-bottom: 25px; }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #666; font-size: 0.9rem; }
+        .info-value { font-weight: 600; color: #333; }
+        .buttons { display: flex; gap: 12px; flex-direction: column; }
+        .btn { padding: 16px 24px; border-radius: 12px; font-size: 1rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-confirmar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .btn-confirmar:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4); }
+        .btn-cancelar { background: #fee2e2; color: #dc2626; }
+        .btn-cancelar:hover { background: #fecaca; }
+        .mensagem { text-align: center; padding: 20px; display: none; }
+        .mensagem.sucesso { color: #10b981; }
+        .mensagem.cancelado { color: #dc2626; }
+        .mensagem i { font-size: 3rem; margin-bottom: 15px; display: block; }
+        .mensagem h2 { font-size: 1.5rem; margin-bottom: 10px; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 0.8rem; background: #f8f9fa; }
+        @media (max-width: 480px) { .container { border-radius: 0; min-height: 100vh; } .header, .content, .footer { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Confirmar Presença</h1>
+            <p>B&T Tech - Escola de Esportes</p>
+        </div>
+        <div class="content">
+            <div class="info-card">
+                <div class="info-row"><span class="info-label">Aluno</span><span class="info-value">${presenca.alunos?.nome}</span></div>
+                <div class="info-row"><span class="info-label">Aula</span><span class="info-value">${presenca.turmas?.nome}</span></div>
+                <div class="info-row"><span class="info-label">Data</span><span class="info-value">${dataFormatada}</span></div>
+                <div class="info-row"><span class="info-label">Horário</span><span class="info-value">${horario}</span></div>
+            </div>
+            <div id="botoes" class="buttons">
+                <button onclick="confirmar('confirmado')" class="btn btn-confirmar"><i class="fas fa-check-circle"></i> ✅ Sim, estarei presente!</button>
+                <button onclick="confirmar('cancelado')" class="btn btn-cancelar"><i class="fas fa-times-circle"></i> ❌ Não vou poder ir</button>
+            </div>
+            <div id="mensagem" class="mensagem"></div>
+        </div>
+        <div class="footer">Powered by B&T Tech</div>
+    </div>
+    <script>
+        async function confirmar(status) {
+            const token = '${presenca.token_confirmacao}';
+            document.getElementById('botoes').innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#667eea;"></i><p style="margin-top:10px;">Confirmando...</p></div>';
+            try {
+                const response = await fetch('/api/confirmar-presenca', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, status }) });
+                const result = await response.json();
+                if (result.success) {
+                    const div = document.getElementById('mensagem');
+                    div.style.display = 'block';
+                    div.className = 'mensagem ' + (status === 'confirmado' ? 'sucesso' : 'cancelado');
+                    div.innerHTML = status === 'confirmado' ? '<i class="fas fa-check-circle"></i><h2>✅ Presença Confirmada!</h2><p>Obrigado! Nos vemos na aula.</p>' : '<i class="fas fa-times-circle"></i><h2>❌ Aula Cancelada</h2><p>Que pena! Até a próxima.</p>';
+                    document.getElementById('botoes').style.display = 'none';
+                }
+            } catch (error) { alert('Erro ao confirmar. Tente novamente.'); location.reload(); }
+        }
+    </script>
+</body>
+</html>`;
+}
+
+// ==================== ROTAS PÚBLICAS (sem autenticação) ====================
+
+// 🔥 ROTA DE CONFIRMAÇÃO - DEVE SER A PRIMEIRA ROTA GET!
+app.get('/confirmar', async (req, res) => {
+    console.log('[CONFIRMAR] Rota chamada com token:', req.query.token);
+    try {
+        const { token } = req.query;
+        
+        if (!token) {
+            console.log('[CONFIRMAR] Token não fornecido');
+            return res.status(400).send(paginaErro('Link inválido', 'Este link não é válido.'));
+        }
+        
+        console.log('[CONFIRMAR] Buscando token no banco:', token);
+        
+        const { data: presenca, error } = await supabase
+            .from('presencas')
+            .select('*, alunos(nome), turmas(nome, horario_inicio)')
+            .eq('token_confirmacao', token)
+            .single();
+        
+        if (error || !presenca) {
+            console.log('[CONFIRMAR] Presença não encontrada. Erro:', error);
+            return res.status(404).send(paginaErro('Link expirado', 'Este link já foi usado ou expirou.'));
+        }
+        
+        console.log('[CONFIRMAR] Presença encontrada:', presenca.id);
+        
+        const dataAula = presenca.aula_id.split('_')[1];
+        const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', {
+            weekday: 'long', day: 'numeric', month: 'long'
+        });
+        
+        res.send(paginaConfirmacao(presenca, dataFormatada));
+    } catch (error) {
+        console.error('[CONFIRMAR] Erro:', error);
+        res.status(500).send('Erro: ' + error.message);
+    }
+});
+
+// API confirmar presença
+app.post('/api/confirmar-presenca', async (req, res) => {
+    console.log('[CONFIRMAR-API] Recebida requisição');
+    try {
+        const { token, status } = req.body;
+        
+        console.log('[CONFIRMAR-API] Token:', token, 'Status:', status);
+        
+        const { error } = await supabase
+            .from('presencas')
+            .update({ 
+                status: status, 
+                updated_at: new Date().toISOString() 
+            })
+            .eq('token_confirmacao', token);
+        
+        if (error) {
+            console.error('[CONFIRMAR-API] Erro ao atualizar:', error);
+            return res.status(500).json({ error: error.message });
+        }
+        
+        console.log('[CONFIRMAR-API] Presença atualizada com sucesso');
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[CONFIRMAR-API] Erro:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== ROTAS DE AUTENTICAÇÃO ====================
+
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        const perfil = await getPerfil(data.user.id);
+
+        if (!perfil) {
+            await supabase.auth.signOut();
+            return res.status(401).json({ error: 'Perfil não encontrado' });
+        }
+
+        res.json({ user: data.user, perfil: perfil, access_token: data.session.access_token });
+    } catch (error) {
+        res.status(401).json({ error: error.message });
+    }
+});
+
+app.post('/api/logout', async (req, res) => {
+    await supabase.auth.signOut();
+    res.json({ success: true });
+});
 
 app.post('/api/cadastro', async (req, res) => {
     try {
@@ -50,9 +233,7 @@ app.post('/api/cadastro', async (req, res) => {
 
         let escolaId = escola_id;
         
-        // Se não tem escola_id, busca a escola do DONO (admin)
         if (!escolaId) {
-            // Busca primeiro o usuário dono para pegar a escola_id
             const { data: donoExistente } = await supabase
                 .from('perfis')
                 .select('escola_id')
@@ -63,7 +244,6 @@ app.post('/api/cadastro', async (req, res) => {
             if (donoExistente) {
                 escolaId = donoExistente.escola_id;
             } else {
-                // Se não existe dono, cria escola padrão (para primeiro acesso)
                 const { data: escola, error: escolaError } = await supabase
                     .from('escolas')
                     .insert({ nome: nomeEscola || 'Minha Escola' })
@@ -106,175 +286,14 @@ app.post('/api/cadastro', async (req, res) => {
     }
 });
 
-// ==================== SISTEMA DE CONFIRMAÇÃO ====================
-
-// 1. Buscar configuração de notificações da escola
-app.get('/api/config-notificacoes', authenticate, async (req, res) => {
+app.get('/api/session', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        
-        const { data, error } = await supabase
-            .from('config_notificacoes')
-            .select('*')
-            .eq('escola_id', perfil.escola_id)
-            .single();
-        
-        res.json(data || { ativo: false, horas_antes: 24 });
+        res.json({ user: req.user, perfil });
     } catch (error) {
-        res.json({ ativo: false, horas_antes: 24 });
+        res.status(401).json({ error: error.message });
     }
 });
-
-// 2. Salvar configuração de notificações
-app.post('/api/config-notificacoes', authenticate, async (req, res) => {
-    try {
-        const perfil = await getPerfil(req.user.id);
-        const { ativo, horas_antes, mensagem_personalizada } = req.body;
-        
-        const { data, error } = await supabase
-            .from('config_notificacoes')
-            .upsert({
-                escola_id: perfil.escola_id,
-                ativo: ativo || false,
-                horas_antes: horas_antes || 24,
-                mensagem_personalizada: mensagem_personalizada
-            }, { onConflict: 'escola_id' })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 3. Status do WhatsApp
-app.get('/api/whatsapp-status', async (req, res) => {
-    try {
-        const whatsapp = require('./whatsapp');
-        res.json(whatsapp.getStatus());
-    } catch (error) {
-        res.json({ connected: false, error: error.message });
-    }
-});
-
-// 4. Webhook para receber respostas (chamado pelo whatsapp.js)
-app.post('/api/webhook-confirmacao', async (req, res) => {
-    try {
-        const { numero, resposta, buttonId } = req.body;
-        
-        // buttonId no formato: sim_turmaId_data ou nao_turmaId_data
-        const [acao, turma_id, data_aula] = buttonId.split('_');
-        const novoStatus = acao === 'sim' ? 'confirmado' : 'cancelado';
-        
-        // Busca o aluno pelo telefone
-        const telefone = numero.replace(/\D/g, '');
-        
-        const { data: aluno } = await supabase
-            .from('alunos')
-            .select('id')
-            .eq('telefone', `%${telefone}%`)
-            .single();
-        
-        if (aluno) {
-            const aulaId = `${turma_id}_${data_aula}`;
-            
-            // Atualiza mensagens_confirmacao
-            await supabase
-                .from('mensagens_confirmacao')
-                .update({ 
-                    resposta: novoStatus,
-                    responded_at: new Date().toISOString()
-                })
-                .eq('aula_id', aulaId)
-                .eq('aluno_id', aluno.id);
-            
-            // Atualiza presencas
-            await supabase
-                .from('presencas')
-                .update({ 
-                    status: novoStatus,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('aula_id', aulaId)
-                .eq('aluno_id', aluno.id);
-            
-            // Envia mensagem de confirmação
-            const msgResposta = novoStatus === 'confirmado'
-                ? '✅ Presença confirmada! Nos vemos na aula. 🎉'
-                : '❌ Aula cancelada. Que pena! Até a próxima. 🙏';
-            
-            const whatsapp = require('./whatsapp');
-            await whatsapp.sendSimpleMessage(telefone, msgResposta);
-        }
-        
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Erro webhook:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-//---------------------------------------------------------
-//---------------------------------------------------------
-// 5. API para painel mostrar status de confirmação
-app.get('/api/painel', authenticate, async (req, res) => {
-    try {
-        const perfil = await getPerfil(req.user.id);
-
-        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-        const hoje = diasSemana[new Date().getDay()];
-        const dataHoje = new Date().toISOString().split('T')[0];
-
-        const { data: turmas } = await supabase
-            .from('turmas')
-            .select('*, perfis(nome, cor)')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativa', true)
-            .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
-        
-        let turmasFiltradas = turmas || [];
-        
-        if (perfil.tipo === 'professor') {
-            turmasFiltradas = turmasFiltradas.filter(t => t.professor_id === perfil.id);
-        }
-
-        let turmasComAlunos = await Promise.all((turmasFiltradas || []).map(async (turma) => {
-            const { data: matriculas } = await supabase
-                .from('matriculas')
-                .select('*, alunos(*)')
-                .eq('turma_id', turma.id)
-                .eq('ativa', true);
-            
-            // Busca status de confirmação
-            const aulaId = `${turma.id}_${turma.data_avulsa || dataHoje}`;
-            const { data: presencas } = await supabase
-                .from('presencas')
-                .select('*')
-                .eq('aula_id', aulaId);
-            
-            // Mescla status da presença
-            const alunos = (matriculas || []).map(m => {
-                const presenca = presencas?.find(p => p.aluno_id === m.aluno_id);
-                return {
-                    ...m,
-                    status_confirmacao: presenca?.status || 'pendente'
-                };
-            });
-            
-            return { ...turma, alunos };
-        }));
-
-        res.json(turmasComAlunos);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-//---------------------------------------------------------
-
-
 
 app.get('/api/escolas', async (req, res) => {
     try {
@@ -290,43 +309,7 @@ app.get('/api/escolas', async (req, res) => {
     }
 });
 
-app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-
-        const perfil = await getPerfil(data.user.id);
-
-        if (!perfil) {
-            await supabase.auth.signOut();
-            return res.status(401).json({ error: 'Perfil não encontrado' });
-        }
-
-        res.json({ 
-            user: data.user, 
-            perfil: perfil,
-            access_token: data.session.access_token
-        });
-    } catch (error) {
-        res.status(401).json({ error: error.message });
-    }
-});
-
-app.post('/api/logout', async (req, res) => {
-    await supabase.auth.signOut();
-    res.json({ success: true });
-});
-
-app.get('/api/session', authenticate, async (req, res) => {
-    try {
-        const perfil = await getPerfil(req.user.id);
-        res.json({ user: req.user, perfil });
-    } catch (error) {
-        res.status(401).json({ error: error.message });
-    }
-});
+// ==================== ROTAS DE ALUNOS ====================
 
 app.get('/api/alunos', authenticate, async (req, res) => {
     try {
@@ -424,6 +407,8 @@ app.delete('/api/alunos/:id', authenticate, async (req, res) => {
     }
 });
 
+// ==================== ROTAS DE PROFESSORES ====================
+
 app.get('/api/professores', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
@@ -508,11 +493,12 @@ app.delete('/api/professores/:id', authenticate, async (req, res) => {
     }
 });
 
+// ==================== ROTAS DE TURMAS ====================
+
 app.get('/api/turmas', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         
-        // Busca todas as turmas ativas da escola
         const { data: turmas, error } = await supabase
             .from('turmas')
             .select('*, perfis(nome, cor)')
@@ -521,7 +507,6 @@ app.get('/api/turmas', authenticate, async (req, res) => {
         
         if (error) throw error;
         
-        // Se for professor, filtra apenas as turmas dele
         if (perfil.tipo === 'professor') {
             const turmasDoProfessor = (turmas || []).filter(t => t.professor_id === perfil.id);
             return res.json(turmasDoProfessor);
@@ -632,6 +617,8 @@ app.delete('/api/turmas/:id', authenticate, async (req, res) => {
     }
 });
 
+// ==================== ROTAS DE MATRÍCULAS ====================
+
 app.get('/api/matriculas/:turmaId', authenticate, async (req, res) => {
     try {
         const { data } = await supabase
@@ -700,421 +687,282 @@ app.delete('/api/matriculas/:id', authenticate, async (req, res) => {
     }
 });
 
-app.get('/api/presencas/:aulaId', authenticate, async (req, res) => {
-    try {
-        const { data } = await supabase
-            .from('presencas')
-            .select('*, alunos(*)')
-            .eq('aula_id', req.params.aulaId);
-        
-        res.json(data || []);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+// ==================== ROTAS DE CONFIRMAÇÕES ====================
 
-app.post('/api/presencas', authenticate, async (req, res) => {
-    try {
-        const { aula_id, aluno_id, status } = req.body;
-        
-        const { data: existente } = await supabase
-            .from('presencas')
-            .select('*')
-            .eq('aula_id', aula_id)
-            .eq('aluno_id', aluno_id)
-            .single();
-        
-        if (existente) {
-            const { data, error } = await supabase
-                .from('presencas')
-                .update({ status })
-                .eq('id', existente.id)
-                .select()
-                .single();
-            
-            if (error) throw error;
-            return res.json(data);
-        }
-
-        const { data, error } = await supabase
-            .from('presencas')
-            .insert({ aula_id, aluno_id, status })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.patch('/api/presencas/:id', authenticate, async (req, res) => {
-    try {
-        const { status } = req.body;
-        const { data, error } = await supabase
-            .from('presencas')
-            .update({ status })
-            .eq('id', req.params.id)
-            .select()
-            .single();
-        
-        if (error) throw error;
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.get('/api/aulas', authenticate, async (req, res) => {
+// Rota para gerar link único de confirmação
+app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        const hoje = new Date().toISOString().split('T')[0];
+        const { turma_id, aluno_id, aluno_nome, telefone, data, horario } = req.body;
         
-        // Busca as turmas primeiro
-        const { data: turmas } = await supabase
-            .from('turmas')
-            .select('*, perfis(nome, cor)')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativa', true);
-        
-        let turmasFiltradas = turmas || [];
-        
-        // Se for professor, filtra apenas as turmas dele
-        if (perfil.tipo === 'professor') {
-            turmasFiltradas = turmasFiltradas.filter(t => t.professor_id === perfil.id);
+        if (!turma_id || !aluno_id) {
+            return res.status(400).json({ error: 'Dados incompletos' });
         }
         
-        const turmaIds = turmasFiltradas.map(t => t.id);
+        const token = crypto.randomBytes(32).toString('hex');
         
-        if (turmaIds.length === 0) {
-            return res.json([]);
-        }
+        const hoje = new Date();
+        const amanha = new Date(Date.now() + 86400000);
+        const dataHoje = hoje.toISOString().split('T')[0];
+        const dataAmanha = amanha.toISOString().split('T')[0];
         
-        // Busca aulas do dia para essas turmas
-        const { data: aulas } = await supabase
-            .from('aulas')
-            .select('*, turmas(*)')
-            .eq('data', hoje)
-            .in('turma_id', turmaIds);
-        
-        res.json(aulas || []);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.post('/api/aulas', authenticate, async (req, res) => {
-    try {
-        const { turma_id, data } = req.body;
-        
-        const { data: existente } = await supabase
-            .from('aulas')
-            .select('*')
-            .eq('turma_id', turma_id)
-            .eq('data', data)
-            .single();
-        
-        if (existente) return res.json(existente);
-
-        const { data: aula, error } = await supabase
-            .from('aulas')
-            .insert({ turma_id, data })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        res.json(aula);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.get('/api/aulas/buscar', authenticate, async (req, res) => {
-    try {
-        const { turma_id, data } = req.query;
-        const { data: aula } = await supabase
-            .from('aulas')
-            .select('*')
-            .eq('turma_id', turma_id)
-            .eq('data', data)
-            .single();
-        
-        res.json(aula || null);
-    } catch (error) {
-        res.json(null);
-    }
-});
-
-app.get('/api/dashboard', authenticate, async (req, res) => {
-    try {
-        const perfil = await getPerfil(req.user.id);
-
-        const [{ count: alunosAtivos }, { count: turmasAtivas }, { data: turmas }] = await Promise.all([
-            supabase.from('alunos').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativo', true),
-            supabase.from('turmas').select('*', { count: 'exact', head: true }).eq('escola_id', perfil.escola_id).eq('ativa', true),
-            supabase.from('turmas').select('*, perfis(nome, cor)').eq('escola_id', perfil.escola_id).eq('ativa', true)
-        ]);
-
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-        const hoje = diasSemana[new Date().getDay()];
-        const dataHoje = new Date().toISOString().split('T')[0];
+        const hojeDia = diasSemana[hoje.getDay()];
         
-        let aulasHoje = turmas?.filter(t => t.dia_semana === hoje || t.data_avulsa === dataHoje) || [];
-        
-        if (perfil.tipo === 'professor') {
-            aulasHoje = aulasHoje.filter(t => t.professor_id === perfil.id);
-        }
-
-        res.json({ alunosAtivos, turmasAtivas, aulasHoje });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// CONFIGURAÇÕES FINANCEIRAS
-app.get('/api/config-financeiras', authenticate, async (req, res) => {
-    try {
-        const perfil = await getPerfil(req.user.id);
-        
-        const { data, error } = await supabase
-            .from('configuracoes_financeiras')
+        const { data: turma, error: turmaError } = await supabase
+            .from('turmas')
             .select('*')
-            .eq('escola_id', perfil.escola_id);
+            .eq('id', turma_id)
+            .single();
         
-        if (error) throw error;
-        res.json(data || []);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.post('/api/config-financeiras', authenticate, async (req, res) => {
-    try {
-        const perfil = await getPerfil(req.user.id);
-        const { tipo, valor, quantidade, descricao } = req.body;
-        
-        // Remove registros antigos desse tipo antes de inserir novo
-        if (tipo === 'mensalidade_fixa' || tipo === 'mensalidade_variavel') {
-            await supabase
-                .from('configuracoes_financeiras')
-                .delete()
-                .eq('escola_id', perfil.escola_id)
-                .eq('tipo', tipo);
+        if (turmaError || !turma) {
+            console.log('Erro ao buscar turma:', turmaError);
+            return res.status(400).json({ error: 'Turma não encontrada' });
         }
         
-        const { data, error } = await supabase
-            .from('configuracoes_financeiras')
-            .insert({
+        const dataAula = data || turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
+        const aulaId = `${turma_id}_${dataAula}`;
+        
+        const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
+        
+        const { data: presenca, error: presencaError } = await supabase
+            .from('presencas')
+            .upsert({
+                aula_id: aulaId,
+                aluno_id: aluno_id,
+                turma_id: turma_id,
                 escola_id: perfil.escola_id,
-                tipo,
-                valor: parseFloat(valor),
-                quantidade: quantidade || 1,
-                descricao
-            })
+                status: 'pendente',
+                token_confirmacao: token,
+                expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
+            }, { onConflict: 'aula_id,aluno_id' })
             .select()
             .single();
         
-        if (error) throw error;
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.delete('/api/config-financeiras/:id', authenticate, async (req, res) => {
-    try {
-        const perfil = await getPerfil(req.user.id);
-        
-        const { data: existing } = await supabase
-            .from('configuracoes_financeiras')
-            .select('escola_id')
-            .eq('id', req.params.id)
-            .single();
-        
-        if (!existing || existing.escola_id !== perfil.escola_id) {
-            return res.status(403).json({ error: 'Acesso negado' });
+        if (presencaError) {
+            console.log('Erro ao salvar presenca:', presencaError);
+            return res.status(500).json({ error: presencaError.message });
         }
         
-        await supabase
-            .from('configuracoes_financeiras')
-            .delete()
-            .eq('id', req.params.id);
+        console.log('Link gerado para', aluno_nome, ':', linkConfirmacao);
         
-        res.json({ success: true });
+        res.json({ 
+            success: true, 
+            link: linkConfirmacao
+        });
     } catch (error) {
+        console.error('Erro geral em gerar-link-unico:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-
-//rota /api/relatorios 
-
-app.get('/api/relatorios', authenticate, async (req, res) => {
+app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
-        const { inicio, fim } = req.query;
-
-        // Se não tiver período, usa o mês atual
-        const periodoInicio = inicio ? new Date(inicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-        const periodoFim = fim ? new Date(fim) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
-
-        // 1. Buscar turmas
+        
+        const hoje = new Date();
+        const amanha = new Date(Date.now() + 86400000);
+        const dataHoje = hoje.toISOString().split('T')[0];
+        const dataAmanha = amanha.toISOString().split('T')[0];
+        
+        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const hojeDia = diasSemana[hoje.getDay()];
+        const amanhaDia = diasSemana[amanha.getDay()];
+        
         const { data: turmas } = await supabase
             .from('turmas')
-            .select('*, perfis(nome, cor)')
-            .eq('escola_id', perfil.escola_id)
-            .eq('ativa', true);
-
-        // 2. Buscar alunos
-        const { data: alunos } = await supabase
-            .from('alunos')
             .select('*')
             .eq('escola_id', perfil.escola_id)
-            .eq('ativo', true);
-
-        // 3. Buscar matrículas
-        const { data: matriculas } = await supabase
-            .from('matriculas')
-            .select('*, alunos(nome), turmas(professor_id)')
             .eq('ativa', true);
-
-        // 4. Buscar aulas no período
-        const { data: aulas } = await supabase
-            .from('aulas')
-            .select('id, turma_id, data')
-            .gte('data', periodoInicio.toISOString().split('T')[0])
-            .lte('data', periodoFim.toISOString().split('T')[0]);
-
-        // 5. Buscar presenças dessas aulas
-        let presencas = [];
-        if (aulas && aulas.length > 0) {
-            const aulaIds = aulas.map(a => a.id);
-            const { data: presencasData } = await supabase
-                .from('presencas')
-                .select('id, aula_id, aluno_id, status')
-                .in('aula_id', aulaIds);
+        
+        const turmasFiltradas = (turmas || []).filter(t => 
+            t.dia_semana === hojeDia || 
+            t.dia_semana === amanhaDia ||
+            t.data_avulsa === dataHoje ||
+            t.data_avulsa === dataAmanha
+        );
+        
+        let links = [];
+        
+        for (const turma of turmasFiltradas) {
+            const { data: matriculas } = await supabase
+                .from('matriculas')
+                .select('*, alunos(*)')
+                .eq('turma_id', turma.id)
+                .eq('ativa', true);
             
-            presencas = presencasData || [];
+            const dataAula = turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
+            const aulaId = `${turma.id}_${dataAula}`;
+            
+            const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', {
+                weekday: 'long', day: 'numeric', month: 'long'
+            });
+            
+            const horario = turma.horario_inicio ? String(turma.horario_inicio).substring(0, 5) : '00:00';
+            
+            for (const mat of (matriculas || [])) {
+                if (!mat.alunos?.telefone) continue;
+                
+                const token = crypto.randomBytes(32).toString('hex');
+                const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
+                
+                await supabase
+                    .from('presencas')
+                    .upsert({
+                        aula_id: aulaId,
+                        aluno_id: mat.aluno_id,
+                        turma_id: turma.id,
+                        escola_id: perfil.escola_id,
+                        status: 'pendente',
+                        token_confirmacao: token,
+                        expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
+                    }, { onConflict: 'aula_id,aluno_id' });
+                
+                const mensagem = `Confirmacao de Aula\n\n` +
+                    `Olá ${mat.alunos.nome}!\n\n` +
+                    `Aula: ${turma.nome}\n` +
+                    `Data: ${dataFormatada}\n` +
+                    `Horario: ${horario}\n\n` +
+                    `Confirme sua presenca:\n${linkConfirmacao}\n\n` +
+                    `B&T Tech`;
+                
+                links.push({
+                    id: mat.aluno_id,
+                    aluno: mat.alunos.nome,
+                    telefone: mat.alunos.telefone,
+                    turma: turma.nome,
+                    data: dataFormatada,
+                    horario: horario,
+                    link: linkConfirmacao,
+                    mensagem: mensagem
+                });
+            }
         }
+        
+        res.json({ success: true, links });
+    } catch (error) {
+        console.error('Erro:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
-        // Calcular alunos comparecidos (contando aparições, não alunos únicos)
-        // Considera "presente" ou "confirmado" como comparecimento
-        const comparecimentosCount = presencas.filter(p => 
-            p.status === 'presente' || p.status === 'confirmado'
-        ).length;
-
-        // Professores
-        const professoresMap = {};
+// API aulas para página de confirmações
+app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const hoje = new Date();
+        const amanha = new Date(Date.now() + 86400000);
+        const dataHoje = hoje.toISOString().split('T')[0];
+        const dataAmanha = amanha.toISOString().split('T')[0];
+        
+        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const hojeDia = diasSemana[hoje.getDay()];
+        const amanhaDia = diasSemana[amanha.getDay()];
+        
+        const { data: turmas } = await supabase
+            .from('turmas')
+            .select('*, perfis(nome)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true);
+        
+        async function getAlunosComStatus(turmaId, aulaId) {
+            const { data: matriculas } = await supabase
+                .from('matriculas')
+                .select('*, alunos(id, nome, telefone)')
+                .eq('turma_id', turmaId)
+                .eq('ativa', true);
+            
+            if (!matriculas || matriculas.length === 0) return [];
+            
+            const { data: presencas } = await supabase
+                .from('presencas')
+                .select('aluno_id, status, token_confirmacao')
+                .eq('aula_id', aulaId);
+            
+            const presencasMap = {};
+            if (presencas) {
+                presencas.forEach(p => {
+                    presencasMap[p.aluno_id] = p;
+                });
+            }
+            
+            return matriculas.map(mat => {
+                const conf = presencasMap[mat.aluno_id];
+                return {
+                    id: mat.aluno_id,
+                    nome: mat.alunos?.nome,
+                    telefone: mat.alunos?.telefone,
+                    status: conf?.status || 'pendente',
+                    link: conf?.token_confirmacao ? `https://saasbt.onrender.com/confirmar?token=${conf.token_confirmacao}` : ''
+                };
+            });
+        }
+        
+        let aulasHoje = [];
+        let aulasAmanha = [];
+        let aulasProximos = [];
         
         for (const turma of (turmas || [])) {
-            const professorId = turma.professor_id;
-            if (!professorId) continue;
+            const aulaIdHoje = `${turma.id}_${dataHoje}`;
+            const aulaIdAmanha = `${turma.id}_${dataAmanha}`;
             
-            if (!professoresMap[professorId]) {
-                professoresMap[professorId] = {
-                    id: professorId,
-                    nome: turma.perfis?.nome || 'Sem professor',
-                    cor: turma.perfis?.cor || '#3b82f6',
-                    totalTurmas: 0,
-                    totalAlunos: 0,
-                    totalComparecimentos: 0,
-                    aulasMes: 0
-                };
+            if (turma.dia_semana === hojeDia || turma.data_avulsa === dataHoje) {
+                const alunos = await getAlunosComStatus(turma.id, aulaIdHoje);
+                aulasHoje.push({
+                    id: turma.id,
+                    nome: turma.nome,
+                    professor: turma.perfis?.nome,
+                    horario_inicio: turma.horario_inicio,
+                    horario_fim: turma.horario_fim,
+                    data_formatada: hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                    alunos: alunos
+                });
+            }
+            
+            if (turma.dia_semana === amanhaDia || turma.data_avulsa === dataAmanha) {
+                const alunos = await getAlunosComStatus(turma.id, aulaIdAmanha);
+                aulasAmanha.push({
+                    id: turma.id,
+                    nome: turma.nome,
+                    professor: turma.perfis?.nome,
+                    horario_inicio: turma.horario_inicio,
+                    horario_fim: turma.horario_fim,
+                    data_formatada: amanha.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                    alunos: alunos
+                });
+            }
+            
+            for (let i = 2; i <= 6; i++) {
+                const dataFutura = new Date(Date.now() + 86400000 * i);
+                const dataFuturaStr = dataFutura.toISOString().split('T')[0];
+                const diaFuturo = diasSemana[dataFutura.getDay()];
+                
+                if (turma.dia_semana === diaFuturo) {
+                    const aulaId = `${turma.id}_${dataFuturaStr}`;
+                    const alunos = await getAlunosComStatus(turma.id, aulaId);
+                    aulasProximos.push({
+                        id: turma.id,
+                        nome: turma.nome,
+                        professor: turma.perfis?.nome,
+                        horario_inicio: turma.horario_inicio,
+                        horario_fim: turma.horario_fim,
+                        data_formatada: dataFutura.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                        alunos: alunos
+                    });
+                    break;
+                }
             }
         }
-
-        // Calcular estatísticas por professor
-        const turmasIds = turmas?.map(t => t.id) || [];
-        const turmasPorProfessor = {};
         
-        turmas?.forEach(t => {
-            if (t.professor_id) {
-                if (!turmasPorProfessor[t.professor_id]) {
-                    turmasPorProfessor[t.professor_id] = [];
-                }
-                turmasPorProfessor[t.professor_id].push(t);
-            }
-        });
-
-        Object.keys(professoresMap).forEach(profId => {
-            const turmasProf = turmasPorProfessor[profId] || [];
-            professoresMap[profId].totalTurmas = turmasProf.length;
-            
-            // Alunos únicos nas turmas do professor
-            const matriculasProf = matriculas?.filter(m => 
-                m.turmas?.professor_id === profId
-            ) || [];
-            const alunosUnicos = [...new Set(matriculasProf.map(m => m.aluno_id))];
-            professoresMap[profId].totalAlunos = alunosUnicos.length;
-            
-            // Aulas do professor no período
-            const aulasProfIds = [];
-            turmasProf.forEach(t => {
-                const aulasDaTurma = aulas?.filter(a => a.turma_id === t.id) || [];
-                aulasDaTurma.forEach(a => aulasProfIds.push(a.id));
-            });
-
-            // Comparecimentos do professor
-            const comparecimentosProf = presencas.filter(p => 
-                aulasProfIds.includes(p.aula_id) && 
-                (p.status === 'presente' || p.status === 'confirmado')
-            ).length;
-            
-            professoresMap[profId].totalComparecimentos = comparecimentosProf;
-            professoresMap[profId].aulasMes = turmasProf.length * 4;
-        });
-
-        // Turmas com alunos
-        const turmasComAlunos = turmas?.map(turma => {
-            const alunosTurma = matriculas?.filter(m => m.turma_id === turma.id) || [];
-            return { 
-                ...turma, 
-                professor_nome: turma.perfis?.nome, 
-                totalAlunos: alunosTurma.length 
-            };
-        }) || [];
-
-        // Estatísticas gerais
-        const totalTurmas = turmas?.length || 0;
-        const totalAlunos = alunos?.length || 0;
-        
-        // Contar alunos novos no período
-        const alunosNovosPeriodo = alunos?.filter(a => 
-            new Date(a.created_at) >= periodoInicio && new Date(a.created_at) <= periodoFim
-        ).length || 0;
-
-        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-        const hoje = diasSemana[new Date().getDay()];
-        const dataHoje = new Date().toISOString().split('T')[0];
-        
-        // Turmas/Aulas desta semana
-        const turmasSemana = turmas?.filter(t => t.dia_semana === hoje).length || 0;
-        const aulasSemana = turmasSemana * 4;
-        
-        const totalAulas = aulas?.length || 0;
-        const mediaPresenca = totalAulas > 0 ? (comparecimentosCount / totalAulas).toFixed(1) : 0;
-
-        res.json({
-            estatisticas: {
-                totalTurmas,
-                turmasSemana,
-                totalAlunos,
-                alunosNovosMes: alunosNovosPeriodo,
-                totalAulas,
-                aulasSemana,
-                alunosComparecidos: comparecimentosCount,
-                mediaPresenca: parseFloat(mediaPresenca)
-            },
-            professores: Object.values(professoresMap),
-            turmas: turmasComAlunos
-        });
+        res.json({ hoje: aulasHoje, amanha: aulasAmanha, proximos: aulasProximos });
     } catch (error) {
-        console.error('Erro relatórios:', error);
+        console.error('Erro em /api/aulas-confirmacoes:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
+// ==================== ROTAS DE PAINEL ====================
 
 app.get('/api/painel', authenticate, async (req, res) => {
     try {
@@ -1124,7 +972,6 @@ app.get('/api/painel', authenticate, async (req, res) => {
         const hoje = diasSemana[new Date().getDay()];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        // Busca as turmas primeiro
         const { data: turmas } = await supabase
             .from('turmas')
             .select('*, perfis(nome, cor)')
@@ -1134,15 +981,8 @@ app.get('/api/painel', authenticate, async (req, res) => {
         
         let turmasFiltradas = turmas || [];
         
-        // Se for professor, filtra apenas as turmas dele
         if (perfil.tipo === 'professor') {
             turmasFiltradas = turmasFiltradas.filter(t => t.professor_id === perfil.id);
-        }
-
-        for (const turma of (turmasFiltradas || [])) {
-            await supabase
-                .from('aulas')
-                .upsert({ turma_id: turma.id, data: dataHoje }, { onConflict: 'turma_id,data' });
         }
 
         let turmasComAlunos = await Promise.all((turmasFiltradas || []).map(async (turma) => {
@@ -1152,7 +992,18 @@ app.get('/api/painel', authenticate, async (req, res) => {
                 .eq('turma_id', turma.id)
                 .eq('ativa', true);
             
-            return { ...turma, alunos: matriculas || [] };
+            const aulaId = `${turma.id}_${turma.data_avulsa || dataHoje}`;
+            const { data: presencas } = await supabase
+                .from('presencas')
+                .select('*')
+                .eq('aula_id', aulaId);
+            
+            const alunos = (matriculas || []).map(m => {
+                const presenca = presencas?.find(p => p.aluno_id === m.aluno_id);
+                return { ...m, status_confirmacao: presenca?.status || 'pendente' };
+            });
+            
+            return { ...turma, alunos };
         }));
 
         res.json(turmasComAlunos);
@@ -1161,8 +1012,7 @@ app.get('/api/painel', authenticate, async (req, res) => {
     }
 });
 
-// ROTAS DE PÁGINA
-const fs = require('fs');
+// ==================== ROTAS DE PÁGINA ====================
 
 app.get('/', (req, res) => {
     const filePath = path.resolve(__dirname, '../pages/index.html');
@@ -1172,6 +1022,12 @@ app.get('/', (req, res) => {
 
 app.get('/dashboard', (req, res) => {
     const filePath = path.resolve(__dirname, '../pages/dashboard.html');
+    if (fs.existsSync(filePath)) res.sendFile(filePath);
+    else res.status(404).send('Arquivo não encontrado');
+});
+
+app.get('/confirmacoes', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/confirmacoes.html');
     if (fs.existsSync(filePath)) res.sendFile(filePath);
     else res.status(404).send('Arquivo não encontrado');
 });
@@ -1209,7 +1065,7 @@ app.get('/painel', (req, res) => {
 app.get('/relatorios', (req, res) => {
     const filePath = path.resolve(__dirname, '../pages/relatorios.html');
     if (fs.existsSync(filePath)) res.sendFile(filePath);
-    else res.status(404).send('Arquivo não encontrado: ' + filePath);
+    else res.status(404).send('Arquivo não encontrado');
 });
 
 app.get('/financeiro', (req, res) => {
@@ -1218,12 +1074,16 @@ app.get('/financeiro', (req, res) => {
     else res.status(404).send('Arquivo não encontrado');
 });
 
-
-// CSS
 app.get('/css/style.css', (req, res) => {
     const filePath = path.resolve(__dirname, '../css/style.css');
     if (fs.existsSync(filePath)) res.sendFile(filePath);
     else res.status(404).send('CSS não encontrado');
+});
+
+// Middleware para rotas não encontradas
+app.use((req, res) => {
+    console.log('[404] Rota não encontrada:', req.method, req.url);
+    res.status(404).send('Página não encontrada');
 });
 
 app.listen(port, () => {

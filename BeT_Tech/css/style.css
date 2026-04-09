@@ -64,6 +64,39 @@
     box-sizing: border-box;
 }
 
+/* Status das confirmações */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.pendente {
+    background: var(--warning-bg);
+    color: #fbbf24;
+    border: 1px solid #fbbf24;
+}
+
+.status-badge.confirmado {
+    background: var(--success-bg);
+    color: #10b981;
+    border: 1px solid #10b981;
+}
+
+.status-badge.cancelado {
+    background: var(--danger-bg);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
+.status-badge.presente {
+    background: #dbeafe;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
+}
+
+
 body {
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     background: var(--bg-dark);

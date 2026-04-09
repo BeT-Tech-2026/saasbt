@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmações - B&T Tech</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        .confirmacoes-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title.today { color: #10b981; }
+        .section-title.tomorrow { color: #f59e0b; }
+        .section-title.upcoming { color: #3b82f6; }
+        
+        .date-badge {
+            background: var(--bg-dark);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .aula-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .aula-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .aula-header.amanha {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .aula-header.proximo {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .aula-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+        
+        .aula-info p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .alunos-list {
+            padding: 15px;
+        }
+        
+        .aluno-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: var(--bg-dark);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .aluno-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .aluno-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .aluno-nome {
+            font-weight: 500;
+        }
+        
+        .aluno-telefone {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.pendente { background: #fef3c7; color: #d97706; }
+        .status-badge.confirmado { background: #d1fae5; color: #059669; }
+        .status-badge.cancelado { background: #fee2e2; color: #dc2626; }
+        
+        .whatsapp-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .whatsapp-btn:hover {
+            background: #20BD5A;
+            transform: translateY(-2px);
+        }
+        
+        .whatsapp-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .whatsapp-btn.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 600px) {
+            .section-header { flex-direction: column; align-items: flex-start; }
+            .aula-header { flex-direction: column; text-align: center; }
+            .aluno-item { flex-direction: column; align-items: flex-start; }
+            .whatsapp-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <span>B&T Tech</span>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item"><i class="fas fa-home"></i> Início</a>
+            <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
+            <a href="/professores" class="menu-item"><i class="fas fa-chalkboard-teacher"></i> Professores</a>
+            <a href="/turmas" class="menu-item"><i class="fas fa-school"></i> Turmas</a>
+            <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
+            <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
+            <a href="/confirmacoes" class="menu-item active"><i class="fab fa-whatsapp"></i> Confirmações</a>
+            <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
+            <a href="/financeiro" class="menu-item "><i class="fas fa-dollar-sign"></i> Financeiro</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Carregando...</p>
+                    <p class="user-type" id="userType">Carregando...</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1><i class="fab fa-whatsapp mr-2"></i>Confirmações</h1>
+        </header>
+
+        <div class="confirmacoes-container">
+            <!-- Hoje -->
+            <div class="section-header">
+                <h2 class="section-title today"><i class="fas fa-calendar-day"></i> Hoje</h2>
+                <span class="date-badge" id="dataHoje"></span>
+            </div>
+            <div id="aulasHoje"></div>
+
+            <!-- Amanhã -->
+            <div class="section-header" style="margin-top: 40px;">
+                <h2 class="section-title tomorrow"><i class="fas fa-sun"></i> Amanhã</h2>
+                <span class="date-badge" id="dataAmanha"></span>
+            </div>
+            <div id="aulasAmanha"></div>
+
+            <!-- Próximos dias -->
+            <div class="section-header" style="margin-top: 40px;">
+                <h2 class="section-title upcoming"><i class="fas fa-calendar-week"></i> Próximos Dias</h2>
+            </div>
+            <div id="aulasProximos"></div>
+        </div>
+    </main>
+
+    <script>
+        let authToken = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            authToken = localStorage.getItem('token');
+            if (!authToken) { window.location.href = '/'; return; }
+
+            const perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil();
+            if (!perfil) { window.location.href = '/'; return; }
+
+            document.getElementById('userName').textContent = perfil.nome;
+            document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
+
+            const hoje = new Date();
+            document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+            
+            const amanha = new Date(Date.now() + 86400000);
+            document.getElementById('dataAmanha').textContent = amanha.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+            loadAulas();
+        });
+
+        async function getPerfil() {
+            const response = await fetch('/api/session', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            const data = await response.json();
+            return data.perfil;
+        }
+
+        async function loadAulas() {
+            const response = await fetch('/api/aulas-confirmacoes', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            const dados = await response.json();
+
+            renderAulas('aulasHoje', dados.hoje, 'hoje');
+            renderAulas('aulasAmanha', dados.amanha, 'amanha');
+            renderAulas('aulasProximos', dados.proximos, 'proximo');
+        }
+
+        function renderAulas(containerId, aulas, tipo) {
+            const container = document.getElementById(containerId);
+            
+            if (!aulas || aulas.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>Nenhuma aula ${tipo === 'hoje' ? 'hoje' : tipo === 'amanha' ? 'amanhã' : 'nos próximos dias'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = aulas.map(aula => {
+                const tipoClasse = tipo === 'hoje' ? '' : tipo === 'amanha' ? 'amanha' : 'proximo';
+                const horario = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '';
+                const horarioFim = aula.horario_fim ? aula.horario_fim.substring(0, 5) : '';
+                
+                return `
+                <div class="aula-card">
+                    <div class="aula-header ${tipoClasse}">
+                        <div class="aula-info">
+                            <h3>${aula.nome}</h3>
+                            <p><i class="fas fa-user"></i> ${aula.professor || 'Sem professor'} | <i class="fas fa-clock"></i> ${horario} às ${horarioFim}</p>
+                        </div>
+                    </div>
+                    <div class="alunos-list">
+                        ${aula.alunos.map(aluno => {
+                            const telefone = aluno.telefone ? aluno.telefone.replace(/\D/g, '') : '';
+                            
+                            return `
+                            <div class="aluno-item">
+                                <div class="aluno-info">
+                                    <div class="aluno-avatar">${aluno.nome.charAt(0)}</div>
+                                    <div>
+                                        <div class="aluno-nome">${aluno.nome}</div>
+                                        <div class="aluno-telefone">${aluno.telefone || 'Sem telefone'}</div>
+                                    </div>
+                                </div>
+                                <span class="status-badge ${aluno.status}">${getStatusLabel(aluno.status)}</span>
+                                <button onclick="enviarWhatsapp('${aula.id}', '${aula.nome}', '${aula.data_formatada}', '${horario}', '${aluno.id}', '${aluno.nome}', '${aluno.telefone}')" 
+                                    class="whatsapp-btn" ${!telefone ? 'disabled' : ''}>
+                                    <i class="fab fa-whatsapp"></i> Enviar
+                                </button>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pendente': 'Aguardando',
+                'confirmado': 'Confirmado',
+                'cancelado': 'Cancelado'
+            };
+            return labels[status] || 'Aguardando';
+        }
+
+        // Função para gerar link e enviar WhatsApp
+        async function enviarWhatsapp(turmaId, turmaNome, data, horario, alunoId, alunoNome, telefone) {
+            if (!telefone) {
+                alert('Aluno sem telefone cadastrado!');
+                return;
+            }
+
+            const telefoneLimpo = telefone.replace(/\D/g, '');
+            
+            try {
+                // Gera o link de confirmação
+                const response = await fetch('/api/gerar-link-unico', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        turma_id: turmaId,
+                        aluno_id: alunoId,
+                        aluno_nome: alunoNome,
+                        telefone: telefone,
+                        data: data,
+                        horario: horario
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.link) {
+                    // Monta a mensagem com o link
+                    const mensagem = `Confirmacao de Aula\n\n` +
+                        `Olá ${alunoNome}!\n\n` +
+                        `Aula: ${turmaNome}\n` +
+                        `Data: ${data}\n` +
+                        `Horario: ${horario}\n\n` +
+                        `Confirme sua presenca:\n${result.link}\n\n` +
+                        `B&T Tech`;
+                    
+                    // Abre o WhatsApp com a mensagem
+                    const linkWhats = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
+                    window.open(linkWhats, '_blank');
+                    
+                    // Recarrega a lista para atualizar status
+                    loadAulas();
+                } else {
+                    alert('Erro ao gerar link: ' + (result.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao gerar link de confirmacao');
+            }
+        }
+
+        async function logout() {
+            await fetch('/api/logout', { 
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            localStorage.removeItem('token');
+            localStorage.removeItem('perfil');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

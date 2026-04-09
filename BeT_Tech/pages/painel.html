@@ -23,7 +23,6 @@
             <a href="/painel" class="menu-item active"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
             <a href="/financeiro" class="menu-item "><i class="fas fa-dollar-sign"></i> Financeiro</a>
-
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -44,6 +43,33 @@
         </header>
 
         <div class="content">
+            <!-- Seção de Confirmação -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2><i class="fab fa-whatsapp mr-2"></i>Confirmação de Aulas</h2>
+                    <button onclick="gerarLinksConfirmacao()" class="btn btn-primary" id="btnGerarLinks">
+                        <i class="fas fa-link"></i> Gerar Links de Confirmação
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="linksGerados" style="display: none;">
+                        <div style="background: var(--success-bg); border: 1px solid var(--success); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <p style="margin: 0; color: var(--success);"><i class="fas fa-check-circle"></i> <strong>Links gerados!</strong> Copie e envie para os alunos pelo WhatsApp.</p>
+                        </div>
+                        <textarea id="textoLinks" style="width: 100%; height: 200px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-family: monospace; font-size: 12px;" readonly></textarea>
+                        <div style="margin-top: 10px;">
+                            <button onclick="copiarLinks()" class="btn btn-secondary">
+                                <i class="fas fa-copy"></i> Copiar Tudo
+                            </button>
+                        </div>
+                    </div>
+                    <div id="infoLinks" style="text-align: center; color: var(--text-muted);">
+                        <i class="fas fa-info-circle"></i> Clique em "Gerar Links" para criar links de confirmação para os alunos.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel de Aulas -->
             <div id="painelContent"></div>
         </div>
     </main>
@@ -67,7 +93,7 @@
                     <button onclick="atualizarStatus('cancelado')" class="btn btn-danger">
                         <i class="fas fa-times"></i> Cancelado
                     </button>
-                    <button onclick="atualizarStatus('aguardando')" class="btn" style="background: var(--warning-bg); color: #fbbf24; border: 1px solid var(--warning);">
+                    <button onclick="atualizarStatus('pendente')" class="btn" style="background: var(--warning-bg); color: #fbbf24; border: 1px solid var(--warning);">
                         <i class="fas fa-clock"></i> Aguardando
                     </button>
                 </div>
@@ -77,12 +103,13 @@
 
     <script>
         let perfil = null;
+        let authToken = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) { window.location.href = '/'; return; }
+            authToken = localStorage.getItem('token');
+            if (!authToken) { window.location.href = '/'; return; }
 
-            perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(token);
+            perfil = JSON.parse(localStorage.getItem('perfil')) || await getPerfil(authToken);
             if (!perfil) { window.location.href = '/'; return; }
 
             document.getElementById('userName').textContent = perfil.nome;
@@ -107,22 +134,35 @@
         }
 
         async function loadPainel() {
-            const token = localStorage.getItem('token');
             const response = await fetch('/api/painel', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${authToken}` }
             });
             const turmas = await response.json();
 
             const container = document.getElementById('painelContent');
             
             if (!turmas || turmas.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-times"></i><p>Nenhuma aula agendada para hoje</p></div>';
+                container.innerHTML = '<div class="card"><div class="card-body"><div class="empty-state"><i class="fas fa-calendar-times"></i><p>Nenhuma aula agendada para hoje</p></div></div></div>';
                 return;
             }
 
+            // Busca status de confirmação para cada aluno
+            const responseConfirmacoes = await fetch('/api/confirmacoes', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            const confirmacoes = await responseConfirmacoes.json();
+
             container.innerHTML = `
                 <div class="painel-grid">
-                    ${turmas.map(turma => `
+                    ${turmas.map(turma => {
+                        const hoje = new Date().toISOString().split('T')[0];
+                        const dataAula = turma.data_avulsa || hoje;
+                        const aulaId = `${turma.id}_${dataAula}`;
+                        
+                        // Filtra confirmações para esta aula
+                        const confirmacoesTurma = confirmacoes.filter(c => c.aula_id === aulaId);
+                        
+                        return `
                         <div class="painel-card">
                             <div class="painel-header">
                                 <div class="painel-info">
@@ -144,30 +184,95 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${turma.alunos.length > 0 ? turma.alunos.map(m => `
+                                        ${turma.alunos.length > 0 ? turma.alunos.map(m => {
+                                            const conf = confirmacoesTurma.find(c => c.aluno_id === m.aluno_id);
+                                            const status = conf?.status || 'pendente';
+                                            
+                                            return `
                                             <tr>
                                                 <td>${m.alunos.nome}</td>
                                                 <td>${m.alunos.telefone || '-'}</td>
-                                                <td><span class="painel-status aguardando">Aguardando</span></td>
+                                                <td><span class="painel-status ${status}">${getStatusLabel(status)}</span></td>
                                             </tr>
-                                        `).join('') : '<tr><td colspan="3" class="empty">Nenhum aluno matriculado</td></tr>'}
+                                            `;
+                                        }).join('') : '<tr><td colspan="3" class="empty">Nenhum aluno matriculado</td></tr>'}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
             `;
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pendente': '⏳ Aguardando',
+                'confirmado': '✅ Confirmado',
+                'cancelado': '❌ Cancelado',
+                'presente': '👤 Presente'
+            };
+            return labels[status] || '⏳ Aguardando';
+        }
+
+        // Gerar links de confirmação
+        async function gerarLinksConfirmacao() {
+            const btn = document.getElementById('btnGerarLinks');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+            
+            try {
+                const response = await fetch('/api/gerar-links-confirmacao', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.links.length > 0) {
+                    // Gera o texto com todos os links
+                    const texto = result.links.map(l => {
+                        return `📢 *Confirmação de Aula*\n\n` +
+                               `Olá ${l.aluno}! 👋\n\n` +
+                               `*Aula:* ${l.turma}\n` +
+                               `*Data:* ${l.data}\n` +
+                               `*Horário:* ${l.horario}\n\n` +
+                               `Confirme sua presença aqui:\n${l.link}\n\n` +
+                               `───────────────────`;
+                    }).join('\n\n');
+                    
+                    document.getElementById('textoLinks').value = texto;
+                    document.getElementById('linksGerados').style.display = 'block';
+                    document.getElementById('infoLinks').style.display = 'none';
+                    
+                    alert(`✅ Links gerados para ${result.links.length} alunos!\n\nClique em "Copiar Tudo" e cole no WhatsApp para enviar.`);
+                } else {
+                    alert('Nenhuma aula encontrada para hoje/amanhã');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao gerar links');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-link"></i> Gerar Links de Confirmação';
+        }
+
+        // Copiar links
+        async function copiarLinks() {
+            const texto = document.getElementById('textoLinks').value;
+            await navigator.clipboard.writeText(texto);
+            alert('✅ Texto copiado! Agora é só colar no WhatsApp e enviar.');
         }
 
         window.openModal = (tipo) => document.getElementById(`modal${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`).classList.remove('hidden');
         window.closeModal = (tipo) => document.getElementById(`modal${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`).classList.add('hidden');
 
         async function logout() {
-            const token = localStorage.getItem('token');
             await fetch('/api/logout', { 
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${authToken}` }
             });
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
