@@ -1,4 +1,4 @@
-// server.js - Versão corrigida e testada
+// server.js - Verificado e corrigido
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -44,121 +44,26 @@ const getPerfil = async (userId) => {
     return data;
 };
 
-// ==================== FUNÇÕES AUXILIARES ====================
-function paginaErro(titulo, mensagem) {
-    return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erro</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .c { background: #fff; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        h1 { color: #ef4444; margin-bottom: 10px; }
-        p { color: #666; }
-    </style>
-</head>
-<body>
-    <div class="c">
-        <h1>⚠️ ${titulo}</h1>
-        <p>${mensagem}</p>
-    </div>
-</body>
-</html>`;
-}
-
-function paginaConfirmacao(presenca, dataFormatada) {
-    const horario = presenca.turmas?.horario_inicio ? presenca.turmas.horario_inicio.substring(0, 5) : '';
-    return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmar Presença - B&T Tech</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .container { background: white; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 450px; width: 100%; overflow: hidden; animation: slideUp 0.5s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-        .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
-        .header p { opacity: 0.9; font-size: 0.9rem; }
-        .content { padding: 30px; }
-        .info-card { background: #f8f9fa; border-radius: 16px; padding: 20px; margin-bottom: 25px; }
-        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: #666; font-size: 0.9rem; }
-        .info-value { font-weight: 600; color: #333; }
-        .buttons { display: flex; gap: 12px; flex-direction: column; }
-        .btn { padding: 16px 24px; border-radius: 12px; font-size: 1rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-confirmar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-        .btn-confirmar:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4); }
-        .btn-cancelar { background: #fee2e2; color: #dc2626; }
-        .btn-cancelar:hover { background: #fecaca; }
-        .mensagem { text-align: center; padding: 20px; display: none; }
-        .mensagem.sucesso { color: #10b981; }
-        .mensagem.cancelado { color: #dc2626; }
-        .mensagem i { font-size: 3rem; margin-bottom: 15px; display: block; }
-        .mensagem h2 { font-size: 1.5rem; margin-bottom: 10px; }
-        .footer { text-align: center; padding: 20px; color: #999; font-size: 0.8rem; background: #f8f9fa; }
-        @media (max-width: 480px) { .container { border-radius: 0; min-height: 100vh; } .header, .content, .footer { padding: 20px; } }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 Confirmar Presença</h1>
-            <p>B&T Tech - Escola de Esportes</p>
-        </div>
-        <div class="content">
-            <div class="info-card">
-                <div class="info-row"><span class="info-label">Aluno</span><span class="info-value">${presenca.alunos?.nome || 'N/A'}</span></div>
-                <div class="info-row"><span class="info-label">Aula</span><span class="info-value">${presenca.turmas?.nome || 'N/A'}</span></div>
-                <div class="info-row"><span class="info-label">Data</span><span class="info-value">${dataFormatada}</span></div>
-                <div class="info-row"><span class="info-label">Horário</span><span class="info-value">${horario}</span></div>
-            </div>
-            <div id="botoes" class="buttons">
-                <button onclick="confirmar('confirmado')" class="btn btn-confirmar"><i class="fas fa-check-circle"></i> ✅ Sim, estarei presente!</button>
-                <button onclick="confirmar('cancelado')" class="btn btn-cancelar"><i class="fas fa-times-circle"></i> ❌ Não vou poder ir</button>
-            </div>
-            <div id="mensagem" class="mensagem"></div>
-        </div>
-        <div class="footer">Powered by B&T Tech</div>
-    </div>
-    <script>
-        async function confirmar(status) {
-            const token = '${presenca.token_confirmacao}';
-            document.getElementById('botoes').innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#667eea;"></i><p style="margin-top:10px;">Confirmando...</p></div>';
-            try {
-                const response = await fetch('/api/confirmar-presenca', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, status }) });
-                const result = await response.json();
-                if (result.success) {
-                    const div = document.getElementById('mensagem');
-                    div.style.display = 'block';
-                    div.className = 'mensagem ' + (status === 'confirmado' ? 'sucesso' : 'cancelado');
-                    div.innerHTML = status === 'confirmado' ? '<i class="fas fa-check-circle"></i><h2>✅ Presença Confirmada!</h2><p>Obrigado! Nos vemos na aula.</p>' : '<i class="fas fa-times-circle"></i><h2>❌ Aula Cancelada</h2><p>Que pena! Até a próxima.</p>';
-                    document.getElementById('botoes').style.display = 'none';
-                }
-            } catch (error) { alert('Erro ao confirmar. Tente novamente.'); location.reload(); }
-        }
-    </script>
-</body>
-</html>`;
-}
-
 // ==================== ROTAS PÚBLICAS ====================
 
-// ROTA DE CONFIRMAÇÃO
-app.get('/confirmar', async (req, res) => {
-    console.log('>>> /confirmar chamado com token:', req.query.token);
+// Página de confirmação - Serve o arquivo HTML
+app.get('/confirmar', (req, res) => {
+    const filePath = path.resolve(__dirname, '../pages/confirmar.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('Página não encontrada');
+    }
+});
+
+// API para buscar dados da confirmação
+app.get('/api/dados-confirmacao', async (req, res) => {
+    console.log('[API] /api/dados-confirmacao chamado');
     
     const { token } = req.query;
     
     if (!token) {
-        console.log('>>> Sem token');
-        return res.status(400).send(paginaErro('Link inválido', 'Este link não é válido.'));
+        return res.json({ success: false, error: 'Token não fornecido' });
     }
     
     try {
@@ -169,45 +74,60 @@ app.get('/confirmar', async (req, res) => {
             .single();
         
         if (error || !presenca) {
-            console.log('>>> Token não encontrado no banco. Erro:', error);
-            return res.status(404).send(paginaErro('Link expirado', 'Este link já foi usado ou expirou.'));
+            console.log('[API] Token não encontrado:', error);
+            return res.json({ success: false, error: 'Link expirado ou já utilizado' });
         }
-        
-        console.log('>>> Presença encontrada:', presenca.id);
         
         const dataAula = presenca.aula_id.split('_')[1];
         const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', {
             weekday: 'long', day: 'numeric', month: 'long'
         });
         
-        res.send(paginaConfirmacao(presenca, dataFormatada));
+        const horario = presenca.turmas?.horario_inicio 
+            ? presenca.turmas.horario_inicio.substring(0, 5) 
+            : '';
+        
+        res.json({
+            success: true,
+            dados: {
+                presenca_id: presenca.id,
+                aluno_nome: presenca.alunos?.nome,
+                turma_nome: presenca.turmas?.nome,
+                data_formatada: dataFormatada,
+                horario: horario,
+                status: presenca.status
+            }
+        });
     } catch (err) {
-        console.error('>>> Erro:', err);
-        res.status(500).send('Erro: ' + err.message);
+        console.error('[API] Erro:', err);
+        res.json({ success: false, error: err.message });
     }
 });
 
 // API confirmar presença
 app.post('/api/confirmar-presenca', async (req, res) => {
-    console.log('>>> /api/confirmar-presenca chamado');
+    console.log('[API] /api/confirmar-presenca chamado');
     try {
         const { token, status } = req.body;
         
         const { error } = await supabase
             .from('presencas')
-            .update({ status: status, updated_at: new Date().toISOString() })
+            .update({ 
+                status: status, 
+                updated_at: new Date().toISOString() 
+            })
             .eq('token_confirmacao', token);
         
         if (error) {
-            console.error('>>> Erro ao confirmar:', error);
-            return res.status(500).json({ error: error.message });
+            console.error('[API] Erro ao confirmar:', error);
+            return res.status(500).json({ success: false, error: error.message });
         }
         
-        console.log('>>> Presença atualizada para:', status);
+        console.log('[API] Presença atualizada para:', status);
         res.json({ success: true });
     } catch (error) {
-        console.error('>>> Erro:', error);
-        res.status(500).json({ error: error.message });
+        console.error('[API] Erro:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -552,9 +472,11 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Turma não encontrada' });
         }
         
+        // Usa a data fornecida ou determina automaticamente
         const dataAula = data || turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
         const aulaId = `${turma_id}_${dataAula}`;
         
+        // 🔗 Gera o link para a nova página de confirmação
         const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
@@ -612,6 +534,8 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                 if (!mat.alunos?.telefone) continue;
                 
                 const token = crypto.randomBytes(32).toString('hex');
+                
+                // 🔗 Gera o link para a nova página de confirmação
                 const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
                 
                 await supabase.from('presencas').upsert({
@@ -670,6 +594,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                     nome: mat.alunos?.nome,
                     telefone: mat.alunos?.telefone,
                     status: conf?.status || 'pendente',
+                    // 🔗 Gera o link para a nova página
                     link: conf?.token_confirmacao ? `https://saasbt.onrender.com/confirmar?token=${conf.token_confirmacao}` : ''
                 };
             });
