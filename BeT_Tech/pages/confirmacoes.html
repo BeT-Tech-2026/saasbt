@@ -82,6 +82,33 @@
             font-size: 0.9rem;
             opacity: 0.9;
         }
+
+        /* Botão WhatsApp no header da aula */
+        .whatsapp-turma-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.6);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        
+        .whatsapp-turma-btn:hover {
+            background: rgba(255,255,255,0.35);
+            border-color: white;
+            transform: translateY(-1px);
+        }
+
+        .whatsapp-turma-btn .fa-whatsapp {
+            font-size: 1.1rem;
+        }
         
         .alunos-list {
             padding: 15px;
@@ -139,19 +166,26 @@
         .status-badge.confirmado { background: #d1fae5; color: #059669; }
         .status-badge.cancelado { background: #fee2e2; color: #dc2626; }
         
+        .aluno-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Botão WhatsApp individual por aluno */
         .whatsapp-btn {
             background: #25D366;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 14px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: all 0.2s;
         }
         
@@ -165,10 +199,20 @@
             cursor: not-allowed;
             transform: none;
         }
-        
-        .whatsapp-btn.loading {
-            opacity: 0.7;
-            pointer-events: none;
+
+        /* Tooltip no botão desabilitado */
+        .whatsapp-btn[disabled] { position: relative; }
+        .whatsapp-btn[disabled]:hover::after {
+            content: 'Sem telefone cadastrado';
+            position: absolute;
+            bottom: calc(100% + 6px);
+            right: 0;
+            background: #333;
+            color: white;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
         }
         
         .empty-state {
@@ -182,12 +226,35 @@
             margin-bottom: 15px;
             opacity: 0.5;
         }
+
+        /* Toast de feedback */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1a1a2e;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            z-index: 9999;
+            animation: slideInToast 0.3s ease;
+        }
+        .toast.hide { animation: slideOutToast 0.3s ease forwards; }
+        @keyframes slideInToast { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideOutToast { to { opacity: 0; transform: translateY(20px); } }
+        .toast i { color: #25D366; font-size: 1.1rem; }
         
         @media (max-width: 600px) {
             .section-header { flex-direction: column; align-items: flex-start; }
             .aula-header { flex-direction: column; text-align: center; }
             .aluno-item { flex-direction: column; align-items: flex-start; }
             .whatsapp-btn { width: 100%; justify-content: center; }
+            .whatsapp-turma-btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -207,7 +274,7 @@
             <a href="/painel" class="menu-item"><i class="fas fa-clipboard-list"></i> Painel do Dia</a>
             <a href="/confirmacoes" class="menu-item active"><i class="fab fa-whatsapp"></i> Confirmações</a>
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
-            <a href="/financeiro" class="menu-item "><i class="fas fa-dollar-sign"></i> Financeiro</a>
+            <a href="/financeiro" class="menu-item"><i class="fas fa-dollar-sign"></i> Financeiro</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -251,6 +318,8 @@
 
     <script>
         let authToken = null;
+        // Cache global das aulas para lookup rápido ao montar mensagem
+        const aulasCache = {};
 
         document.addEventListener('DOMContentLoaded', async () => {
             authToken = localStorage.getItem('token');
@@ -285,6 +354,12 @@
             });
             const dados = await response.json();
 
+            // Salva no cache global indexado por turmaId+data
+            [...(dados.hoje||[]), ...(dados.amanha||[]), ...(dados.proximos||[])].forEach(aula => {
+                const key = `${aula.id}_${aula.data_formatada}`;
+                aulasCache[key] = aula;
+            });
+
             renderAulas('aulasHoje', dados.hoje, 'hoje');
             renderAulas('aulasAmanha', dados.amanha, 'amanha');
             renderAulas('aulasProximos', dados.proximos, 'proximo');
@@ -305,16 +380,36 @@
 
             container.innerHTML = aulas.map(aula => {
                 const tipoClasse = tipo === 'hoje' ? '' : tipo === 'amanha' ? 'amanha' : 'proximo';
-                const horario = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '';
-                const horarioFim = aula.horario_fim ? aula.horario_fim.substring(0, 5) : '';
+                const horario    = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '';
+                const horarioFim = aula.horario_fim    ? aula.horario_fim.substring(0, 5)    : '';
+                const cacheKey   = `${aula.id}_${aula.data_formatada}`;
+                
+                const totalAlunos     = aula.alunos.length;
+                const confirmados     = aula.alunos.filter(a => a.status === 'confirmado').length;
+                const pendentes       = aula.alunos.filter(a => a.status === 'pendente').length;
+                const temTelefone     = aula.alunos.some(a => a.telefone);
                 
                 return `
                 <div class="aula-card">
                     <div class="aula-header ${tipoClasse}">
                         <div class="aula-info">
                             <h3>${aula.nome}</h3>
-                            <p><i class="fas fa-user"></i> ${aula.professor || 'Sem professor'} | <i class="fas fa-clock"></i> ${horario} às ${horarioFim}</p>
+                            <p>
+                                <i class="fas fa-user"></i> ${aula.professor || 'Sem professor'}
+                                &nbsp;|&nbsp;
+                                <i class="fas fa-clock"></i> ${horario} às ${horarioFim}
+                                &nbsp;|&nbsp;
+                                <i class="fas fa-users"></i> ${confirmados}/${totalAlunos} confirmados
+                                ${pendentes > 0 ? `<span style="margin-left:6px;background:rgba(255,255,255,0.25);padding:2px 8px;border-radius:10px;font-size:0.8rem;">${pendentes} pendente${pendentes > 1 ? 's' : ''}</span>` : ''}
+                            </p>
                         </div>
+                        <!-- Botão WhatsApp para a turma inteira -->
+                        <button
+                            onclick="enviarMensagemTurma('${cacheKey}')"
+                            class="whatsapp-turma-btn"
+                            title="Enviar mensagem de confirmação para todos os alunos">
+                            <i class="fab fa-whatsapp"></i> Enviar para Turma
+                        </button>
                     </div>
                     <div class="alunos-list">
                         ${aula.alunos.map(aluno => {
@@ -329,11 +424,16 @@
                                         <div class="aluno-telefone">${aluno.telefone || 'Sem telefone'}</div>
                                     </div>
                                 </div>
-                                <span class="status-badge ${aluno.status}">${getStatusLabel(aluno.status)}</span>
-                                <button onclick="enviarLinkConfirmacao('${aula.id}', '${aula.nome}', '${aula.data_formatada}', '${horario}', '${aluno.id}', '${aluno.nome}', '${aluno.telefone}')" 
-                                    class="whatsapp-btn" ${!telefone ? 'disabled' : ''}>
-                                    <i class="fab fa-whatsapp"></i> Enviar Link
-                                </button>
+                                <div class="aluno-actions">
+                                    <span class="status-badge ${aluno.status}">${getStatusLabel(aluno.status)}</span>
+                                    <button
+                                        onclick="enviarLinkAluno('${cacheKey}', '${aluno.id}')"
+                                        class="whatsapp-btn"
+                                        ${!telefone ? 'disabled' : ''}
+                                        title="${telefone ? 'Enviar link de confirmação' : 'Sem telefone cadastrado'}">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </button>
+                                </div>
                             </div>
                             `;
                         }).join('')}
@@ -345,70 +445,108 @@
 
         function getStatusLabel(status) {
             const labels = {
-                'pendente': 'Aguardando',
-                'confirmado': 'Confirmado',
-                'cancelado': 'Cancelado'
+                'pendente':   '⏳ Aguardando',
+                'confirmado': '✅ Confirmado',
+                'cancelado':  '❌ Cancelado'
             };
-            return labels[status] || 'Aguardando';
+            return labels[status] || '⏳ Aguardando';
         }
 
-        // Função para gerar link e enviar WhatsApp
-        async function enviarLinkConfirmacao(turmaId, turmaNome, data, horario, alunoId, alunoNome, telefone) {
-            if (!telefone) {
-                alert('Aluno sem telefone cadastrado!');
+        // ──────────────────────────────────────────────────────────────
+        // Monta a mensagem WhatsApp para UM aluno específico
+        // ──────────────────────────────────────────────────────────────
+        function enviarLinkAluno(cacheKey, alunoId) {
+            const aula = aulasCache[cacheKey];
+            if (!aula) return;
+
+            const aluno = aula.alunos.find(a => a.id === alunoId);
+            if (!aluno || !aluno.telefone) {
+                showToast('⚠️ Aluno sem telefone cadastrado!', true);
                 return;
             }
 
-            const telefoneLimpo = telefone.replace(/\D/g, '');
-            
-            try {
-                // Gera o link de confirmação usando o ID do aluno
-                const response = await fetch('/api/gerar-link-unico', {
-                    method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        turma_id: turmaId,
-                        aluno_id: alunoId,
-                        data: data,
-                        horario: horario
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success && result.link) {
-                    // Monta a mensagem com o link usando ID do aluno
-                    const linkConfirmacao = `https://saasbt.onrender.com/confirmar?aluno=${alunoId}`;
-                    
-                    const mensagem = `Confirmacao de Aula
+            const telefone    = aluno.telefone.replace(/\D/g, '');
+            const horario     = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '-';
+            const horarioFim  = aula.horario_fim    ? aula.horario_fim.substring(0, 5)    : '-';
+            const linkConfirm = `/confirmar?aluno=${aluno.id}`;
 
-Olá ${alunoNome}!
+            // Lista de colegas (sem incluir o próprio aluno)
+            const colegas = aula.alunos
+                .filter(a => a.id !== alunoId)
+                .map(a => `  • ${a.nome}`)
+                .join('\n');
 
-Aula: ${turmaNome}
-Data: ${data}
-Horario: ${horario}
+            const mensagem =
+`📋 *Confirmação de Presença*
+B&T Tech - Escola de Esportes
 
-Confirme sua presenca:
-${linkConfirmacao}
+Olá, *${aluno.nome}*! 👋
 
-B&T Tech`;
-                    
-                    // Abre o WhatsApp com a mensagem
-                    const linkWhats = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
-                    window.open(linkWhats, '_blank');
-                    
-                    // Recarrega a lista para atualizar status
-                    loadAulas();
-                } else {
-                    alert('Erro ao gerar link: ' + (result.error || 'Erro desconhecido'));
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao gerar link de confirmacao');
+Você tem uma aula agendada:
+
+🏫 *Turma:* ${aula.nome}
+👨‍🏫 *Professor:* ${aula.professor || 'A definir'}
+📅 *Data:* ${aula.data_formatada}
+🕐 *Horário:* ${horario} às ${horarioFim}${colegas ? `
+
+👥 *Colegas de turma:*
+${colegas}` : ''}
+
+✅ Confirme ou cancele sua presença pelo link abaixo:
+${linkConfirm}
+
+_B&T Tech aguarda você!_ 🏐`;
+
+            const urlWhats = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
+            window.open(urlWhats, '_blank');
+            showToast(`✅ WhatsApp aberto para ${aluno.nome}`);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Envia mensagem para TODOS os alunos da turma (abre uma janela
+        // por aluno com telefone cadastrado)
+        // ──────────────────────────────────────────────────────────────
+        function enviarMensagemTurma(cacheKey) {
+            const aula = aulasCache[cacheKey];
+            if (!aula) return;
+
+            const comTelefone = aula.alunos.filter(a => a.telefone);
+            if (comTelefone.length === 0) {
+                showToast('⚠️ Nenhum aluno com telefone nesta turma!', true);
+                return;
             }
+
+            const semTelefone = aula.alunos.length - comTelefone.length;
+            const confirmMsg  = semTelefone > 0
+                ? `Enviar mensagem para ${comTelefone.length} aluno(s)?\n(${semTelefone} sem telefone serão ignorados)`
+                : `Enviar mensagem para todos os ${comTelefone.length} aluno(s)?`;
+
+            if (!confirm(confirmMsg)) return;
+
+            comTelefone.forEach((aluno, index) => {
+                // Pequeno delay para o navegador não bloquear múltiplos popups
+                setTimeout(() => {
+                    enviarLinkAluno(cacheKey, aluno.id);
+                }, index * 600);
+            });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Toast de feedback
+        // ──────────────────────────────────────────────────────────────
+        function showToast(msg, isError = false) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i class="fas fa-${isError ? 'exclamation-triangle' : 'check-circle'}" style="color:${isError ? '#ef4444' : '#25D366'}"></i> ${msg}`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         async function logout() {

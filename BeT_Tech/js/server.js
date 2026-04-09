@@ -17,6 +17,8 @@ const supabase = createClient(
     process.env.SUPABASE_KEY
 );
 
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+
 console.log('Servidor iniciado...');
 console.log('__dirname:', __dirname);
 
@@ -91,71 +93,94 @@ app.get('/confirmar', (req, res) => {
     `);
 });
 
-// API - Buscar aulas do aluno
+// API - Buscar aulas do aluno (via matrículas — cria presenças automaticamente)
 app.get('/api/aulas-aluno', async (req, res) => {
     const { aluno } = req.query;
-    
-    if (!aluno) {
-        return res.json({ success: false, error: 'ID do aluno não fornecido' });
-    }
-    
+    if (!aluno) return res.json({ success: false, error: 'ID do aluno não fornecido' });
+
     try {
-        // Busca o aluno
+        // 1. Busca o aluno
         const { data: alunoData, error: alunoError } = await supabase
-            .from('alunos')
-            .select('nome')
-            .eq('id', aluno)
-            .single();
-        
-        if (alunoError || !alunoData) {
+            .from('alunos').select('nome').eq('id', aluno).single();
+        if (alunoError || !alunoData)
             return res.json({ success: false, error: 'Aluno não encontrado' });
-        }
-        
-        // Busca todas as presenças pendentes do aluno
-        const { data: presencas } = await supabase
-            .from('presencas')
-            .select('*, turmas(nome, horario_inicio, horario_fim)')
+
+        // 2. Busca matrículas ativas com dados da turma
+        const { data: matriculas } = await supabase
+            .from('matriculas')
+            .select('*, turmas(id, nome, dia_semana, horario_inicio, horario_fim, escola_id)')
             .eq('aluno_id', aluno)
-            .eq('status', 'pendente')
-            .order('aula_id', { ascending: false });
-        
-        // Filtra apenas aulas de hoje ou futuras
+            .eq('ativa', true);
+
+        if (!matriculas || matriculas.length === 0)
+            return res.json({ success: true, dados: { aluno_nome: alunoData.nome, aulas: [] } });
+
+        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
-        
-        const aulas = (presencas || [])
-            .map(p => {
-                const dataAula = p.aula_id.split('_').pop();
-                const dataObj = new Date(dataAula + 'T12:00:00');
-                dataObj.setHours(0, 0, 0, 0);
-                
-                return {
-                    ...p,
-                    data_aula: dataAula,
-                    data_obj: dataObj
-                };
-            })
-            .filter(p => p.data_obj >= hoje)
-            .map(p => ({
-                presenca_id: p.id,
-                aula_id: p.aula_id,
-                turma_nome: p.turmas?.nome || 'Aula',
-                data: new Date(p.data_aula + 'T12:00:00').toLocaleDateString('pt-BR', {
-                    weekday: 'long', day: 'numeric', month: 'long'
-                }),
-                data_raw: p.data_aula,
-                horario_inicio: p.turmas?.horario_inicio?.substring(0, 5) || '-',
-                horario_fim: p.turmas?.horario_fim?.substring(0, 5) || '-',
-                status: p.status
-            }));
-        
-        res.json({
-            success: true,
-            dados: {
-                aluno_nome: alunoData.nome,
-                aulas: aulas
+
+        const aulas = [];
+
+        for (const mat of matriculas) {
+            const turma = mat.turmas;
+            if (!turma) continue;
+
+            // Procura a próxima ocorrência desta turma (hoje + 14 dias)
+            for (let i = 0; i <= 14; i++) {
+                const dataFutura = new Date(hoje);
+                dataFutura.setDate(hoje.getDate() + i);
+
+                if (diasSemana[dataFutura.getDay()] !== turma.dia_semana) continue;
+
+                const dataStr = dataFutura.toISOString().split('T')[0];
+                const aulaId  = `${turma.id}_${dataStr}`;
+
+                // Verifica se já existe registro de presença
+                const { data: presencaExistente } = await supabase
+                    .from('presencas').select('id, status')
+                    .eq('aula_id', aulaId).eq('aluno_id', aluno).single();
+
+                // Se já foi respondido (confirmado/cancelado), pula
+                if (presencaExistente && presencaExistente.status !== 'pendente') break;
+
+                let presencaId = presencaExistente?.id;
+
+                // Se não existe, cria o registro de presença agora
+                if (!presencaExistente) {
+                    const { data: nova } = await supabase
+                        .from('presencas')
+                        .insert({
+                            aula_id:   aulaId,
+                            aluno_id:  aluno,
+                            turma_id:  turma.id,
+                            escola_id: turma.escola_id,
+                            status:    'pendente'
+                        })
+                        .select('id').single();
+                    presencaId = nova?.id;
+                }
+
+                if (!presencaId) break;
+
+                aulas.push({
+                    presenca_id:    presencaId,
+                    aula_id:        aulaId,
+                    turma_nome:     turma.nome,
+                    data:           dataFutura.toLocaleDateString('pt-BR', {
+                                        weekday: 'long', day: 'numeric', month: 'long'
+                                    }),
+                    data_raw:       dataStr,
+                    horario_inicio: turma.horario_inicio?.substring(0, 5) || '-',
+                    horario_fim:    turma.horario_fim?.substring(0, 5)    || '-',
+                    status:         'pendente'
+                });
+
+                break; // Pega só a próxima ocorrência de cada turma
             }
-        });
+        }
+
+        res.json({ success: true, dados: { aluno_nome: alunoData.nome, aulas } });
+
     } catch (error) {
         res.json({ success: false, error: error.message });
     }
@@ -524,7 +549,7 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         const aulaId = `${turma_id}_${dataAula}`;
         
         // Gera link com ID do aluno
-        const linkConfirmacao = `https://saasbt.onrender.com/confirmar?aluno=${aluno_id}`;
+        const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
             aula_id: aulaId,
@@ -593,7 +618,8 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                 }, { onConflict: 'aula_id,aluno_id' });
                 
                 // Gera link com ID do aluno
-                const linkConfirmacao = `https://saasbt.onrender.com/confirmar?aluno=${mat.aluno_id}`;
+                link: `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`
+
                 
                 const mensagem = `Confirmacao de Aula
 
