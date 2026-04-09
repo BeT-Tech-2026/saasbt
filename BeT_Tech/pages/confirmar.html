@@ -7,595 +7,142 @@
     <title>Confirmar Presença - B&T Tech</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --primary: #667eea;
-            --primary-dark: #764ba2;
-            --success: #10b981;
-            --success-dark: #059669;
-            --danger: #ef4444;
-            --danger-dark: #dc2626;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-400: #9ca3af;
-            --gray-500: #6b7280;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
-            --gray-800: #1f2937;
-            --gray-900: #111827;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            width: 100%;
-            max-width: 480px;
-            overflow: hidden;
-            animation: slideUp 0.5s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 32px 24px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-            animation: pulse 3s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.3; }
-        }
-
-        .header-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .logo {
-            width: 64px;
-            height: 64px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-            font-size: 28px;
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .header p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 24px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--gray-200);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading p {
-            color: var(--gray-500);
-            font-size: 0.95rem;
-        }
-
-        .info-card {
-            background: var(--gray-50);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
-            border: 1px solid var(--gray-200);
-        }
-
-        .info-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--gray-200);
-        }
-
-        .info-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-
-        .info-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-
-        .info-subtitle {
-            font-size: 0.85rem;
-            color: var(--gray-500);
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-        }
-
-        .info-row:not(:last-child) {
-            border-bottom: 1px solid var(--gray-100);
-        }
-
-        .info-label {
-            color: var(--gray-500);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .info-label i {
-            width: 20px;
-            color: var(--gray-400);
-        }
-
-        .info-value {
-            font-weight: 600;
-            color: var(--gray-900);
-            font-size: 0.95rem;
-        }
-
-        .buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .btn {
-            padding: 16px 24px;
-            border-radius: 14px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .btn-confirmar {
-            background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
-            color: white;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-confirmar:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
-        }
-
-        .btn-confirmar:active {
-            transform: translateY(0);
-        }
-
-        .btn-cancelar {
-            background: var(--gray-100);
-            color: var(--danger);
-            border: 2px solid var(--gray-200);
-        }
-
-        .btn-cancelar:hover {
-            background: #fee2e2;
-            border-color: var(--danger);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn i {
-            font-size: 1.2rem;
-        }
-
-        /* Mensagem de sucesso */
-        .mensagem {
-            text-align: center;
-            padding: 20px;
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .mensagem.show {
-            display: block;
-        }
-
-        .mensagem.sucesso .mensagem-icon {
-            color: var(--success);
-        }
-
-        .mensagem.cancelado .mensagem-icon {
-            color: var(--danger);
-        }
-
-        .mensagem-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-        }
-
-        .mensagem h2 {
-            font-size: 1.5rem;
-            margin-bottom: 8px;
-            color: var(--gray-900);
-        }
-
-        .mensagem p {
-            color: var(--gray-500);
-            font-size: 0.95rem;
-        }
-
-        .mensagem .details {
-            background: var(--gray-50);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
-            text-align: left;
-        }
-
-        .mensagem .details p {
-            font-size: 0.9rem;
-            color: var(--gray-700);
-            margin: 4px 0;
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 16px;
-            color: var(--gray-400);
-            font-size: 0.8rem;
-            background: var(--gray-50);
-            border-top: 1px solid var(--gray-200);
-        }
-
-        /* Error state */
-        .error-container {
-            text-align: center;
-            padding: 40px 24px;
-        }
-
-        .error-icon {
-            width: 80px;
-            height: 80px;
-            background: #fee2e2;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 2.5rem;
-            color: var(--danger);
-        }
-
-        .error-container h2 {
-            color: var(--gray-900);
-            margin-bottom: 8px;
-        }
-
-        .error-container p {
-            color: var(--gray-500);
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-            body {
-                padding: 0;
-                align-items: flex-start;
-            }
-
-            .container {
-                border-radius: 0;
-                min-height: 100vh;
-                max-width: 100%;
-            }
-
-            .header {
-                padding: 24px 20px;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 1.3rem;
-            }
-
-            .info-card {
-                padding: 16px;
-            }
-
-            .btn {
-                padding: 14px 20px;
-            }
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --primary: #667eea; --primary-dark: #764ba2; --success: #10b981; --success-dark: #059669; --danger: #ef4444; --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-400: #9ca3af; --gray-500: #6b7280; --gray-900: #111827; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); min-height: 100vh; padding: 16px; }
+        .container { background: white; border-radius: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); max-width: 500px; margin: 0 auto; overflow: hidden; animation: slideUp 0.5s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 32px 24px; text-align: center; }
+        .header h1 { font-size: 1.5rem; margin-bottom: 8px; }
+        .content { padding: 24px; }
+        .loading { text-align: center; padding: 40px; }
+        .spinner { width: 48px; height: 48px; border: 4px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error { text-align: center; padding: 40px 24px; }
+        .error h2 { color: var(--gray-900); margin-bottom: 8px; }
+        .error p { color: var(--gray-500); }
+        .aluno-nome { font-size: 1.2rem; font-weight: 600; color: var(--gray-900); margin-bottom: 20px; text-align: center; }
+        .aula-card { background: var(--gray-50); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--gray-200); }
+        .aula-card h3 { font-size: 1rem; color: var(--gray-900); margin-bottom: 8px; }
+        .aula-info { font-size: 0.9rem; color: var(--gray-500); margin-bottom: 4px; }
+        .aula-info i { width: 20px; color: var(--gray-400); }
+        .btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-confirmar { background: var(--success); color: white; }
+        .btn-confirmar:hover { background: #059669; }
+        .btn-cancelar { background: var(--gray-100); color: var(--danger); margin-top: 8px; }
+        .btn-cancelar:hover { background: #fee2e2; }
+        .success-message { text-align: center; padding: 40px 24px; }
+        .success-message i { font-size: 4rem; color: var(--success); margin-bottom: 16px; }
+        .success-message h2 { color: var(--gray-900); margin-bottom: 8px; }
+        .success-message p { color: var(--gray-500); }
+        .empty { text-align: center; padding: 40px 24px; color: var(--gray-500); }
+        .empty i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+        .footer { text-align: center; padding: 16px; color: var(--gray-400); font-size: 0.8rem; background: var(--gray-50); border-top: 1px solid var(--gray-200); }
+        @media (max-width: 480px) { body { padding: 0; } .container { border-radius: 0; min-height: 100vh; } }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-volleyball-ball"></i>
-                </div>
-                <h1>📋 Confirmar Presença</h1>
-                <p>B&T Tech - Escola de Esportes</p>
-            </div>
+            <h1>📋 Confirmar Presença</h1>
+            <p>B&T Tech - Escola de Esportes</p>
         </div>
-
         <div class="content">
-            <!-- Loading -->
             <div id="loading" class="loading">
-                <div class="loading-spinner"></div>
-                <p>Carregando informações...</p>
+                <div class="spinner"></div>
+                <p>Carregando suas aulas...</p>
             </div>
-
-            <!-- Error -->
-            <div id="error" class="error-container" style="display: none;">
-                <div class="error-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <h2 id="error-title">Ops! Algo deu errado</h2>
-                <p id="error-message">Este link pode ter expirado ou já foi utilizado.</p>
+            <div id="error" class="error" style="display:none;">
+                <h2>Ops!</h2>
+                <p id="error-msg">Algo deu errado.</p>
             </div>
-
-            <!-- Confirmação -->
-            <div id="confirmacao" style="display: none;">
-                <div class="info-card">
-                    <div class="info-header">
-                        <div class="info-icon">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
-                        <div>
-                            <div class="info-title" id="aula-nome">Aula</div>
-                            <div class="info-subtitle" id="aluno-nome">Aluno</div>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-calendar"></i> Data</span>
-                        <span class="info-value" id="aula-data">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-clock"></i> Horário</span>
-                        <span class="info-value" id="aula-horario">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label"><i class="fas fa-school"></i> Escola</span>
-                        <span class="info-value">B&T Tech</span>
-                    </div>
-                </div>
-
-                <p style="text-align: center; color: var(--gray-500); margin-bottom: 16px; font-size: 0.9rem;">
-                    Você confirma sua presença nesta aula?
-                </p>
-
-                <div class="buttons" id="botoes">
-                    <button onclick="confirmar('confirmado')" class="btn btn-confirmar">
-                        <i class="fas fa-check-circle"></i>
-                        ✅ Sim, estarei presente!
-                    </button>
-                    <button onclick="confirmar('cancelado')" class="btn btn-cancelar">
-                        <i class="fas fa-times-circle"></i>
-                        ❌ Não vou poder ir
-                    </button>
-                </div>
+            <div id="aulas" style="display:none;">
+                <p class="aluno-nome" id="aluno-nome"></p>
+                <div id="lista-aulas"></div>
             </div>
-
-            <!-- Mensagem de sucesso -->
-            <div id="mensagem-sucesso" class="mensagem">
-                <div class="mensagem-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h2>🎉 Presença Confirmada!</h2>
-                <p>Obrigado! Nos vemos na aula.</p>
-                <div class="details">
-                    <p><strong>Aula:</strong> <span id="sucesso-aula"></span></p>
-                    <p><strong>Data:</strong> <span id="sucesso-data"></span></p>
-                    <p><strong>Horário:</strong> <span id="sucesso-horario"></span></p>
-                </div>
-            </div>
-
-            <!-- Mensagem de cancelado -->
-            <div id="mensagem-cancelado" class="mensagem">
-                <div class="mensagem-icon">
-                    <i class="fas fa-times-circle"></i>
-                </div>
-                <h2>😔 Aula Cancelada</h2>
-                <p>Que pena! Sentiremos sua falta. Até a próxima!</p>
-                <div class="details">
-                    <p><strong>Aula:</strong> <span id="cancelado-aula"></span></p>
-                    <p><strong>Data:</strong> <span id="cancelado-data"></span></p>
-                </div>
+            <div id="success" class="success-message" style="display:none;">
+                <i class="fas fa-check-circle"></i>
+                <h2>🎉 Presenças Confirmadas!</h2>
+                <p>Obrigado! Nos vemos nas aulas.</p>
             </div>
         </div>
-
-        <div class="footer">
-            Powered by B&T Tech
-        </div>
+        <div class="footer">Powered by B&T Tech</div>
     </div>
 
     <script>
-        // Pega o token da URL
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-
-        let dadosAula = null;
-
-        // Carrega os dados
-        async function carregarDados() {
-            if (!token) {
-                mostrarErro('Link Inválido', 'Este link de confirmação não é válido.');
+        const alunoId = urlParams.get('aluno');
+        
+        async function carregarAulas() {
+            if (!alunoId) {
+                showError('Link inválido. ID do aluno não encontrado.');
                 return;
             }
-
+            
             try {
-                const response = await fetch('/api/dados-confirmacao?token=' + token);
+                const response = await fetch('/api/aulas-aluno?aluno=' + alunoId);
                 const data = await response.json();
-
+                
                 if (!data.success) {
-                    mostrarErro('Link Expirado', data.error || 'Este link já foi usado ou expirou.');
+                    showError(data.error || 'Erro ao carregar aulas.');
                     return;
                 }
-
-                dadosAula = data.dados;
-                mostrarConfirmacao(dadosAula);
-            } catch (error) {
-                console.error('Erro:', error);
-                mostrarErro('Erro de Conexão', 'Não foi possível carregar as informações. Tente novamente mais tarde.');
+                
+                document.getElementById('aluno-nome').textContent = data.dados.aluno_nome;
+                
+                if (data.dados.aulas.length === 0) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('aulas').style.display = 'block';
+                    document.getElementById('lista-aulas').innerHTML = '<div class="empty"><i class="fas fa-calendar-check"></i><p>Nenhuma aula pendente de confirmação!</p></div>';
+                    return;
+                }
+                
+                document.getElementById('lista-aulas').innerHTML = data.dados.aulas.map(aula => `
+                    <div class="aula-card">
+                        <h3>${aula.turma_nome}</h3>
+                        <p class="aula-info"><i class="fas fa-calendar"></i> ${aula.data}</p>
+                        <p class="aula-info"><i class="fas fa-clock"></i> ${aula.horario_inicio} às ${aula.horario_fim}</p>
+                        <button onclick="confirmar(${aula.presenca_id})" class="btn btn-confirmar">
+                            <i class="fas fa-check"></i> Confirmar Presença
+                        </button>
+                    </div>
+                `).join('');
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('aulas').style.display = 'block';
+                
+            } catch (e) {
+                showError('Erro de conexão. Tente novamente.');
             }
         }
-
-        function mostrarErro(titulo, mensagem) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('error-title').textContent = titulo;
-            document.getElementById('error-message').textContent = mensagem;
-        }
-
-        function mostrarConfirmacao(dados) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('confirmacao').style.display = 'block';
-
-            document.getElementById('aluno-nome').textContent = dados.aluno_nome;
-            document.getElementById('aula-nome').textContent = dados.turma_nome;
-            document.getElementById('aula-data').textContent = dados.data_formatada;
-            document.getElementById('aula-horario').textContent = dados.horario;
-        }
-
-        async function confirmar(status) {
-            const botoes = document.getElementById('botoes');
-            botoes.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Confirmando...</p>
-                </div>
-            `;
-
+        
+        async function confirmar(presencaId) {
             try {
                 const response = await fetch('/api/confirmar-presenca', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ token: token, status: status })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ presenca_id: presencaId, status: 'confirmado' })
                 });
-
                 const result = await response.json();
-
+                
                 if (result.success) {
-                    document.getElementById('confirmacao').style.display = 'none';
-
-                    if (status === 'confirmado') {
-                        document.getElementById('sucesso-aula').textContent = dadosAula.turma_nome;
-                        document.getElementById('sucesso-data').textContent = dadosAula.data_formatada;
-                        document.getElementById('sucesso-horario').textContent = dadosAula.horario;
-                        document.getElementById('mensagem-sucesso').classList.add('show');
-                    } else {
-                        document.getElementById('cancelado-aula').textContent = dadosAula.turma_nome;
-                        document.getElementById('cancelado-data').textContent = dadosAula.data_formatada;
-                        document.getElementById('mensagem-cancelado').classList.add('show');
-                    }
+                    // Recarrega as aulas
+                    carregarAulas();
                 } else {
                     alert('Erro ao confirmar. Tente novamente.');
-                    location.reload();
                 }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao confirmar. Verifique sua conexão e tente novamente.');
-                location.reload();
+            } catch (e) {
+                alert('Erro ao confirmar. Verifique sua conexão.');
             }
         }
-
-        // Inicia
-        carregarDados();
+        
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error-msg').textContent = msg;
+        }
+        
+        carregarAulas();
     </script>
 </body>
 </html>

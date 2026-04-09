@@ -1,4 +1,4 @@
-// server.js - Verificado e corrigido
+// server.js - Versão com ID do aluno (CORRIGIDO)
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -18,6 +18,7 @@ const supabase = createClient(
 );
 
 console.log('Servidor iniciado...');
+console.log('__dirname:', __dirname);
 
 // ==================== AUTENTICAÇÃO ====================
 const authenticate = async (req, res, next) => {
@@ -46,89 +47,138 @@ const getPerfil = async (userId) => {
 
 // ==================== ROTAS PÚBLICAS ====================
 
-// Página de confirmação - Serve o arquivo HTML
+// ROTA DA PÁGINA DE CONFIRMAÇÃO - CORRIGIDA COM MÚLTIPLOS CAMINHOS
 app.get('/confirmar', (req, res) => {
-    const filePath = path.resolve(__dirname, '../pages/confirmar.html');
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send('Página não encontrada');
+    console.log('>>> Acessando /confirmar');
+    console.log('>>> Query:', req.query);
+    
+    // Lista de possíveis caminhos onde o arquivo pode estar
+    const possiveisCaminhos = [
+        path.join(__dirname, 'pages', 'confirmar.html'),
+        path.join(__dirname, '..', 'pages', 'confirmar.html'),
+        path.join(__dirname, '..', '..', 'pages', 'confirmar.html'),
+        path.join(process.cwd(), 'pages', 'confirmar.html'),
+        path.join(process.cwd(), 'src', 'pages', 'confirmar.html'),
+        '/app/pages/confirmar.html', // Render específico
+        '/opt/render/project/src/pages/confirmar.html' // Outro caminho comum no Render
+    ];
+    
+    let arquivoEncontrado = null;
+    
+    for (const caminho of possiveisCaminhos) {
+        console.log('>>> Verificando:', caminho);
+        if (fs.existsSync(caminho)) {
+            arquivoEncontrado = caminho;
+            console.log('>>> ENCONTRADO:', caminho);
+            break;
+        }
     }
+    
+    if (arquivoEncontrado) {
+        return res.sendFile(arquivoEncontrado);
+    }
+    
+    // Se não encontrou, retorna erro detalhado
+    console.log('>>> ARQUIVO NÃO ENCONTRADO!');
+    res.status(404).send(`
+        <h1>Erro 404 - Página não encontrada</h1>
+        <p>O arquivo confirmar.html não foi encontrado.</p>
+        <p><strong>Diretório atual:</strong> ${__dirname}</p>
+        <p><strong>Caminhos tentados:</strong></p>
+        <ul>
+            ${possiveisCaminhos.map(c => `<li>${c}</li>`).join('')}
+        </ul>
+    `);
 });
 
-// API para buscar dados da confirmação
-app.get('/api/dados-confirmacao', async (req, res) => {
-    console.log('[API] /api/dados-confirmacao chamado');
+// API - Buscar aulas do aluno
+app.get('/api/aulas-aluno', async (req, res) => {
+    const { aluno } = req.query;
     
-    const { token } = req.query;
-    
-    if (!token) {
-        return res.json({ success: false, error: 'Token não fornecido' });
+    if (!aluno) {
+        return res.json({ success: false, error: 'ID do aluno não fornecido' });
     }
     
     try {
-        const { data: presenca, error } = await supabase
-            .from('presencas')
-            .select('*, alunos(nome), turmas(nome, horario_inicio)')
-            .eq('token_confirmacao', token)
+        // Busca o aluno
+        const { data: alunoData, error: alunoError } = await supabase
+            .from('alunos')
+            .select('nome')
+            .eq('id', aluno)
             .single();
         
-        if (error || !presenca) {
-            console.log('[API] Token não encontrado:', error);
-            return res.json({ success: false, error: 'Link expirado ou já utilizado' });
+        if (alunoError || !alunoData) {
+            return res.json({ success: false, error: 'Aluno não encontrado' });
         }
         
-        const dataAula = presenca.aula_id.split('_')[1];
-        const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', {
-            weekday: 'long', day: 'numeric', month: 'long'
-        });
+        // Busca todas as presenças pendentes do aluno
+        const { data: presencas } = await supabase
+            .from('presencas')
+            .select('*, turmas(nome, horario_inicio, horario_fim)')
+            .eq('aluno_id', aluno)
+            .eq('status', 'pendente')
+            .order('aula_id', { ascending: false });
         
-        const horario = presenca.turmas?.horario_inicio 
-            ? presenca.turmas.horario_inicio.substring(0, 5) 
-            : '';
+        // Filtra apenas aulas de hoje ou futuras
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
+        const aulas = (presencas || [])
+            .map(p => {
+                const dataAula = p.aula_id.split('_').pop();
+                const dataObj = new Date(dataAula + 'T12:00:00');
+                dataObj.setHours(0, 0, 0, 0);
+                
+                return {
+                    ...p,
+                    data_aula: dataAula,
+                    data_obj: dataObj
+                };
+            })
+            .filter(p => p.data_obj >= hoje)
+            .map(p => ({
+                presenca_id: p.id,
+                aula_id: p.aula_id,
+                turma_nome: p.turmas?.nome || 'Aula',
+                data: new Date(p.data_aula + 'T12:00:00').toLocaleDateString('pt-BR', {
+                    weekday: 'long', day: 'numeric', month: 'long'
+                }),
+                data_raw: p.data_aula,
+                horario_inicio: p.turmas?.horario_inicio?.substring(0, 5) || '-',
+                horario_fim: p.turmas?.horario_fim?.substring(0, 5) || '-',
+                status: p.status
+            }));
         
         res.json({
             success: true,
             dados: {
-                presenca_id: presenca.id,
-                aluno_nome: presenca.alunos?.nome,
-                turma_nome: presenca.turmas?.nome,
-                data_formatada: dataFormatada,
-                horario: horario,
-                status: presenca.status
+                aluno_nome: alunoData.nome,
+                aulas: aulas
             }
         });
-    } catch (err) {
-        console.error('[API] Erro:', err);
-        res.json({ success: false, error: err.message });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
     }
 });
 
-// API confirmar presença
+// API - Confirmar presença (por presenca_id)
 app.post('/api/confirmar-presenca', async (req, res) => {
-    console.log('[API] /api/confirmar-presenca chamado');
-    try {
-        const { token, status } = req.body;
-        
-        const { error } = await supabase
-            .from('presencas')
-            .update({ 
-                status: status, 
-                updated_at: new Date().toISOString() 
-            })
-            .eq('token_confirmacao', token);
-        
-        if (error) {
-            console.error('[API] Erro ao confirmar:', error);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-        
-        console.log('[API] Presença atualizada para:', status);
-        res.json({ success: true });
-    } catch (error) {
-        console.error('[API] Erro:', error);
-        res.status(500).json({ success: false, error: error.message });
+    const { presenca_id, status } = req.body;
+    
+    if (!presenca_id) {
+        return res.json({ success: false, error: 'ID da presença não fornecido' });
     }
+    
+    const { error } = await supabase
+        .from('presencas')
+        .update({ status: status, updated_at: new Date().toISOString() })
+        .eq('id', presenca_id);
+    
+    if (error) {
+        return res.json({ success: false, error: error.message });
+    }
+    
+    res.json({ success: true });
 });
 
 // ==================== ROTAS DE AUTENTICAÇÃO ====================
@@ -456,8 +506,6 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Dados incompletos' });
         }
         
-        const token = crypto.randomBytes(32).toString('hex');
-        
         const hoje = new Date();
         const amanha = new Date(Date.now() + 86400000);
         const dataHoje = hoje.toISOString().split('T')[0];
@@ -472,21 +520,22 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Turma não encontrada' });
         }
         
-        // Usa a data fornecida ou determina automaticamente
         const dataAula = data || turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
         const aulaId = `${turma_id}_${dataAula}`;
         
-        // 🔗 Gera o link para a nova página de confirmação
-        const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
+        // Gera link com ID do aluno
+        const linkConfirmacao = `https://saasbt.onrender.com/confirmar?aluno=${aluno_id}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
-            aula_id: aulaId, aluno_id: aluno_id, turma_id: turma_id,
-            escola_id: perfil.escola_id, status: 'pendente', token_confirmacao: token,
+            aula_id: aulaId,
+            aluno_id: aluno_id,
+            turma_id: turma_id,
+            escola_id: perfil.escola_id,
+            status: 'pendente',
             expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
         }, { onConflict: 'aula_id,aluno_id' });
         
         if (presencaError) {
-            console.log('Erro ao salvar presenca:', presencaError);
             return res.status(500).json({ error: presencaError.message });
         }
         
@@ -533,23 +582,41 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
             for (const mat of (matriculas || [])) {
                 if (!mat.alunos?.telefone) continue;
                 
-                const token = crypto.randomBytes(32).toString('hex');
-                
-                // 🔗 Gera o link para a nova página de confirmação
-                const linkConfirmacao = `https://saasbt.onrender.com/confirmar?token=${token}`;
-                
+                // Cria presença se não existir
                 await supabase.from('presencas').upsert({
-                    aula_id: aulaId, aluno_id: mat.aluno_id, turma_id: turma.id,
-                    escola_id: perfil.escola_id, status: 'pendente', token_confirmacao: token,
+                    aula_id: aulaId,
+                    aluno_id: mat.aluno_id,
+                    turma_id: turma.id,
+                    escola_id: perfil.escola_id,
+                    status: 'pendente',
                     expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
                 }, { onConflict: 'aula_id,aluno_id' });
                 
-                const mensagem = `Confirmacao de Aula\n\nOlá ${mat.alunos.nome}!\n\nAula: ${turma.nome}\nData: ${dataFormatada}\nHorario: ${horario}\n\nConfirme sua presenca:\n${linkConfirmacao}\n\nB&T Tech`;
+                // Gera link com ID do aluno
+                const linkConfirmacao = `https://saasbt.onrender.com/confirmar?aluno=${mat.aluno_id}`;
+                
+                const mensagem = `Confirmacao de Aula
+
+Olá ${mat.alunos.nome}!
+
+Aula: ${turma.nome}
+Data: ${dataFormatada}
+Horario: ${horario}
+
+Confirme sua presenca:
+${linkConfirmacao}
+
+B&T Tech`;
                 
                 links.push({
-                    id: mat.aluno_id, aluno: mat.alunos.nome, telefone: mat.alunos.telefone,
-                    turma: turma.nome, data: dataFormatada, horario: horario,
-                    link: linkConfirmacao, mensagem: mensagem
+                    id: mat.aluno_id,
+                    aluno: mat.alunos.nome,
+                    telefone: mat.alunos.telefone,
+                    turma: turma.nome,
+                    data: dataFormatada,
+                    horario: horario,
+                    link: linkConfirmacao,
+                    mensagem: mensagem
                 });
             }
         }
@@ -580,7 +647,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             const { data: matriculas } = await supabase.from('matriculas').select('*, alunos(id, nome, telefone)').eq('turma_id', turmaId).eq('ativa', true);
             if (!matriculas || matriculas.length === 0) return [];
             
-            const { data: presencas } = await supabase.from('presencas').select('aluno_id, status, token_confirmacao').eq('aula_id', aulaId);
+            const { data: presencas } = await supabase.from('presencas').select('id, aluno_id, status').eq('aula_id', aulaId);
             
             const presencasMap = {};
             if (presencas) {
@@ -594,8 +661,8 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                     nome: mat.alunos?.nome,
                     telefone: mat.alunos?.telefone,
                     status: conf?.status || 'pendente',
-                    // 🔗 Gera o link para a nova página
-                    link: conf?.token_confirmacao ? `https://saasbt.onrender.com/confirmar?token=${conf.token_confirmacao}` : ''
+                    // Gera link com ID do aluno
+                    link: `https://saasbt.onrender.com/confirmar?aluno=${mat.aluno_id}`
                 };
             });
         }

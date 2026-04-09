@@ -1,3 +1,4 @@
+<!-- pages/confirmacoes.html -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -329,9 +330,9 @@
                                     </div>
                                 </div>
                                 <span class="status-badge ${aluno.status}">${getStatusLabel(aluno.status)}</span>
-                                <button onclick="enviarWhatsapp('${aula.id}', '${aula.nome}', '${aula.data_formatada}', '${horario}', '${aluno.id}', '${aluno.nome}', '${aluno.telefone}')" 
+                                <button onclick="enviarLinkConfirmacao('${aula.id}', '${aula.nome}', '${aula.data_formatada}', '${horario}', '${aluno.id}', '${aluno.nome}', '${aluno.telefone}')" 
                                     class="whatsapp-btn" ${!telefone ? 'disabled' : ''}>
-                                    <i class="fab fa-whatsapp"></i> Enviar
+                                    <i class="fab fa-whatsapp"></i> Enviar Link
                                 </button>
                             </div>
                             `;
@@ -352,7 +353,7 @@
         }
 
         // Função para gerar link e enviar WhatsApp
-        async function enviarWhatsapp(turmaId, turmaNome, data, horario, alunoId, alunoNome, telefone) {
+        async function enviarLinkConfirmacao(turmaId, turmaNome, data, horario, alunoId, alunoNome, telefone) {
             if (!telefone) {
                 alert('Aluno sem telefone cadastrado!');
                 return;
@@ -361,7 +362,7 @@
             const telefoneLimpo = telefone.replace(/\D/g, '');
             
             try {
-                // Gera o link de confirmação
+                // Gera o link de confirmação usando o ID do aluno
                 const response = await fetch('/api/gerar-link-unico', {
                     method: 'POST',
                     headers: { 
@@ -371,8 +372,6 @@
                     body: JSON.stringify({
                         turma_id: turmaId,
                         aluno_id: alunoId,
-                        aluno_nome: alunoNome,
-                        telefone: telefone,
                         data: data,
                         horario: horario
                     })
@@ -381,14 +380,21 @@
                 const result = await response.json();
                 
                 if (result.success && result.link) {
-                    // Monta a mensagem com o link
-                    const mensagem = `Confirmacao de Aula\n\n` +
-                        `Olá ${alunoNome}!\n\n` +
-                        `Aula: ${turmaNome}\n` +
-                        `Data: ${data}\n` +
-                        `Horario: ${horario}\n\n` +
-                        `Confirme sua presenca:\n${result.link}\n\n` +
-                        `B&T Tech`;
+                    // Monta a mensagem com o link usando ID do aluno
+                    const linkConfirmacao = `https://saasbt.onrender.com/confirmar?aluno=${alunoId}`;
+                    
+                    const mensagem = `Confirmacao de Aula
+
+Olá ${alunoNome}!
+
+Aula: ${turmaNome}
+Data: ${data}
+Horario: ${horario}
+
+Confirme sua presenca:
+${linkConfirmacao}
+
+B&T Tech`;
                     
                     // Abre o WhatsApp com a mensagem
                     const linkWhats = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
