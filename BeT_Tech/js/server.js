@@ -84,6 +84,7 @@ app.get('/confirmar', (req, res) => {
     `);
 });
 
+
 // API - Buscar aulas do aluno (via matrículas — cria presenças automaticamente)
 app.get('/api/aulas-aluno', async (req, res) => {
     const { aluno } = req.query;
@@ -95,9 +96,10 @@ app.get('/api/aulas-aluno', async (req, res) => {
         if (alunoError || !alunoData)
             return res.json({ success: false, error: 'Aluno não encontrado' });
 
+        // CORREÇÃO 1: Incluir 'data_avulsa' no select
         const { data: matriculas } = await supabase
             .from('matriculas')
-            .select('*, turmas(id, nome, dia_semana, horario_inicio, horario_fim, escola_id)')
+            .select('*, turmas(id, nome, dia_semana, horario_inicio, horario_fim, escola_id, data_avulsa)')
             .eq('aluno_id', aluno)
             .eq('ativa', true);
 
@@ -114,20 +116,42 @@ app.get('/api/aulas-aluno', async (req, res) => {
             const turma = mat.turmas;
             if (!turma) continue;
 
-            for (let i = 0; i <= 14; i++) {
-                const dataFutura = new Date(hoje);
-                dataFutura.setDate(hoje.getDate() + i);
+            let dataAulaValida = null;
 
-                if (diasSemana[dataFutura.getDay()] !== turma.dia_semana) continue;
+            // CORREÇÃO 2: Lógica para tratar Aula Avulsa (data_avulsa) ou Recorrente
+            if (turma.data_avulsa) {
+                // Se tem data fixa, usa ela
+                const dataAvulsaDate = new Date(turma.data_avulsa + 'T00:00:00');
+                // Verifica se a data é hoje ou futura (até 14 dias pra frente)
+                if (dataAvulsaDate >= hoje && dataAvulsaDate <= new Date(hoje.getTime() + 14 * 86400000)) {
+                    dataAulaValida = dataAvulsaDate;
+                }
+            } else {
+                // Se não tem data fixa, procura o próximo dia da semana
+                for (let i = 0; i <= 14; i++) {
+                    const dataFutura = new Date(hoje);
+                    dataFutura.setDate(hoje.getDate() + i);
 
-                const dataStr = dataFutura.toISOString().split('T')[0];
+                    if (diasSemana[dataFutura.getDay()] !== turma.dia_semana) continue;
+                    
+                    dataAulaValida = dataFutura;
+                    break;
+                }
+            }
+
+            // Se encontrou uma data válida para os próximos dias
+            if (dataAulaValida) {
+                const dataStr = dataAulaValida.toISOString().split('T')[0];
                 const aulaId  = `${turma.id}_${dataStr}`;
 
                 const { data: presencaExistente } = await supabase
                     .from('presencas').select('id, status')
                     .eq('aula_id', aulaId).eq('aluno_id', aluno).single();
 
-                if (presencaExistente && presencaExistente.status !== 'pendente') break;
+                // Se já confirmou ou faltou, não mostra como pendente
+                if (presencaExistente && presencaExistente.status !== 'pendente') {
+                    continue; 
+                }
 
                 let presencaId = presencaExistente?.id;
 
@@ -151,7 +175,7 @@ app.get('/api/aulas-aluno', async (req, res) => {
                     presenca_id:    presencaId,
                     aula_id:        aulaId,
                     turma_nome:     turma.nome,
-                    data:           dataFutura.toLocaleDateString('pt-BR', {
+                    data:           dataAulaValida.toLocaleDateString('pt-BR', {
                                         weekday: 'long', day: 'numeric', month: 'long'
                                     }),
                     data_raw:       dataStr,
@@ -159,17 +183,17 @@ app.get('/api/aulas-aluno', async (req, res) => {
                     horario_fim:    turma.horario_fim?.substring(0, 5)    || '-',
                     status:         'pendente'
                 });
-
-                break;
             }
         }
 
         res.json({ success: true, dados: { aluno_nome: alunoData.nome, aulas } });
 
     } catch (error) {
+        console.error('Erro em aulas-aluno:', error);
         res.json({ success: false, error: error.message });
     }
 });
+
 
 // API - Confirmar presença
 app.post('/api/confirmar-presenca', async (req, res) => {

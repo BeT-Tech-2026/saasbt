@@ -83,7 +83,6 @@
             opacity: 0.9;
         }
 
-        /* Botão WhatsApp no header da aula */
         .whatsapp-turma-btn {
             background: rgba(255,255,255,0.2);
             color: white;
@@ -172,7 +171,6 @@
             gap: 8px;
         }
 
-        /* Botão WhatsApp individual por aluno */
         .whatsapp-btn {
             background: #25D366;
             color: white;
@@ -200,7 +198,6 @@
             transform: none;
         }
 
-        /* Tooltip no botão desabilitado */
         .whatsapp-btn[disabled] { position: relative; }
         .whatsapp-btn[disabled]:hover::after {
             content: 'Sem telefone cadastrado';
@@ -227,7 +224,6 @@
             opacity: 0.5;
         }
 
-        /* Toast de feedback */
         .toast {
             position: fixed;
             bottom: 24px;
@@ -294,21 +290,18 @@
         </header>
 
         <div class="confirmacoes-container">
-            <!-- Hoje -->
             <div class="section-header">
                 <h2 class="section-title today"><i class="fas fa-calendar-day"></i> Hoje</h2>
                 <span class="date-badge" id="dataHoje"></span>
             </div>
             <div id="aulasHoje"></div>
 
-            <!-- Amanhã -->
             <div class="section-header" style="margin-top: 40px;">
                 <h2 class="section-title tomorrow"><i class="fas fa-sun"></i> Amanhã</h2>
                 <span class="date-badge" id="dataAmanha"></span>
             </div>
             <div id="aulasAmanha"></div>
 
-            <!-- Próximos dias -->
             <div class="section-header" style="margin-top: 40px;">
                 <h2 class="section-title upcoming"><i class="fas fa-calendar-week"></i> Próximos Dias</h2>
             </div>
@@ -318,7 +311,6 @@
 
     <script>
         let authToken = null;
-        // Cache global das aulas para lookup rápido ao montar mensagem
         const aulasCache = {};
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -354,7 +346,6 @@
             });
             const dados = await response.json();
 
-            // Salva no cache global indexado por turmaId+data
             [...(dados.hoje||[]), ...(dados.amanha||[]), ...(dados.proximos||[])].forEach(aula => {
                 const key = `${aula.id}_${aula.data_formatada}`;
                 aulasCache[key] = aula;
@@ -387,7 +378,6 @@
                 const totalAlunos     = aula.alunos.length;
                 const confirmados     = aula.alunos.filter(a => a.status === 'confirmado').length;
                 const pendentes       = aula.alunos.filter(a => a.status === 'pendente').length;
-                const temTelefone     = aula.alunos.some(a => a.telefone);
                 
                 return `
                 <div class="aula-card">
@@ -403,11 +393,7 @@
                                 ${pendentes > 0 ? `<span style="margin-left:6px;background:rgba(255,255,255,0.25);padding:2px 8px;border-radius:10px;font-size:0.8rem;">${pendentes} pendente${pendentes > 1 ? 's' : ''}</span>` : ''}
                             </p>
                         </div>
-                        <!-- Botão WhatsApp para a turma inteira -->
-                        <button
-                            onclick="enviarMensagemTurma('${cacheKey}')"
-                            class="whatsapp-turma-btn"
-                            title="Enviar mensagem de confirmação para todos os alunos">
+                        <button onclick="enviarMensagemTurma('${cacheKey}')" class="whatsapp-turma-btn" title="Enviar mensagem de confirmação para todos os alunos">
                             <i class="fab fa-whatsapp"></i> Enviar para Turma
                         </button>
                     </div>
@@ -426,11 +412,7 @@
                                 </div>
                                 <div class="aluno-actions">
                                     <span class="status-badge ${aluno.status}">${getStatusLabel(aluno.status)}</span>
-                                    <button
-                                        onclick="enviarLinkAluno('${cacheKey}', '${aluno.id}')"
-                                        class="whatsapp-btn"
-                                        ${!telefone ? 'disabled' : ''}
-                                        title="${telefone ? 'Enviar link de confirmação' : 'Sem telefone cadastrado'}">
+                                    <button onclick="enviarLinkAluno('${cacheKey}', '${aluno.id}')" class="whatsapp-btn" ${!telefone ? 'disabled' : ''} title="${telefone ? 'Enviar link de confirmação' : 'Sem telefone cadastrado'}">
                                         <i class="fab fa-whatsapp"></i>
                                     </button>
                                 </div>
@@ -445,23 +427,31 @@
 
         function getStatusLabel(status) {
             const labels = {
-                'pendente':   '⏳ Aguardando',
-                'confirmado': '✅ Confirmado',
-                'cancelado':  '❌ Cancelado'
+                'pendente':   'Aguardando',
+                'confirmado':  'Confirmado',
+                'cancelado':   'Cancelado'
             };
-            return labels[status] || '⏳ Aguardando';
+            return labels[status] || 'Aguardando';
         }
 
-        // ──────────────────────────────────────────────────────────────
+        // Função auxiliar para limpar texto e garantir UTF-8 válido
+        function limparTexto(texto) {
+            if (!texto) return '';
+            return texto
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/[\u200B-\u200D\uFEFF]/g, '')
+                .trim();
+        }
+
         // Monta a mensagem WhatsApp para UM aluno específico
-        // ──────────────────────────────────────────────────────────────
         function enviarLinkAluno(cacheKey, alunoId) {
             const aula = aulasCache[cacheKey];
             if (!aula) return;
 
             const aluno = aula.alunos.find(a => a.id === alunoId);
             if (!aluno || !aluno.telefone) {
-                showToast('⚠️ Aluno sem telefone cadastrado!', true);
+                showToast('Aluno sem telefone cadastrado!', true);
                 return;
             }
 
@@ -473,67 +463,61 @@
             // Lista de colegas (sem incluir o próprio aluno)
             const colegas = aula.alunos
                 .filter(a => a.id !== alunoId)
-                .map(a => `  • ${a.nome}`)
+                .map(a => `  - ${limparTexto(a.nome)}`)
                 .join('\n');
 
-            const mensagem =
-`📋 *Confirmação de Presença*
-B&T Tech - Escola de Esportes
+            // Mensagem com texto puro (sem emojis problemáticos)
+            const mensagem = 
+`*Confirmacao de Presenca* - B&T Tech
 
-Olá, *${aluno.nome}*! 👋
+Ola, ${limperTexto(aluno.nome)}!
 
-Você tem uma aula agendada:
+Voce tem uma aula agendada:
 
-🏫 *Turma:* ${aula.nome}
-👨‍🏫 *Professor:* ${aula.professor || 'A definir'}
-📅 *Data:* ${aula.data_formatada}
-🕐 *Horário:* ${horario} às ${horarioFim}${colegas ? `
+Turma: ${limparTexto(aula.nome)}
+Professor: ${limparTexto(aula.professor) || 'A definir'}
+Data: ${limparTexto(aula.data_formatada)}
+Horario: ${horario} as ${horarioFim}${colegas ? `
 
-👥 *Colegas de turma:*
+Colegas de turma:
 ${colegas}` : ''}
 
-✅ Confirme ou cancele sua presença pelo link abaixo:
+Confirme ou cancele sua presenca pelo link abaixo:
 ${linkConfirm}
 
-_B&T Tech aguarda você!_ 🏐`;
+B&T Tech aguarda voce!`;
 
             const urlWhats = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
             window.open(urlWhats, '_blank');
-            showToast(`✅ WhatsApp aberto para ${aluno.nome}`);
+            showToast(`WhatsApp aberto para ${aluno.nome}`);
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // Envia mensagem para TODOS os alunos da turma (abre uma janela
-        // por aluno com telefone cadastrado)
-        // ──────────────────────────────────────────────────────────────
+        // Envia mensagem para TODOS os alunos da turma
         function enviarMensagemTurma(cacheKey) {
             const aula = aulasCache[cacheKey];
             if (!aula) return;
 
             const comTelefone = aula.alunos.filter(a => a.telefone);
             if (comTelefone.length === 0) {
-                showToast('⚠️ Nenhum aluno com telefone nesta turma!', true);
+                showToast('Nenhum aluno com telefone nesta turma!', true);
                 return;
             }
 
             const semTelefone = aula.alunos.length - comTelefone.length;
             const confirmMsg  = semTelefone > 0
-                ? `Enviar mensagem para ${comTelefone.length} aluno(s)?\n(${semTelefone} sem telefone serão ignorados)`
+                ? `Enviar mensagem para ${comTelefone.length} aluno(s)?\n(${semTelefone} sem telefone serao ignorados)`
                 : `Enviar mensagem para todos os ${comTelefone.length} aluno(s)?`;
 
             if (!confirm(confirmMsg)) return;
 
             comTelefone.forEach((aluno, index) => {
-                // Pequeno delay para o navegador não bloquear múltiplos popups
                 setTimeout(() => {
                     enviarLinkAluno(cacheKey, aluno.id);
                 }, index * 600);
             });
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Toast de feedback
-        // ──────────────────────────────────────────────────────────────
         function showToast(msg, isError = false) {
             const existing = document.querySelector('.toast');
             if (existing) existing.remove();
