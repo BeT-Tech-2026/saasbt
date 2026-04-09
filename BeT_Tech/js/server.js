@@ -534,7 +534,7 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         const aulaId = `${turma_id}_${dataAula}`;
         
         // ✅ CORRIGIDO: era `$https://...` (faltava as chaves)
-        const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${aluno_id}`;
+        const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${aluno_id}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
             aula_id: aulaId,
@@ -601,7 +601,7 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                 }, { onConflict: 'aula_id,aluno_id' });
                 
                 // ✅ CORRIGIDO: era `$https://...` (faltava as chaves)
-                const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${mat.aluno_id}`;
+                const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`;
                 
                 const mensagem = `Confirmacao de Aula\n\nOlá ${mat.alunos.nome}!\n\nAula: ${turma.nome}\nData: ${dataFormatada}\nHorario: ${horario}\n\nConfirme sua presenca:\n${linkConfirmacao}\n\nB&T Tech`;
                 
@@ -659,7 +659,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                     telefone: mat.alunos?.telefone,
                     status: conf?.status || 'pendente',
                     // ✅ CORRIGIDO: era window.location.origin (não existe no Node.js)
-                    link: `$https://saasbt.vercel.app/confirmar?aluno=${mat.aluno_id}`
+                    link: `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`
                 };
             });
         }
