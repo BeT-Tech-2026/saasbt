@@ -549,7 +549,7 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         const aulaId = `${turma_id}_${dataAula}`;
         
         // Gera link com ID do aluno
-        const linkConfirmacao = `${BASE_URL}https://saasbt.vercel.app/confirmar?aluno=${aluno_id}`;
+        const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${aluno_id}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
             aula_id: aulaId,
@@ -618,7 +618,7 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                 }, { onConflict: 'aula_id,aluno_id' });
                 
                 // Gera link com ID do aluno
-                const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`;
+                const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${mat.aluno_id}`;
 
                 
                 const mensagem = `Confirmacao de Aula
