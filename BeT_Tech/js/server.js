@@ -549,7 +549,7 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         const aulaId = `${turma_id}_${dataAula}`;
         
         // Gera link com ID do aluno
-        const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`;
+        const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${aluno_id}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
             aula_id: aulaId,
@@ -601,7 +601,7 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
             const dataAula = turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
             const aulaId = `${turma.id}_${dataAula}`;
             
-            const dataFormatada = new Date(dataAula).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+            const dataFormatada = new Date(dataAula + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
             const horario = turma.horario_inicio ? String(turma.horario_inicio).substring(0, 5) : '00:00';
             
             for (const mat of (matriculas || [])) {
@@ -618,7 +618,7 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                 }, { onConflict: 'aula_id,aluno_id' });
                 
                 // Gera link com ID do aluno
-                link: `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`
+                const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`;
 
                 
                 const mensagem = `Confirmacao de Aula
@@ -687,8 +687,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                     nome: mat.alunos?.nome,
                     telefone: mat.alunos?.telefone,
                     status: conf?.status || 'pendente',
-                    // Gera link com ID do aluno
-                    link: `https://saasbt.onrender.com/confirmar?aluno=${mat.aluno_id}`
+                    link: `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`
                 };
             });
         }

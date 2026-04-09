@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -247,7 +246,7 @@
                         <div class="turma-body">
                             <p><i class="fas fa-clock"></i> ${t.horario_inicio} - ${t.horario_fim}</p>
                             <p><i class="fas fa-user"></i> ${t.perfis?.nome || 'Sem professor'}</p>
-                            ${t.data_avulsa ? `<p><i class="fas fa-calendar"></i> ${new Date(t.data_avulsa).toLocaleDateString('pt-BR')}</p>` : ''}
+                            ${t.data_avulsa ? `<p><i class="fas fa-calendar"></i> ${new Date(t.data_avulsa + 'T12:00:00').toLocaleDateString('pt-BR')}</p>` : ''}
                             <p><i class="fas fa-users"></i> ${t.alunosMatriculados?.length || 0}/${t.limite_alunos} alunos</p>
                             
                             <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
