@@ -38,6 +38,8 @@ const getPerfil = async (userId) => {
     return data;
 };
 
+
+
 app.post('/api/cadastro', async (req, res) => {
     try {
         const { nome, email, password, nomeEscola, escola_id, tipo, cor } = req.body;
@@ -103,6 +105,176 @@ app.post('/api/cadastro', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// ==================== SISTEMA DE CONFIRMAÇÃO ====================
+
+// 1. Buscar configuração de notificações da escola
+app.get('/api/config-notificacoes', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const { data, error } = await supabase
+            .from('config_notificacoes')
+            .select('*')
+            .eq('escola_id', perfil.escola_id)
+            .single();
+        
+        res.json(data || { ativo: false, horas_antes: 24 });
+    } catch (error) {
+        res.json({ ativo: false, horas_antes: 24 });
+    }
+});
+
+// 2. Salvar configuração de notificações
+app.post('/api/config-notificacoes', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        const { ativo, horas_antes, mensagem_personalizada } = req.body;
+        
+        const { data, error } = await supabase
+            .from('config_notificacoes')
+            .upsert({
+                escola_id: perfil.escola_id,
+                ativo: ativo || false,
+                horas_antes: horas_antes || 24,
+                mensagem_personalizada: mensagem_personalizada
+            }, { onConflict: 'escola_id' })
+            .select()
+            .single();
+        
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. Status do WhatsApp
+app.get('/api/whatsapp-status', async (req, res) => {
+    try {
+        const whatsapp = require('./whatsapp');
+        res.json(whatsapp.getStatus());
+    } catch (error) {
+        res.json({ connected: false, error: error.message });
+    }
+});
+
+// 4. Webhook para receber respostas (chamado pelo whatsapp.js)
+app.post('/api/webhook-confirmacao', async (req, res) => {
+    try {
+        const { numero, resposta, buttonId } = req.body;
+        
+        // buttonId no formato: sim_turmaId_data ou nao_turmaId_data
+        const [acao, turma_id, data_aula] = buttonId.split('_');
+        const novoStatus = acao === 'sim' ? 'confirmado' : 'cancelado';
+        
+        // Busca o aluno pelo telefone
+        const telefone = numero.replace(/\D/g, '');
+        
+        const { data: aluno } = await supabase
+            .from('alunos')
+            .select('id')
+            .eq('telefone', `%${telefone}%`)
+            .single();
+        
+        if (aluno) {
+            const aulaId = `${turma_id}_${data_aula}`;
+            
+            // Atualiza mensagens_confirmacao
+            await supabase
+                .from('mensagens_confirmacao')
+                .update({ 
+                    resposta: novoStatus,
+                    responded_at: new Date().toISOString()
+                })
+                .eq('aula_id', aulaId)
+                .eq('aluno_id', aluno.id);
+            
+            // Atualiza presencas
+            await supabase
+                .from('presencas')
+                .update({ 
+                    status: novoStatus,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('aula_id', aulaId)
+                .eq('aluno_id', aluno.id);
+            
+            // Envia mensagem de confirmação
+            const msgResposta = novoStatus === 'confirmado'
+                ? '✅ Presença confirmada! Nos vemos na aula. 🎉'
+                : '❌ Aula cancelada. Que pena! Até a próxima. 🙏';
+            
+            const whatsapp = require('./whatsapp');
+            await whatsapp.sendSimpleMessage(telefone, msgResposta);
+        }
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erro webhook:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+//---------------------------------------------------------
+//---------------------------------------------------------
+// 5. API para painel mostrar status de confirmação
+app.get('/api/painel', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+
+        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const hoje = diasSemana[new Date().getDay()];
+        const dataHoje = new Date().toISOString().split('T')[0];
+
+        const { data: turmas } = await supabase
+            .from('turmas')
+            .select('*, perfis(nome, cor)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true)
+            .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
+        
+        let turmasFiltradas = turmas || [];
+        
+        if (perfil.tipo === 'professor') {
+            turmasFiltradas = turmasFiltradas.filter(t => t.professor_id === perfil.id);
+        }
+
+        let turmasComAlunos = await Promise.all((turmasFiltradas || []).map(async (turma) => {
+            const { data: matriculas } = await supabase
+                .from('matriculas')
+                .select('*, alunos(*)')
+                .eq('turma_id', turma.id)
+                .eq('ativa', true);
+            
+            // Busca status de confirmação
+            const aulaId = `${turma.id}_${turma.data_avulsa || dataHoje}`;
+            const { data: presencas } = await supabase
+                .from('presencas')
+                .select('*')
+                .eq('aula_id', aulaId);
+            
+            // Mescla status da presença
+            const alunos = (matriculas || []).map(m => {
+                const presenca = presencas?.find(p => p.aluno_id === m.aluno_id);
+                return {
+                    ...m,
+                    status_confirmacao: presenca?.status || 'pendente'
+                };
+            });
+            
+            return { ...turma, alunos };
+        }));
+
+        res.json(turmasComAlunos);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+//---------------------------------------------------------
+
+
 
 app.get('/api/escolas', async (req, res) => {
     try {
