@@ -532,6 +532,19 @@ B&T Tech aguarda voce!`;
             localStorage.removeItem('perfil');
             window.location.href = '/';
         }
+
+            // Recarrega os dados quando a página volta a ficar visível (quando volta de turmas.html)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                console.log('Página visível novamente, recarregando aulas...');
+                loadAulas();
+            }
+        });
+
+        // Também recarrega quando a janela ganha foco
+        window.addEventListener('focus', function() {
+            loadAulas();
+        });
     </script>
 </body>
 </html>

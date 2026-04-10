@@ -1,3 +1,4 @@
+<!-- pages/confirmar.html -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -44,7 +45,7 @@
     <div class="container">
         <div class="header">
             <h1>Confirmar Presenca</h1>
-            <p>B&T Tech - Escola de Esportes</p>
+            <p>B&amp;T Tech - Escola de Esportes</p>
         </div>
         <div class="content">
             <div id="loading" class="loading">
@@ -65,15 +66,17 @@
                 <p id="success-msg">Sua resposta foi registrada.</p>
             </div>
         </div>
-        <div class="footer">Powered by B&T Tech</div>
+        <div class="footer">Powered by B&amp;T Tech</div>
     </div>
 
     <script>
+        // Pegar ID do aluno da URL
         var urlParams = new URLSearchParams(window.location.search);
         var alunoId = urlParams.get('aluno');
         
         console.log("Aluno ID:", alunoId);
         
+        // Funcao para carregar as aulas
         function carregarAulas() {
             if (!alunoId) {
                 showError("Link invalido. ID do aluno nao encontrado.");
@@ -102,22 +105,33 @@
                     var html = "";
                     for (var i = 0; i < data.dados.aulas.length; i++) {
                         var aula = data.dados.aulas[i];
-                        html = html + '<div class="aula-card">';
-                        html = html + '<h3>' + aula.turma_nome + '</h3>';
-                        html = html + '<p class="aula-info"><i class="fas fa-calendar"></i> ' + aula.data + '</p>';
-                        html = html + '<p class="aula-info"><i class="fas fa-clock"></i> ' + aula.horario_inicio + ' as ' + aula.horario_fim + '</p>';
-                        html = html + '<button onclick="confirmar(' + aula.presenca_id + ', \'confirmado\')" class="btn btn-confirmar">';
-                        html = html + '<i class="fas fa-check"></i> Confirmar Presenca';
-                        html = html + '</button>';
-                        html = html + '<button onclick="confirmar(' + aula.presenca_id + ', \'cancelado\')" class="btn btn-cancelar">';
-                        html = html + '<i class="fas fa-times"></i> Cancelar Aula';
-                        html = html + '</button>';
-                        html = html + '</div>';
+                        html += '<div class="aula-card">';
+                        html += '<h3>' + escapeHtml(aula.turma_nome) + '</h3>';
+                        html += '<p class="aula-info"><i class="fas fa-calendar"></i> ' + escapeHtml(aula.data) + '</p>';
+                        html += '<p class="aula-info"><i class="fas fa-clock"></i> ' + escapeHtml(aula.horario_inicio) + ' as ' + escapeHtml(aula.horario_fim) + '</p>';
+                        html += '<button class="btn btn-confirmar" data-id="' + aula.presenca_id + '" data-status="confirmado">';
+                        html += '<i class="fas fa-check"></i> Confirmar Presenca';
+                        html += '</button>';
+                        html += '<button class="btn btn-cancelar" data-id="' + aula.presenca_id + '" data-status="cancelado">';
+                        html += '<i class="fas fa-times"></i> Cancelar Aula';
+                        html += '</button>';
+                        html += '</div>';
                     }
                     
                     document.getElementById("lista-aulas").innerHTML = html;
                     document.getElementById("loading").style.display = "none";
                     document.getElementById("aulas").style.display = "block";
+                    
+                    // Adicionar event listeners aos botoes
+                    var botoes = document.querySelectorAll('.btn');
+                    for (var j = 0; j < botoes.length; j++) {
+                        botoes[j].addEventListener('click', function(e) {
+                            var btn = e.currentTarget;
+                            var id = btn.getAttribute('data-id');
+                            var status = btn.getAttribute('data-status');
+                            confirmar(id, status);
+                        });
+                    }
                 })
                 .catch(function(e) {
                     console.error("Erro:", e);
@@ -125,9 +139,20 @@
                 });
         }
         
+        // Funcao para escapar HTML e evitar XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        // Funcao para confirmar presenca
         function confirmar(presencaId, status) {
-            alert("Enviando - ID: " + presencaId + " Status: " + status);
-            console.log("Enviando - ID:", presencaId, "Status:", status);
+            console.log("Confirmando - ID:", presencaId, "Status:", status);
             
             fetch("/api/confirmar-presenca", {
                 method: "POST",
@@ -143,6 +168,8 @@
                     } else {
                         showSuccess("Aula cancelada. Sentiremos sua falta!");
                     }
+                    // Recarrega apos 2 segundos
+                    setTimeout(carregarAulas, 2000);
                 } else {
                     alert("Erro: " + (result.error || "Erro desconhecido"));
                 }
@@ -153,6 +180,7 @@
             });
         }
         
+        // Funcao para mostrar sucesso
         function showSuccess(msg) {
             document.getElementById("loading").style.display = "none";
             document.getElementById("aulas").style.display = "none";
@@ -160,12 +188,14 @@
             document.getElementById("success-msg").textContent = msg;
         }
         
+        // Funcao para mostrar erro
         function showError(msg) {
             document.getElementById("loading").style.display = "none";
             document.getElementById("error").style.display = "block";
             document.getElementById("error-msg").textContent = msg;
         }
         
+        // Iniciar
         carregarAulas();
     </script>
 </body>

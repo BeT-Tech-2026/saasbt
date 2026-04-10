@@ -400,6 +400,86 @@ app.delete('/api/professores/:id', authenticate, async (req, res) => {
     }
 });
 
+// ==================== ROTAS DE PROFESSORES (continuação) ====================
+
+// GET /api/professores/:id - Buscar professor por ID (para edição)
+app.get('/api/professores/:id', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        if (perfil.tipo !== 'dono') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const { data: professor } = await supabase
+            .from('perfis')
+            .select('id, nome, email, cor')
+            .eq('id', req.params.id)
+            .eq('escola_id', perfil.escola_id)
+            .single();
+
+        if (!professor) {
+            return res.status(404).json({ error: 'Professor não encontrado' });
+        }
+
+        res.json(professor);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PUT /api/professores/:id - Atualizar professor (editar)
+app.put('/api/professores/:id', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        if (perfil.tipo !== 'dono') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const { data: professorExistente } = await supabase
+            .from('perfis')
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+
+        if (!professorExistente || professorExistente.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Professor não encontrado nesta escola' });
+        }
+
+        const { nome, email, senha, cor } = req.body;
+        const updates = {};
+
+        if (nome) updates.nome = nome;
+        if (email) updates.email = email;
+        if (cor) updates.cor = cor;
+
+        // Se quiser mudar a senha via Supabase Auth Admin
+        if (senha && senha.length >= 6) {
+            const { error: senhaError } = await supabase.auth.admin.updateUserById(
+                req.params.id,
+                { password: senha }
+            );
+            if (senhaError) {
+                console.error('Erro ao atualizar senha:', senhaError);
+                // Não bloqueia a atualização dos outros dados
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('perfis')
+            .update(updates)
+            .eq('id', req.params.id)
+            .select('id, nome, email, cor')
+            .single();
+
+        if (error) throw error;
+        res.json({ success: true, professor: data });
+
+    } catch (error) {
+        console.error('Erro ao atualizar professor:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==================== ROTAS DE TURMAS ====================
 
 app.get('/api/turmas', authenticate, async (req, res) => {
@@ -638,6 +718,10 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
 });
 
 
+
+
+// Substituir TODO o conteúdo da rota /api/aulas-confirmacoes por:
+
 app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
@@ -686,20 +770,26 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
         }
         
         function getProximaData(turma) {
-            if (turma.data_avulsa) {
-                const dataAvulsa = new Date(turma.data_avulsa + 'T00:00:00');
-                if (dataAvulsa >= hoje) {
-                    return { data: dataAvulsa, tipo: 'avulsa' };
+            // Usar purely date string para evitar problemas de timezone
+            const dataAvulsaStr = turma.data_avulsa;
+            
+            if (dataAvulsaStr) {
+                // Para aulas avulsas, compara string diretamente (YYYY-MM-DD)
+                const hojeStr = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
+                
+                if (dataAvulsaStr >= hojeStr) {
+                    return { dataStr: dataAvulsaStr, tipo: 'avulsa' };
                 }
                 return null;
             }
             
             if (turma.dia_semana) {
+                const hojeTemp = new Date();
                 for (let i = 0; i < 7; i++) {
-                    const dataFutura = new Date(hoje);
-                    dataFutura.setDate(hoje.getDate() + i);
+                    const dataFutura = new Date(hojeTemp);
+                    dataFutura.setDate(hojeTemp.getDate() + i);
                     if (diasSemana[dataFutura.getDay()] === turma.dia_semana) {
-                        return { data: dataFutura, tipo: 'semanal' };
+                        return { dataStr: dataFutura.toISOString().split('T')[0], tipo: 'semanal' };
                     }
                 }
             }
@@ -714,16 +804,22 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             
             if (!infoData) continue;
             
-            const dataAula = infoData.data;
-            const dataStr = dataAula.toISOString().split('T')[0];
+            const dataStr = infoData.dataStr;
+            
+            // Calcular data de amanha corretamente
+            const amanhaDate = new Date();
+            amanhaDate.setDate(amanhaDate.getDate() + 1);
+            const dataAmanha = amanhaDate.toISOString().split('T')[0];
+            
             const aulaId = `${turma.id}_${dataStr}`;
             const alunos = await getAlunosComStatus(turma.id, aulaId);
             
-            const amanha = new Date(Date.now() + 86400000 + agora.getTimezoneOffset() * 60000 + offset * 60000);
-            const dataAmanha = amanha.toISOString().split('T')[0];
-            
             const ehHoje = dataStr === dataHoje;
             const ehAmanha = dataStr === dataAmanha;
+            
+            // Criar objeto Date apenas para formatação
+            const dataFormat = new Date(dataStr + 'T12:00:00');
+            const dataFormatada = dataFormat.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
             
             todasAulas.push({
                 id: turma.id,
@@ -731,7 +827,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                 professor: turma.perfis?.nome,
                 horario_inicio: turma.horario_inicio,
                 horario_fim: turma.horario_fim,
-                data_formatada: dataAula.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                data_formatada: dataFormatada,
                 data_raw: dataStr,
                 dia_semana: turma.dia_semana,
                 data_avulsa: turma.data_avulsa,
@@ -760,6 +856,8 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 
 // ==================== ROTAS DE PAINEL ====================
 
@@ -1082,6 +1180,28 @@ app.get('/api/relatorios', authenticate, async (req, res) => {
     } catch (error) {
         console.error('Erro em /api/relatorios:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+// API - Buscar presenças por turma e data
+app.get('/api/presencas-aula', authenticate, async (req, res) => {
+    const { turma_id, data } = req.query;
+    if (!turma_id || !data) {
+        return res.json([]);
+    }
+    
+    try {
+        const perfil = await getPerfil(req.user.id);
+        const aulaId = `${turma_id}_${data}`;
+        
+        const { data: presencas } = await supabase
+            .from('presencas')
+            .select('*, alunos(nome, telefone)')
+            .eq('aula_id', aulaId)
+            .eq('escola_id', perfil.escola_id);
+        
+        res.json(presencas || []);
+    } catch (error) {
+        res.json([]);
     }
 });
 

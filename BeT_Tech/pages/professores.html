@@ -47,6 +47,15 @@
         .form-group {
             margin-bottom: 16px;
         }
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body class="dashboard-body">
@@ -99,13 +108,16 @@
         </div>
     </main>
 
+    <!-- Modal para Cadastrar Professor -->
     <div id="modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Novo Professor</h3>
+                <h3 id="modalTitle">Novo Professor</h3>
                 <button onclick="closeModal()" class="close">&times;</button>
             </div>
             <form id="professorForm" class="modal-body">
+                <input type="hidden" id="profId">
+                
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> Nome *</label>
                     <input type="text" id="profNome" placeholder="Nome completo" required>
@@ -114,9 +126,12 @@
                     <label><i class="fas fa-envelope"></i> E-mail *</label>
                     <input type="email" id="profEmail" placeholder="email@exemplo.com" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="senhaGroup">
                     <label><i class="fas fa-lock"></i> Senha *</label>
-                    <input type="password" id="profSenha" required minlength="6" placeholder="Mínimo 6 caracteres">
+                    <input type="password" id="profSenha" minlength="6" placeholder="Mínimo 6 caracteres">
+                    <small id="senhaHint" style="color: var(--text-secondary); display: none;">
+                        Deixe em branco para manter a senha atual
+                    </small>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-palette"></i> Cor do Professor</label>
@@ -127,7 +142,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Cadastrar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmit">Cadastrar</button>
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
                 </div>
             </form>
@@ -185,7 +200,14 @@
                         <div class="profile-avatar"><i class="fas fa-user"></i></div>
                         <h3>${p.nome}</h3>
                         <p>${p.email}</p>
-                        <button onclick="desativarProfessor('${p.id}')" class="btn btn-danger btn-sm">Desativar</button>
+                        <div class="card-actions">
+                            <button onclick="editarProfessor('${p.id}')" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="desativarProfessor('${p.id}')" class="btn btn-danger btn-sm">
+                                <i class="fas fa-trash"></i> Desativar
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             } else {
@@ -193,34 +215,83 @@
             }
         }
 
-        window.openModal = () => document.getElementById('modal').classList.remove('hidden');
+        // Abrir modal para NOVO professor
+        window.openModal = () => {
+            document.getElementById('modalTitle').textContent = 'Novo Professor';
+            document.getElementById('btnSubmit').textContent = 'Cadastrar';
+            document.getElementById('professorForm').reset();
+            document.getElementById('profId').value = '';
+            document.getElementById('profSenha').required = true;
+            document.getElementById('profSenha').placeholder = 'Mínimo 6 caracteres';
+            document.getElementById('senhaHint').style.display = 'none';
+            document.getElementById('profCor').value = '#3b82f6';
+            document.getElementById('colorPreview').style.background = '#3b82f6';
+            document.getElementById('modal').classList.remove('hidden');
+        };
+
+        // Abrir modal para EDITAR professor
+        window.editarProfessor = async (id) => {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/professores/' + id, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const professor = await response.json();
+
+            if (professor) {
+                document.getElementById('modalTitle').textContent = 'Editar Professor';
+                document.getElementById('btnSubmit').textContent = 'Salvar Alterações';
+                document.getElementById('profId').value = professor.id;
+                document.getElementById('profNome').value = professor.nome;
+                document.getElementById('profEmail').value = professor.email;
+                document.getElementById('profSenha').value = '';
+                document.getElementById('profSenha').required = false;
+                document.getElementById('profSenha').placeholder = '••••••••';
+                document.getElementById('senhaHint').style.display = 'block';
+                document.getElementById('profCor').value = professor.cor || '#3b82f6';
+                document.getElementById('colorPreview').style.background = professor.cor || '#3b82f6';
+                document.getElementById('modal').classList.remove('hidden');
+            }
+        };
+
         window.closeModal = () => {
             document.getElementById('modal').classList.add('hidden');
             document.getElementById('professorForm').reset();
-            document.getElementById('profCor').value = '#3b82f6';
-            document.getElementById('colorPreview').style.background = '#3b82f6';
         };
 
         document.getElementById('professorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const token = localStorage.getItem('token');
             
+            const id = document.getElementById('profId').value;
             const nome = document.getElementById('profNome').value;
             const email = document.getElementById('profEmail').value;
             const senha = document.getElementById('profSenha').value;
             const cor = document.getElementById('profCor').value;
 
-            const response = await fetch('/api/professores', {
-                method: 'POST',
+            const payload = { nome, email, cor };
+            if (senha) {
+                payload.senha = senha;
+            }
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? '/api/professores/' + id : '/api/professores';
+
+            const response = await fetch(url, {
+                method: method,
                 headers: { 
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token
                 },
-                body: JSON.stringify({ nome, email, senha, cor })
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
-                alert('Professor cadastrado com sucesso!\n\nEmail: ' + email + '\nSenha: ' + senha);
+                const message = id ? 'Professor atualizado com sucesso!' : 'Professor cadastrado com sucesso!';
+                if (!id) {
+                    alert(message + '\n\nEmail: ' + email + '\nSenha: ' + senha);
+                } else {
+                    alert(message);
+                }
                 closeModal();
                 loadProfessores();
             } else {

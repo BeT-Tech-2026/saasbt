@@ -783,6 +783,7 @@
             const token = localStorage.getItem('token');
             
             if (!aulaAtual) {
+                // Cria a aula se não existir
                 const createResponse = await fetch('/api/aulas', {
                     method: 'POST',
                     headers: { 
@@ -804,6 +805,7 @@
             }
             
             try {
+                // Salva no servidor
                 await fetch('/api/presencas', {
                     method: 'POST',
                     headers: { 
@@ -817,6 +819,7 @@
                     })
                 });
                 
+                // Atualiza o cache local imediatamente
                 const key = `${turmaSelecionada.id}_${dataSelecionada}`;
                 if (!turmasComStatus[key]) turmasComStatus[key] = [];
                 
@@ -824,13 +827,25 @@
                 if (existingIndex >= 0) {
                     turmasComStatus[key][existingIndex].status = status;
                 } else {
-                    turmasComStatus[key].push({ aluno_id: alunoId, status: status });
+                    turmasComStatus[key].push({ 
+                        aluno_id: alunoId, 
+                        status: status,
+                        aula_id: aulaAtual.id 
+                    });
                 }
                 
+                // Atualiza a visualização da grade semanal imediatamente
                 renderWeek();
+                
+                // Atualiza o select para refletir o novo status visualmente
+                const select = document.querySelector(`select[onchange="alterarStatus('${alunoId}', this.value)"]`);
+                if (select) {
+                    select.className = `status-select ${status}`;
+                }
                 
             } catch (error) {
                 console.error('Erro ao salvar presença:', error);
+                alert('Erro ao salvar presença');
             }
         }
 
