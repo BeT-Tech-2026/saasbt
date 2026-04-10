@@ -649,12 +649,15 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
     }
 });
 
+
 app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
+        // Forçar fuso horário de Brasília
+        const agora = new Date();
+        const offset = -3 * 60; // UTC-3 para Brasília
+        const hoje = new Date(agora.getTime() + agora.getTimezoneOffset() * 60000 + offset * 60000);
         const dataHoje = hoje.toISOString().split('T')[0];
         
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
@@ -701,7 +704,6 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             // Se tem data avulsa
             if (turma.data_avulsa) {
                 const dataAvulsa = new Date(turma.data_avulsa + 'T00:00:00');
-                // Se a data avulsa é hoje ou futura, retorna ela
                 if (dataAvulsa >= hoje) {
                     return { data: dataAvulsa, tipo: 'avulsa' };
                 }
@@ -734,7 +736,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             const aulaId = `${turma.id}_${dataStr}`;
             const alunos = await getAlunosComStatus(turma.id, aulaId);
             
-            const amanha = new Date(Date.now() + 86400000);
+            const amanha = new Date(Date.now() + 86400000 + agora.getTimezoneOffset() * 60000 + offset * 60000);
             const dataAmanha = amanha.toISOString().split('T')[0];
             
             const ehHoje = dataStr === dataHoje;
@@ -778,6 +780,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 
 // ==================== ROTAS DE PAINEL ====================

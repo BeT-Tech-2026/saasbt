@@ -340,20 +340,27 @@
             return data.perfil;
         }
 
+        // FUNÇÃO CORRIGIDA - loadAulas
         async function loadAulas() {
-            const response = await fetch('/api/aulas-confirmacoes', {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            const dados = await response.json();
+            try {
+                const response = await fetch('/api/aulas-confirmacoes', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const dados = await response.json();
+                
+                console.log('Dados recebidos:', dados);
 
-            [...(dados.hoje||[]), ...(dados.amanha||[]), ...(dados.proximos||[])].forEach(aula => {
-                const key = `${aula.id}_${aula.data_formatada}`;
-                aulasCache[key] = aula;
-            });
+                [...(dados.hoje||[]), ...(dados.amanha||[]), ...(dados.proximos||[])].forEach(aula => {
+                    const key = `${aula.id}_${aula.data_formatada}`;
+                    aulasCache[key] = aula;
+                });
 
-            renderAulas('aulasHoje', dados.hoje, 'hoje');
-            renderAulas('aulasAmanha', dados.amanha, 'amanha');
-            renderAulas('aulasProximos', dados.proximos, 'proximo');
+                renderAulas('aulasHoje', dados.hoje, 'hoje');
+                renderAulas('aulasAmanha', dados.amanha, 'amanha');
+                renderAulas('aulasProximos', dados.proximos, 'proximo');
+            } catch (error) {
+                console.error('Erro ao carregar aulas:', error);
+            }
         }
 
         function renderAulas(containerId, aulas, tipo) {
@@ -434,19 +441,11 @@
             return labels[status] || 'Aguardando';
         }
 
-        // Função auxiliar para limpar texto e garantir UTF-8 válido
         function limparTexto(texto) {
             if (!texto) return '';
-            return texto
-                .replace(/\r\n/g, '\n')
-                .replace(/\r/g, '\n')
-                .replace(/[\u200B-\u200D\uFEFF]/g, '')
-                .trim();
+            return texto.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
         }
 
-
-
-        // Monta a mensagem WhatsApp para UM aluno específico
         function enviarLinkAluno(cacheKey, alunoId) {
             const aula = aulasCache[cacheKey];
             if (!aula) return;
@@ -462,13 +461,8 @@
             const horarioFim  = aula.horario_fim    ? aula.horario_fim.substring(0, 5)    : '-';
             const linkConfirm = `https://saasbt.vercel.app/confirmar?aluno=${aluno.id}`;
 
-            // Lista de colegas (sem incluir o próprio aluno)
-            const colegas = aula.alunos
-                .filter(a => a.id !== alunoId)
-                .map(a => `  - ${limparTexto(a.nome)}`)
-                .join('\n');
+            const colegas = aula.alunos.filter(a => a.id !== alunoId).map(a => `  - ${limparTexto(a.nome)}`).join('\n');
 
-            // Mensagem com texto puro (sem emojis complexos)
             const mensagem = 
 `*Confirmacao de Presenca* - B&T Tech
 
@@ -479,10 +473,7 @@ Voce tem uma aula agendada:
 Turma: ${limparTexto(aula.nome)}
 Professor: ${limparTexto(aula.professor) || 'A definir'}
 Data: ${limparTexto(aula.data_formatada)}
-Horario: ${horario} as ${horarioFim}${colegas ? `
-
-Colegas de turma:
-${colegas}` : ''}
+Horario: ${horario} as ${horarioFim}${colegas ? '\n\nColegas de turma:\n' + colegas : ''}
 
 Confirme ou cancele sua presenca pelo link abaixo:
 ${linkConfirm}
@@ -494,7 +485,6 @@ B&T Tech aguarda voce!`;
             showToast(`WhatsApp aberto para ${aluno.nome}`);
         }
 
-        // Envia mensagem para TODOS os alunos da turma
         function enviarMensagemTurma(cacheKey) {
             const aula = aulasCache[cacheKey];
             if (!aula) return;
@@ -519,7 +509,6 @@ B&T Tech aguarda voce!`;
             });
         }
 
-        // Toast de feedback
         function showToast(msg, isError = false) {
             const existing = document.querySelector('.toast');
             if (existing) existing.remove();

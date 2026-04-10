@@ -1,10 +1,9 @@
-<!-- pages/confirmar.html -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmar Presença - B&T Tech</title>
+    <title>Confirmar Presenca - B&T Tech</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,10 +25,10 @@
         .aula-card h3 { font-size: 1rem; color: var(--gray-900); margin-bottom: 8px; }
         .aula-info { font-size: 0.9rem; color: var(--gray-500); margin-bottom: 4px; }
         .aula-info i { width: 20px; color: var(--gray-400); }
-        .btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
         .btn-confirmar { background: var(--success); color: white; }
         .btn-confirmar:hover { background: #059669; }
-        .btn-cancelar { background: var(--gray-100); color: var(--danger); margin-top: 8px; }
+        .btn-cancelar { background: transparent; color: var(--danger); border: 2px solid var(--danger); }
         .btn-cancelar:hover { background: #fee2e2; }
         .success-message { text-align: center; padding: 40px 24px; }
         .success-message i { font-size: 4rem; color: var(--success); margin-bottom: 16px; }
@@ -44,7 +43,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 Confirmar Presença</h1>
+            <h1>Confirmar Presenca</h1>
             <p>B&T Tech - Escola de Esportes</p>
         </div>
         <div class="content">
@@ -62,84 +61,109 @@
             </div>
             <div id="success" class="success-message" style="display:none;">
                 <i class="fas fa-check-circle"></i>
-                <h2>🎉 Presenças Confirmadas!</h2>
-                <p>Obrigado! Nos vemos nas aulas.</p>
+                <h2>Obrigado!</h2>
+                <p id="success-msg">Sua resposta foi registrada.</p>
             </div>
         </div>
         <div class="footer">Powered by B&T Tech</div>
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const alunoId = urlParams.get('aluno');
+        var urlParams = new URLSearchParams(window.location.search);
+        var alunoId = urlParams.get('aluno');
         
-        async function carregarAulas() {
+        console.log("Aluno ID:", alunoId);
+        
+        function carregarAulas() {
             if (!alunoId) {
-                showError('Link inválido. ID do aluno não encontrado.');
+                showError("Link invalido. ID do aluno nao encontrado.");
                 return;
             }
             
-            try {
-                const response = await fetch('/api/aulas-aluno?aluno=' + alunoId);
-                const data = await response.json();
-                
-                if (!data.success) {
-                    showError(data.error || 'Erro ao carregar aulas.');
-                    return;
-                }
-                
-                document.getElementById('aluno-nome').textContent = data.dados.aluno_nome;
-                
-                if (data.dados.aulas.length === 0) {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('aulas').style.display = 'block';
-                    document.getElementById('lista-aulas').innerHTML = '<div class="empty"><i class="fas fa-calendar-check"></i><p>Nenhuma aula pendente de confirmação!</p></div>';
-                    return;
-                }
-                
-                document.getElementById('lista-aulas').innerHTML = data.dados.aulas.map(aula => `
-                    <div class="aula-card">
-                        <h3>${aula.turma_nome}</h3>
-                        <p class="aula-info"><i class="fas fa-calendar"></i> ${aula.data}</p>
-                        <p class="aula-info"><i class="fas fa-clock"></i> ${aula.horario_inicio} às ${aula.horario_fim}</p>
-                        <button onclick="confirmar(${aula.presenca_id})" class="btn btn-confirmar">
-                            <i class="fas fa-check"></i> Confirmar Presença
-                        </button>
-                    </div>
-                `).join('');
-                
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('aulas').style.display = 'block';
-                
-            } catch (e) {
-                showError('Erro de conexão. Tente novamente.');
-            }
+            fetch("/api/aulas-aluno?aluno=" + alunoId)
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    console.log("Dados recebidos:", data);
+                    
+                    if (!data.success) {
+                        showError(data.error || "Erro ao carregar aulas.");
+                        return;
+                    }
+                    
+                    document.getElementById("aluno-nome").textContent = data.dados.aluno_nome;
+                    
+                    if (data.dados.aulas.length === 0) {
+                        document.getElementById("loading").style.display = "none";
+                        document.getElementById("aulas").style.display = "block";
+                        document.getElementById("lista-aulas").innerHTML = '<div class="empty"><i class="fas fa-calendar-check"></i><p>Nenhuma aula pendente de confirmacao!</p></div>';
+                        return;
+                    }
+                    
+                    var html = "";
+                    for (var i = 0; i < data.dados.aulas.length; i++) {
+                        var aula = data.dados.aulas[i];
+                        html = html + '<div class="aula-card">';
+                        html = html + '<h3>' + aula.turma_nome + '</h3>';
+                        html = html + '<p class="aula-info"><i class="fas fa-calendar"></i> ' + aula.data + '</p>';
+                        html = html + '<p class="aula-info"><i class="fas fa-clock"></i> ' + aula.horario_inicio + ' as ' + aula.horario_fim + '</p>';
+                        html = html + '<button onclick="confirmar(' + aula.presenca_id + ', \'confirmado\')" class="btn btn-confirmar">';
+                        html = html + '<i class="fas fa-check"></i> Confirmar Presenca';
+                        html = html + '</button>';
+                        html = html + '<button onclick="confirmar(' + aula.presenca_id + ', \'cancelado\')" class="btn btn-cancelar">';
+                        html = html + '<i class="fas fa-times"></i> Cancelar Aula';
+                        html = html + '</button>';
+                        html = html + '</div>';
+                    }
+                    
+                    document.getElementById("lista-aulas").innerHTML = html;
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("aulas").style.display = "block";
+                })
+                .catch(function(e) {
+                    console.error("Erro:", e);
+                    showError("Erro de conexao. Tente novamente.");
+                });
         }
         
-        async function confirmar(presencaId) {
-            try {
-                const response = await fetch('/api/confirmar-presenca', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ presenca_id: presencaId, status: 'confirmado' })
-                });
-                const result = await response.json();
-                
+        function confirmar(presencaId, status) {
+            alert("Enviando - ID: " + presencaId + " Status: " + status);
+            console.log("Enviando - ID:", presencaId, "Status:", status);
+            
+            fetch("/api/confirmar-presenca", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ presenca_id: presencaId, status: status })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                console.log("Resultado:", result);
                 if (result.success) {
-                    // Recarrega as aulas
-                    carregarAulas();
+                    if (status === "confirmado") {
+                        showSuccess("Presenca confirmada com sucesso!");
+                    } else {
+                        showSuccess("Aula cancelada. Sentiremos sua falta!");
+                    }
                 } else {
-                    alert('Erro ao confirmar. Tente novamente.');
+                    alert("Erro: " + (result.error || "Erro desconhecido"));
                 }
-            } catch (e) {
-                alert('Erro ao confirmar. Verifique sua conexão.');
-            }
+            })
+            .catch(function(e) {
+                console.error("Erro ao confirmar:", e);
+                alert("Erro ao confirmar. Verifique sua conexao.");
+            });
+        }
+        
+        function showSuccess(msg) {
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("aulas").style.display = "none";
+            document.getElementById("success").style.display = "block";
+            document.getElementById("success-msg").textContent = msg;
         }
         
         function showError(msg) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('error-msg').textContent = msg;
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("error").style.display = "block";
+            document.getElementById("error-msg").textContent = msg;
         }
         
         carregarAulas();
