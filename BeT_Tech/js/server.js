@@ -649,26 +649,36 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
     }
 });
 
+
 app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         
         const hoje = new Date();
-        const amanha = new Date(Date.now() + 86400000);
         const dataHoje = hoje.toISOString().split('T')[0];
-        const dataAmanha = amanha.toISOString().split('T')[0];
         
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hojeDia = diasSemana[hoje.getDay()];
-        const amanhaDia = diasSemana[amanha.getDay()];
         
-        const { data: turmas } = await supabase.from('turmas').select('*, perfis(nome)').eq('escola_id', perfil.escola_id).eq('ativa', true);
+        // CORREÇÃO: Buscar TODAS as turmas ativas, não só de hoje/amanhã
+        const { data: turmas } = await supabase.from('turmas')
+            .select('*, perfis(nome)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true);
         
         async function getAlunosComStatus(turmaId, aulaId) {
-            const { data: matriculas } = await supabase.from('matriculas').select('*, alunos(id, nome, telefone)').eq('turma_id', turmaId).eq('ativa', true);
+            const { data: matriculas } = await supabase
+                .from('matriculas')
+                .select('*, alunos(id, nome, telefone)')
+                .eq('turma_id', turmaId)
+                .eq('ativa', true);
+            
             if (!matriculas || matriculas.length === 0) return [];
             
-            const { data: presencas } = await supabase.from('presencas').select('id, aluno_id, status').eq('aula_id', aulaId);
+            const { data: presencas } = await supabase
+                .from('presencas')
+                .select('id, aluno_id, status')
+                .eq('aula_id', aulaId);
             
             const presencasMap = {};
             if (presencas) {
@@ -682,7 +692,6 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                     nome: mat.alunos?.nome,
                     telefone: mat.alunos?.telefone,
                     status: conf?.status || 'pendente',
-                    // ✅ CORRIGIDO: era window.location.origin (não existe no Node.js)
                     link: `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`
                 };
             });
@@ -693,54 +702,102 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
         let aulasProximos = [];
         
         for (const turma of (turmas || [])) {
-            const aulaIdHoje = `${turma.id}_${dataHoje}`;
-            const aulaIdAmanha = `${turma.id}_${dataAmanha}`;
+            // Verifica se é aula de hoje (por dia da semana ou data avulsa)
+            const ehHoje = (turma.dia_semana === hojeDia || turma.data_avulsa === dataHoje);
             
-            if (turma.dia_semana === hojeDia || turma.data_avulsa === dataHoje) {
-                const alunos = await getAlunosComStatus(turma.id, aulaIdHoje);
-                aulasHoje.push({
-                    id: turma.id, nome: turma.nome, professor: turma.perfis?.nome,
-                    horario_inicio: turma.horario_inicio, horario_fim: turma.horario_fim,
-                    data_formatada: hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
-                    alunos: alunos
-                });
-            }
-            
-            if (turma.dia_semana === amanhaDia || turma.data_avulsa === dataAmanha) {
-                const alunos = await getAlunosComStatus(turma.id, aulaIdAmanha);
-                aulasAmanha.push({
-                    id: turma.id, nome: turma.nome, professor: turma.perfis?.nome,
-                    horario_inicio: turma.horario_inicio, horario_fim: turma.horario_fim,
-                    data_formatada: amanha.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
-                    alunos: alunos
-                });
-            }
-            
-            for (let i = 2; i <= 6; i++) {
-                const dataFutura = new Date(Date.now() + 86400000 * i);
-                const dataFuturaStr = dataFutura.toISOString().split('T')[0];
-                const diaFuturo = diasSemana[dataFutura.getDay()];
+            // Calcula próximas datas para turmas semanais
+            if (!turma.data_avulsa && turma.dia_semana) {
+                for (let i = 0; i <= 30; i++) { // Busca até 30 dias pra frente
+                    const dataFutura = new Date(Date.now() + 86400000 * i);
+                    const dataFuturaStr = dataFutura.toISOString().split('T')[0];
+                    const diaFuturo = diasSemana[dataFutura.getDay()];
+                    
+                    if (turma.dia_semana === diaFuturo) {
+                        const ehHojeBool = dataFuturaStr === dataHoje;
+                        const amanhaDate = new Date(Date.now() + 86400000);
+                        const amanhaStr = amanhaDate.toISOString().split('T')[0];
+                        const ehAmanhaBool = dataFuturaStr === amanhaStr;
+                        
+                        const aulaId = `${turma.id}_${dataFuturaStr}`;
+                        const alunos = await getAlunosComStatus(turma.id, aulaId);
+                        
+                        const aulaObj = {
+                            id: turma.id,
+                            nome: turma.nome,
+                            professor: turma.perfis?.nome,
+                            horario_inicio: turma.horario_inicio,
+                            horario_fim: turma.horario_fim,
+                            data_formatada: dataFutura.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                            data_raw: dataFuturaStr,
+                            alunos: alunos
+                        };
+                        
+                        if (ehHojeBool) {
+                            aulasHoje.push(aulaObj);
+                        } else if (ehAmanhaBool) {
+                            aulasAmanha.push(aulaObj);
+                        } else {
+                            // Adiciona aos próximos apenas se ainda não chegou ao limite
+                            if (aulasProximos.length < 20) {
+                                aulasProximos.push(aulaObj);
+                            }
+                        }
+                        break; // Achou a próxima ocorrência, sai do loop
+                    }
+                }
+            } else if (turma.data_avulsa) {
+                // Turmas com data avulsa fixa
+                const dataAvulsaDate = new Date(turma.data_avulsa + 'T00:00:00');
+                const dataAvulsaStr = dataAvulsaDate.toISOString().split('T')[0];
                 
-                if (turma.dia_semana === diaFuturo) {
-                    const aulaId = `${turma.id}_${dataFuturaStr}`;
+                const amanhaDate = new Date(Date.now() + 86400000);
+                const amanhaStr = amanhaDate.toISOString().split('T')[0];
+                
+                const ehHojeBool = dataAvulsaStr === dataHoje;
+                const ehAmanhaBool = dataAvulsaStr === amanhaStr;
+                
+                // Só adiciona se a data for hoje, amanhã ou futura
+                if (dataAvulsaDate >= hoje) {
+                    const aulaId = `${turma.id}_${dataAvulsaStr}`;
                     const alunos = await getAlunosComStatus(turma.id, aulaId);
-                    aulasProximos.push({
-                        id: turma.id, nome: turma.nome, professor: turma.perfis?.nome,
-                        horario_inicio: turma.horario_inicio, horario_fim: turma.horario_fim,
-                        data_formatada: dataFutura.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                    
+                    const aulaObj = {
+                        id: turma.id,
+                        nome: turma.nome,
+                        professor: turma.perfis?.nome,
+                        horario_inicio: turma.horario_inicio,
+                        horario_fim: turma.horario_fim,
+                        data_formatada: dataAvulsaDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                        data_raw: dataAvulsaStr,
                         alunos: alunos
-                    });
-                    break;
+                    };
+                    
+                    if (ehHojeBool) {
+                        aulasHoje.push(aulaObj);
+                    } else if (ehAmanhaBool) {
+                        aulasAmanha.push(aulaObj);
+                    } else {
+                        if (aulasProximos.length < 20) {
+                            aulasProximos.push(aulaObj);
+                        }
+                    }
                 }
             }
         }
         
+        // Ordena por data
+        aulasHoje.sort((a, b) => (a.horario_inicio || '').localeCompare(b.horario_inicio || ''));
+        aulasAmanha.sort((a, b) => (a.horario_inicio || '').localeCompare(b.horario_inicio || ''));
+        aulasProximos.sort((a, b) => (a.data_raw || '').localeCompare(b.data_raw || ''));
+        
         res.json({ hoje: aulasHoje, amanha: aulasAmanha, proximos: aulasProximos });
+        
     } catch (error) {
         console.error('Erro em /api/aulas-confirmacoes:', error);
         res.status(500).json({ error: error.message });
     }
 });
+
 
 // ==================== ROTAS DE PAINEL ====================
 
