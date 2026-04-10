@@ -1,4 +1,4 @@
-// server.js - Versão com ID do aluno (CORRIGIDO)
+// server.js - B&T Tech (ATUALIZADO)
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -85,7 +85,7 @@ app.get('/confirmar', (req, res) => {
 });
 
 
-// API - Buscar aulas do aluno (via matrículas — cria presenças automaticamente)
+// API - Buscar aulas do aluno
 app.get('/api/aulas-aluno', async (req, res) => {
     const { aluno } = req.query;
     if (!aluno) return res.json({ success: false, error: 'ID do aluno não fornecido' });
@@ -96,7 +96,6 @@ app.get('/api/aulas-aluno', async (req, res) => {
         if (alunoError || !alunoData)
             return res.json({ success: false, error: 'Aluno não encontrado' });
 
-        // CORREÇÃO 1: Incluir 'data_avulsa' no select
         const { data: matriculas } = await supabase
             .from('matriculas')
             .select('*, turmas(id, nome, dia_semana, horario_inicio, horario_fim, escola_id, data_avulsa)')
@@ -118,28 +117,21 @@ app.get('/api/aulas-aluno', async (req, res) => {
 
             let dataAulaValida = null;
 
-            // CORREÇÃO 2: Lógica para tratar Aula Avulsa (data_avulsa) ou Recorrente
             if (turma.data_avulsa) {
-                // Se tem data fixa, usa ela
                 const dataAvulsaDate = new Date(turma.data_avulsa + 'T00:00:00');
-                // Verifica se a data é hoje ou futura (até 14 dias pra frente)
                 if (dataAvulsaDate >= hoje && dataAvulsaDate <= new Date(hoje.getTime() + 14 * 86400000)) {
                     dataAulaValida = dataAvulsaDate;
                 }
             } else {
-                // Se não tem data fixa, procura o próximo dia da semana
                 for (let i = 0; i <= 14; i++) {
                     const dataFutura = new Date(hoje);
                     dataFutura.setDate(hoje.getDate() + i);
-
                     if (diasSemana[dataFutura.getDay()] !== turma.dia_semana) continue;
-                    
                     dataAulaValida = dataFutura;
                     break;
                 }
             }
 
-            // Se encontrou uma data válida para os próximos dias
             if (dataAulaValida) {
                 const dataStr = dataAulaValida.toISOString().split('T')[0];
                 const aulaId  = `${turma.id}_${dataStr}`;
@@ -148,7 +140,6 @@ app.get('/api/aulas-aluno', async (req, res) => {
                     .from('presencas').select('id, status')
                     .eq('aula_id', aulaId).eq('aluno_id', aluno).single();
 
-                // Se já confirmou ou faltou, não mostra como pendente
                 if (presencaExistente && presencaExistente.status !== 'pendente') {
                     continue; 
                 }
@@ -159,11 +150,11 @@ app.get('/api/aulas-aluno', async (req, res) => {
                     const { data: nova } = await supabase
                         .from('presencas')
                         .insert({
-                            aula_id:   aulaId,
-                            aluno_id:  aluno,
-                            turma_id:  turma.id,
+                            aula_id: aulaId,
+                            aluno_id: aluno,
+                            turma_id: turma.id,
                             escola_id: turma.escola_id,
-                            status:    'pendente'
+                            status: 'pendente'
                         })
                         .select('id').single();
                     presencaId = nova?.id;
@@ -172,16 +163,16 @@ app.get('/api/aulas-aluno', async (req, res) => {
                 if (!presencaId) break;
 
                 aulas.push({
-                    presenca_id:    presencaId,
-                    aula_id:        aulaId,
-                    turma_nome:     turma.nome,
-                    data:           dataAulaValida.toLocaleDateString('pt-BR', {
-                                        weekday: 'long', day: 'numeric', month: 'long'
-                                    }),
-                    data_raw:       dataStr,
+                    presenca_id: presencaId,
+                    aula_id: aulaId,
+                    turma_nome: turma.nome,
+                    data: dataAulaValida.toLocaleDateString('pt-BR', {
+                        weekday: 'long', day: 'numeric', month: 'long'
+                    }),
+                    data_raw: dataStr,
                     horario_inicio: turma.horario_inicio?.substring(0, 5) || '-',
-                    horario_fim:    turma.horario_fim?.substring(0, 5)    || '-',
-                    status:         'pendente'
+                    horario_fim: turma.horario_fim?.substring(0, 5) || '-',
+                    status: 'pendente'
                 });
             }
         }
@@ -198,7 +189,6 @@ app.get('/api/aulas-aluno', async (req, res) => {
 // API - Confirmar presença
 app.post('/api/confirmar-presenca', async (req, res) => {
     const { presenca_id, status } = req.body;
-    
     if (!presenca_id) {
         return res.json({ success: false, error: 'ID da presença não fornecido' });
     }
@@ -557,8 +547,7 @@ app.post('/api/gerar-link-unico', authenticate, async (req, res) => {
         const dataAula = data || turma.data_avulsa || (turma.dia_semana === hojeDia ? dataHoje : dataAmanha);
         const aulaId = `${turma_id}_${dataAula}`;
         
-        // ✅ CORRIGIDO: era `$https://...` (faltava as chaves)
-        const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${aluno_id}`;
+        const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${aluno_id}`;
         
         const { error: presencaError } = await supabase.from('presencas').upsert({
             aula_id: aulaId,
@@ -624,8 +613,7 @@ app.post('/api/gerar-links-confirmacao', authenticate, async (req, res) => {
                     expires_at: new Date(Date.now() + 86400000 * 3).toISOString()
                 }, { onConflict: 'aula_id,aluno_id' });
                 
-                // ✅ CORRIGIDO: era `$https://...` (faltava as chaves)
-                const linkConfirmacao = `$https://saasbt.vercel.app/confirmar?aluno=${mat.aluno_id}`;
+                const linkConfirmacao = `${BASE_URL}/confirmar?aluno=${mat.aluno_id}`;
                 
                 const mensagem = `Confirmacao de Aula\n\nOlá ${mat.alunos.nome}!\n\nAula: ${turma.nome}\nData: ${dataFormatada}\nHorario: ${horario}\n\nConfirme sua presenca:\n${linkConfirmacao}\n\nB&T Tech`;
                 
@@ -654,16 +642,14 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
     try {
         const perfil = await getPerfil(req.user.id);
         
-        // Forçar fuso horário de Brasília
         const agora = new Date();
-        const offset = -3 * 60; // UTC-3 para Brasília
+        const offset = -3 * 60;
         const hoje = new Date(agora.getTime() + agora.getTimezoneOffset() * 60000 + offset * 60000);
         const dataHoje = hoje.toISOString().split('T')[0];
         
         const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const hojeDia = diasSemana[hoje.getDay()];
         
-        // Buscar TODAS as turmas ativas
         const { data: turmas } = await supabase.from('turmas')
             .select('*, perfis(nome)')
             .eq('escola_id', perfil.escola_id)
@@ -699,9 +685,7 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             }));
         }
         
-        // Função para calcular a próxima data de uma turma
         function getProximaData(turma) {
-            // Se tem data avulsa
             if (turma.data_avulsa) {
                 const dataAvulsa = new Date(turma.data_avulsa + 'T00:00:00');
                 if (dataAvulsa >= hoje) {
@@ -710,7 +694,6 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
                 return null;
             }
             
-            // Se tem dia da semana, pega a próxima ocorrência
             if (turma.dia_semana) {
                 for (let i = 0; i < 7; i++) {
                     const dataFutura = new Date(hoje);
@@ -758,17 +741,14 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
             });
         }
         
-        // Separa em grupos
         let aulasHoje = todasAulas.filter(a => a.ehHoje);
         let aulasAmanha = todasAulas.filter(a => a.ehAmanha);
         let aulasProximos = todasAulas.filter(a => !a.ehHoje && !a.ehAmanha);
         
-        // Ordena
         aulasHoje.sort((a, b) => (a.horario_inicio || '').localeCompare(b.horario_inicio || ''));
         aulasAmanha.sort((a, b) => (a.horario_inicio || '').localeCompare(b.horario_inicio || ''));
         aulasProximos.sort((a, b) => (a.data_raw || '').localeCompare(b.data_raw || ''));
         
-        // Limita próximos a 20
         aulasProximos = aulasProximos.slice(0, 20);
         
         console.log('Resultado - Hoje:', aulasHoje.length, 'Amanha:', aulasAmanha.length, 'Proximos:', aulasProximos.length);
@@ -780,8 +760,6 @@ app.get('/api/aulas-confirmacoes', authenticate, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-
 
 // ==================== ROTAS DE PAINEL ====================
 
@@ -819,6 +797,294 @@ app.get('/api/painel', authenticate, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// ==================== 🔥 ROTA DO DASHBOARD ====================
+
+app.get('/api/dashboard', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        const { count: alunosAtivos } = await supabase
+            .from('alunos')
+            .select('*', { count: 'exact', head: true })
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativo', true);
+        
+        const { count: turmasAtivas } = await supabase
+            .from('turmas')
+            .select('*', { count: 'exact', head: true })
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true);
+        
+        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const hoje = diasSemana[new Date().getDay()];
+        const dataHoje = new Date().toISOString().split('T')[0];
+        
+        const { data: aulasHoje } = await supabase
+            .from('turmas')
+            .select('*, perfis(nome, cor)')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true)
+            .or(`dia_semana.eq.${hoje},data_avulsa.eq.${dataHoje}`);
+        
+        let aulasFiltradas = aulasHoje || [];
+        if (perfil.tipo === 'professor') {
+            aulasFiltradas = aulasFiltradas.filter(t => t.professor_id === perfil.id);
+        }
+        
+        res.json({
+            alunosAtivos: alunosAtivos || 0,
+            turmasAtivas: turmasAtivas || 0,
+            aulasHoje: aulasFiltradas
+        });
+        
+    } catch (error) {
+        console.error('Erro no dashboard:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// ==================== 💰 ROTAS FINANCEIRAS ====================
+
+// ✅ USA: configuracoes_financeiras (plural - como está no seu BD)
+
+app.get('/api/config-financeiras', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        if (perfil.tipo !== 'dono') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+        
+        const { data, error } = await supabase
+            .from('configuracoes_financeiras')  // ← Nome correto da tabela
+            .select('*')
+            .eq('escola_id', perfil.escola_id)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('Erro ao buscar config financeiras:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/config-financeiras', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        if (perfil.tipo !== 'dono') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+        
+        const { tipo, valor, quantidade, descricao } = req.body;
+        
+        const { data, error } = await supabase
+            .from('configuracoes_financeiras')  // ← Nome correto da tabela
+            .insert({
+                escola_id: perfil.escola_id,
+                tipo: tipo,
+                valor: parseFloat(valor),
+                quantidade: quantidade || 1,
+                descricao: descricao || ''
+            })
+            .select()
+            .single();
+        
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Erro ao criar config financeira:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/config-financeiras/:id', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        
+        if (perfil.tipo !== 'dono') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+        
+        const { data: existente } = await supabase
+            .from('configuracoes_financeiras')  // ← Nome correto da tabela
+            .select('escola_id')
+            .eq('id', req.params.id)
+            .single();
+        
+        if (!existente || existente.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+        
+        await supabase.from('configuracoes_financeiras').delete().eq('id', req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erro ao excluir config financeira:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== 📊 ROTA DE RELATÓRIOS ====================
+
+app.get('/api/relatorios', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        const { inicio, fim } = req.query;
+
+        // Total de alunos
+        const { count: totalAlunos } = await supabase
+            .from('alunos')
+            .select('*', { count: 'exact', head: true })
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativo', true);
+
+        // Alunos novos este mês
+        const primeiroDiaMes = new Date();
+        primeiroDiaMes.setDate(1);
+        primeiroDiaMes.setHours(0, 0, 0, 0);
+
+        const { count: alunosNovosMes } = await supabase
+            .from('alunos')
+            .select('*', { count: 'exact', head: true })
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativo', true)
+            .gte('created_at', primeiroDiaMes.toISOString());
+
+        // Total de turmas
+        const { data: todasTurmas } = await supabase
+            .from('turmas')
+            .select('*')
+            .eq('escola_id', perfil.escola_id)
+            .eq('ativa', true);
+
+        // Total de aulas (contando dias entre inicio e fim)
+        let totalAulas = 0;
+        let aulasSemana = 0;
+
+        if (inicio && fim) {
+            const startDate = new Date(inicio);
+            const endDate = new Date(fim);
+            const hoje = new Date();
+            const inicioSemana = new Date(hoje);
+            inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+            const fimSemana = new Date(inicioSemana);
+            fimSemana.setDate(inicioSemana.getDate() + 6);
+
+            const diasSemanaNomes = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const diaNome = diasSemanaNomes[d.getDay()];
+                const aulasHoje = todasTurmas.filter(t => t.dia_semana === diaNome);
+                totalAulas += aulasHoje.length;
+
+                // Aulas desta semana
+                if (d >= inicioSemana && d <= fimSemana) {
+                    aulasSemana += aulasHoje.length;
+                }
+            }
+        }
+
+        // Turmas esta semana
+        const hoje = new Date();
+        const inicioSemana = new Date(hoje);
+        inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+        const fimSemana = new Date(inicioSemana);
+        fimSemana.setDate(inicioSemana.getDate() + 6);
+        const diasSemanaNomes = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        let turmasSemana = 0;
+        for (let d = new Date(inicioSemana); d <= fimSemana; d.setDate(d.getDate() + 1)) {
+            const diaNome = diasSemanaNomes[d.getDay()];
+            turmasSemana += todasTurmas.filter(t => t.dia_semana === diaNome).length;
+        }
+
+        // Professores
+        const { data: professores } = await supabase
+            .from('perfis')
+            .select('*')
+            .eq('escola_id', perfil.escola_id)
+            .eq('tipo', 'professor')
+            .eq('ativo', true);
+
+        let professoresComDados = [];
+
+        for (const prof of (professores || [])) {
+            const turmasProfessor = todasTurmas.filter(t => t.professor_id === prof.id);
+            let totalAlunosProfessor = 0;
+
+            for (const turma of turmasProfessor) {
+                const { data: matriculas } = await supabase
+                    .from('matriculas')
+                    .select('*')
+                    .eq('turma_id', turma.id)
+                    .eq('ativa', true);
+                totalAlunosProfessor += (matriculas || []).length;
+            }
+
+            professoresComDados.push({
+                id: prof.id,
+                nome: prof.nome,
+                cor: prof.cor,
+                totalTurmas: turmasProfessor.length,
+                totalAlunos: totalAlunosProfessor,
+                totalComparecimentos: 0
+            });
+        }
+
+        // Turmas com dados
+        let turmasComDados = [];
+
+        for (const turma of (todasTurmas || [])) {
+            const { data: matriculas } = await supabase
+                .from('matriculas')
+                .select('*')
+                .eq('turma_id', turma.id)
+                .eq('ativa', true);
+
+            const professor = professores?.find(p => p.id === turma.professor_id);
+
+            turmasComDados.push({
+                id: turma.id,
+                nome: turma.nome,
+                professor_id: turma.professor_id,
+                professor_nome: professor?.nome || null,
+                dia_semana: turma.dia_semana,
+                horario_inicio: turma.horario_inicio?.substring(0, 5) || '-',
+                horario_fim: turma.horario_fim?.substring(0, 5) || '-',
+                limite_alunos: turma.limite_alunos || 4,
+                totalAlunos: (matriculas || []).length
+            });
+        }
+
+        // Alunos que compareceram (presenças confirmadas)
+        const { count: alunosComparecidos } = await supabase
+            .from('presencas')
+            .select('*', { count: 'exact', head: true })
+            .eq('escola_id', perfil.escola_id)
+            .eq('status', 'confirmado');
+
+        res.json({
+            estatisticas: {
+                totalTurmas: todasTurmas?.length || 0,
+                turmasSemana: turmasSemana,
+                totalAulas: totalAulas,
+                aulasSemana: aulasSemana,
+                totalAlunos: totalAlunos || 0,
+                alunosNovosMes: alunosNovosMes || 0,
+                alunosComparecidos: alunosComparecidos || 0
+            },
+            professores: professoresComDados,
+            turmas: turmasComDados
+        });
+
+    } catch (error) {
+        console.error('Erro em /api/relatorios:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 // ==================== ROTAS DE PÁGINA ====================
 
