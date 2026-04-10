@@ -444,6 +444,8 @@
                 .trim();
         }
 
+
+
         // Monta a mensagem WhatsApp para UM aluno específico
         function enviarLinkAluno(cacheKey, alunoId) {
             const aula = aulasCache[cacheKey];
@@ -466,11 +468,11 @@
                 .map(a => `  - ${limparTexto(a.nome)}`)
                 .join('\n');
 
-            // Mensagem com texto puro (sem emojis problemáticos)
+            // Mensagem com texto puro (sem emojis complexos)
             const mensagem = 
 `*Confirmacao de Presenca* - B&T Tech
 
-Ola, ${limperTexto(aluno.nome)}!
+Ola, ${limparTexto(aluno.nome)}!
 
 Voce tem uma aula agendada:
 
