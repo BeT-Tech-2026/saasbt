@@ -2,65 +2,81 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Planejamento Financeiro - B&T Tech</title>
+    <title>Financeiro - B&T Tech</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        .resultados-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .resultado-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .resultado-card.green {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .resultado-card.orange {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .resultado-card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.85;
+            margin-bottom: 4px;
+        }
+
+        .resultado-card .valor {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
         .financeiro-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-lg);
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
         }
-        
-        @media (max-width: 900px) {
-            .financeiro-grid { grid-template-columns: 1fr; }
-        }
-        
+
         .finance-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
-            padding: 20px;
+            overflow: hidden;
         }
-        
-        .finance-card h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 16px;
+
+        .finance-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
-        
-        .finance-card h3 i { color: var(--primary); }
-        
+
+        .finance-header i { color: var(--primary); }
+
+        .finance-body { padding: 20px; }
+
         .input-group {
             display: flex;
             gap: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
-        
-        .input-group input {
-            flex: 1;
-            padding: 10px 14px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-        
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        
-        .input-group .btn {
-            padding: 10px 16px;
-        }
-        
-        .mensalidade-item {
+
+        .input-group input { flex: 1; }
+
+        .item-list { max-height: 300px; overflow-y: auto; }
+
+        .item-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -68,102 +84,45 @@
             background: var(--bg-dark);
             border-radius: var(--radius-sm);
             margin-bottom: 8px;
-            border: 1px solid var(--border);
         }
-        
-        .mensalidade-item .info strong {
-            display: block;
-            font-size: 14px;
-        }
-        
-        .mensalidade-item .info span {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        
-        .mensalidade-item .actions button {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 4px;
-        }
-        
-        .mensalidade-item .actions button:hover {
-            color: var(--danger);
-        }
-        
-        /* Cards de Resultado */
-        .resultados-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .resultado-card {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .resultado-card.green {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-        
-        .resultado-card.orange {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        }
-        
-        .resultado-card .label {
-            font-size: 11px;
-            text-transform: uppercase;
-            opacity: 0.85;
-            margin-bottom: 4px;
-        }
-        
-        .resultado-card .valor {
-            font-size: 28px;
-            font-weight: 700;
-        }
-        
-        .resultado-card .sub {
-            font-size: 11px;
-            opacity: 0.75;
-            margin-top: 4px;
-        }
-        
-        .projetao-anual {
+
+        .item-row .info strong { display: block; font-size: 14px; }
+        .item-row .info span { font-size: 12px; color: var(--text-muted); }
+        .item-row .actions button { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
+        .item-row .actions button:hover { color: var(--danger); }
+
+        .projetao-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
-            padding: 20px;
-        }
-        
-        .projetao-anual h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            padding: 24px;
+            text-align: center;
+            margin-top: 20px;
         }
 
-        .projetao-anual h3 i { color: var(--primary); }
-        
-        .vazio {
-            text-align: center;
-            padding: 30px;
+        .projetao-card .lucro {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .projetao-card .sub {
+            font-size: 12px;
             color: var(--text-muted);
+            margin-top: 8px;
         }
     </style>
 </head>
 <body class="dashboard-body">
 
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <div class="logo"><i class="fas fa-racquet"></i></div>
             <span>B&T Tech</span>
         </div>
         <nav class="sidebar-menu">
@@ -194,63 +153,64 @@
         </header>
 
         <div class="content">
-            <!-- Resultados -->
+            <!-- Cards de Resultado -->
             <div class="resultados-grid">
                 <div class="resultado-card">
                     <div class="label">Receita Semanal</div>
                     <div class="valor" id="receitaSemanal">R$ 0</div>
-                    <div class="sub">Estimada</div>
                 </div>
                 <div class="resultado-card green">
                     <div class="label">Receita Mensal</div>
                     <div class="valor" id="receitaMensal">R$ 0</div>
-                    <div class="sub">Estimada</div>
                 </div>
             </div>
 
             <div class="financeiro-grid">
-                <!-- Coluna 1: Mensalidades -->
+                <!-- Mensalidades -->
                 <div class="finance-card">
-                    <h3><i class="fas fa-money-bill-wave"></i> Mensalidades</h3>
-                    
-                    <div class="input-group">
-                        <input type="number" id="mensalidadeValor" placeholder="Valor (R$)" min="0" step="0.01">
-                        <input type="number" id="mensalidadeQtd" placeholder="Qtd alunos" min="1" value="1">
-                        <button onclick="adicionarMensalidade()" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                    <div class="finance-header">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h3>Mensalidades</h3>
                     </div>
-                    
-                    <div id="listaMensalidades">
-                        <div class="vazio">Nenhuma mensalidade cadastrada</div>
+                    <div class="finance-body">
+                        <div class="input-group">
+                            <input type="number" id="mensalidadeValor" placeholder="Valor (R$)" min="0" step="0.01">
+                            <input type="number" id="mensalidadeQtd" placeholder="Qtd" min="1" value="1" style="width: 80px;">
+                            <button onclick="adicionarMensalidade()" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div id="listaMensalidades" class="item-list">
+                            <div class="empty" style="padding:30px"><i class="fas fa-receipt" style="opacity:0.3"></i><br>Nenhuma mensalidade</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Coluna 2: Custos Fixos -->
+                <!-- Custos Fixos -->
                 <div class="finance-card">
-                    <h3><i class="fas fa-file-invoice-dollar"></i> Custos Fixos Mensais</h3>
-                    
-                    <div class="input-group">
-                        <input type="text" id="custoDesc" placeholder="Descrição (ex: Aluguel)">
-                        <input type="number" id="custoValor" placeholder="Valor (R$)" min="0">
-                        <button onclick="adicionarCusto()" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                    <div class="finance-header">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <h3>Custos Fixos</h3>
                     </div>
-                    
-                    <div id="listaCustos">
-                        <div class="vazio">Nenhum custo fixo cadastrado</div>
+                    <div class="finance-body">
+                        <div class="input-group">
+                            <input type="text" id="custoDesc" placeholder="Descrição">
+                            <input type="number" id="custoValor" placeholder="Valor (R$)" min="0" style="width: 120px;">
+                            <button onclick="adicionarCusto()" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div id="listaCustos" class="item-list">
+                            <div class="empty" style="padding:30px"><i class="fas fa-file-invoice" style="opacity:0.3"></i><br>Nenhum custo fixo</div>
+                        </div>
                     </div>
 
-                    <!-- Projeção Próximo Mês -->
-                    <div class="projetao-anual" style="margin-top: 24px;">
-                        <h3><i class="fas fa-chart-line"></i> Projeção Próximo Mês</h3>
-                        <div style="text-align: center; padding: 20px 0 12px;">
-                            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Lucro Líquido Estimado</div>
-                            <div id="lucroProximoMes" style="font-size: 36px; font-weight: 700; color: var(--success);">R$ 0</div>
-                            <div id="lucroSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">receita R$ 0 — custos R$ 0</div>
-                        </div>
-                        <button onclick="salvarPlanejamento()" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                            <i class="fas fa-save"></i> Salvar Planejamento do Mês
+                    <!-- Projeção -->
+                    <div class="projetao-card">
+                        <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Lucro Líquido Estimado</div>
+                        <div class="lucro" id="lucroProximoMes">R$ 0</div>
+                        <div class="sub" id="lucroSubtitle">receita R$ 0 — custos R$ 0</div>
+                        <button onclick="salvarPlanejamento()" class="btn btn-primary" style="margin-top: 16px; width: 100%;">
+                            <i class="fas fa-save"></i> Salvar
                         </button>
-                        <div id="savedMsg" style="display:none; text-align:center; font-size:12px; color:var(--success); margin-top:8px;">
-                            <i class="fas fa-check-circle"></i> Planejamento salvo!
+                        <div id="savedMsg" style="display:none; margin-top: 8px; color: var(--success); font-size: 12px;">
+                            <i class="fas fa-check"></i> Salvo!
                         </div>
                     </div>
                 </div>
@@ -258,9 +218,21 @@
         </div>
     </main>
 
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
     <script>
         let perfil = null;
         let configFinanceiras = [];
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            toast.innerHTML = `<i class="fas ${icons[type]}"></i><span>${message}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:inherit;margin-left:auto;cursor:pointer"><i class="fas fa-times"></i></button>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, 4000);
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
@@ -273,8 +245,8 @@
             document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
 
             if (perfil.tipo !== 'dono') {
-                alert('Acesso restrito ao administrador');
-                window.location.href = '/dashboard';
+                showToast('Acesso restrito ao administrador', 'warning');
+                setTimeout(() => window.location.href = '/dashboard', 1500);
                 return;
             }
 
@@ -289,85 +261,66 @@
 
         async function loadConfiguracoes() {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/config-financeiras', { 
-                headers: { 'Authorization': `Bearer ${token}` } 
-            });
-            configFinanceiras = await response.json();
-            render();
-            calcular();
+            try {
+                const response = await fetch('/api/config-financeiras', { headers: { 'Authorization': `Bearer ${token}` } });
+                configFinanceiras = await response.json();
+                render();
+                calcular();
+            } catch (e) { showToast('Erro ao carregar', 'error'); }
         }
 
         function render() {
             const mensalidades = configFinanceiras.filter(c => c.tipo === 'mensalidade_fixa' || c.tipo === 'mensalidade_variavel');
             const custos = configFinanceiras.filter(c => c.tipo === 'custo_fixo');
-            
-            const listaMensalidades = document.getElementById('listaMensalidades');
-            if (mensalidades.length === 0) {
-                listaMensalidades.innerHTML = '<div class="vazio">Nenhuma mensalidade cadastrada</div>';
-            } else {
-                listaMensalidades.innerHTML = mensalidades.map(m => `
-                    <div class="mensalidade-item">
-                        <div class="info">
-                            <strong>R$ ${parseFloat(m.valor).toFixed(2)}</strong>
-                            <span>${m.quantidade} aluno(s)</span>
-                        </div>
-                        <div class="actions">
-                            <button onclick="excluirConfig('${m.id}')"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `).join('');
-            }
 
-            const listaCustos = document.getElementById('listaCustos');
-            if (custos.length === 0) {
-                listaCustos.innerHTML = '<div class="vazio">Nenhum custo fixo cadastrado</div>';
-            } else {
-                listaCustos.innerHTML = custos.map(c => `
-                    <div class="mensalidade-item">
-                        <div class="info">
-                            <strong>${c.descricao}</strong>
-                            <span>R$ ${parseFloat(c.valor).toFixed(2)}/mês</span>
-                        </div>
-                        <div class="actions">
-                            <button onclick="excluirConfig('${c.id}')"><i class="fas fa-trash"></i></button>
-                        </div>
+            const listaMen = document.getElementById('listaMensalidades');
+            listaMen.innerHTML = mensalidades.length ? mensalidades.map(m => `
+                <div class="item-row">
+                    <div class="info">
+                        <strong>R$ ${parseFloat(m.valor).toFixed(2)}</strong>
+                        <span>${m.quantidade} aluno(s)</span>
                     </div>
-                `).join('');
-            }
+                    <div class="actions">
+                        <button onclick="excluirConfig('${m.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('') : '<div class="empty" style="padding:30px"><i class="fas fa-receipt" style="opacity:0.3"></i><br>Nenhuma mensalidade</div>';
+
+            const listaCus = document.getElementById('listaCustos');
+            listaCus.innerHTML = custos.length ? custos.map(c => `
+                <div class="item-row">
+                    <div class="info">
+                        <strong>${c.descricao}</strong>
+                        <span>R$ ${parseFloat(c.valor).toFixed(2)}/mês</span>
+                    </div>
+                    <div class="actions">
+                        <button onclick="excluirConfig('${c.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('') : '<div class="empty" style="padding:30px"><i class="fas fa-file-invoice" style="opacity:0.3"></i><br>Nenhum custo fixo</div>';
         }
 
         function calcular() {
             const mensalidades = configFinanceiras.filter(c => c.tipo === 'mensalidade_fixa' || c.tipo === 'mensalidade_variavel');
             const custos = configFinanceiras.filter(c => c.tipo === 'custo_fixo');
-            
-            // Receita mensal
-            let receitaMensal = 0;
-            mensalidades.forEach(m => {
-                receitaMensal += parseFloat(m.valor) * m.quantidade;
-            });
-            
-            // Receita semanal
-            const receitaSemanal = receitaMensal / 4;
-            
-            // Custos mensais
-            let custosMensais = 0;
-            custos.forEach(c => {
-                custosMensais += parseFloat(c.valor);
-            });
 
-            // Lucro líquido
+            let receitaMensal = 0;
+            mensalidades.forEach(m => { receitaMensal += parseFloat(m.valor) * m.quantidade; });
+
+            const receitaSemanal = receitaMensal / 4;
+
+            let custosMensais = 0;
+            custos.forEach(c => { custosMensais += parseFloat(c.valor); });
+
             const lucroMensal = receitaMensal - custosMensais;
-            
-            // Atualiza cards de receita
+
             document.getElementById('receitaSemanal').textContent = formatMoney(receitaSemanal);
             document.getElementById('receitaMensal').textContent = formatMoney(receitaMensal);
 
-            // Atualiza projeção próximo mês
             const lucroEl = document.getElementById('lucroProximoMes');
             lucroEl.textContent = formatMoney(lucroMensal);
             lucroEl.style.color = lucroMensal >= 0 ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('lucroSubtitle').textContent = 
-                `receita ${formatMoney(receitaMensal)} — custos ${formatMoney(custosMensais)}`;
+            document.getElementById('lucroSubtitle').textContent = `receita ${formatMoney(receitaMensal)} — custos ${formatMoney(custosMensais)}`;
         }
 
         function formatMoney(value) {
@@ -377,105 +330,77 @@
         async function adicionarMensalidade() {
             const valor = document.getElementById('mensalidadeValor').value;
             const quantidade = document.getElementById('mensalidadeQtd').value;
-            
-            if (!valor || valor <= 0) {
-                alert('Digite um valor válido');
-                return;
-            }
+            if (!valor || valor <= 0) { showToast('Digite um valor válido', 'warning'); return; }
 
             const token = localStorage.getItem('token');
             const response = await fetch('/api/config-financeiras', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    tipo: 'mensalidade_variavel',
-                    valor: valor,
-                    quantidade: parseInt(quantidade) || 1,
-                    descricao: 'Mensalidade'
-                })
+                body: JSON.stringify({ tipo: 'mensalidade_variavel', valor, quantidade: parseInt(quantidade) || 1, descricao: 'Mensalidade' })
             });
 
             if (response.ok) {
                 document.getElementById('mensalidadeValor').value = '';
                 document.getElementById('mensalidadeQtd').value = '1';
                 await loadConfiguracoes();
+                showToast('Mensalidade adicionada!', 'success');
             }
         }
 
         async function adicionarCusto() {
             const descricao = document.getElementById('custoDesc').value;
             const valor = document.getElementById('custoValor').value;
-            
-            if (!descricao || !valor || valor <= 0) {
-                alert('Digite descrição e valor válidos');
-                return;
-            }
+            if (!descricao || !valor || valor <= 0) { showToast('Digite descrição e valor válidos', 'warning'); return; }
 
             const token = localStorage.getItem('token');
             const response = await fetch('/api/config-financeiras', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    tipo: 'custo_fixo',
-                    valor: valor,
-                    quantidade: 1,
-                    descricao: descricao
-                })
+                body: JSON.stringify({ tipo: 'custo_fixo', valor, quantidade: 1, descricao })
             });
 
             if (response.ok) {
                 document.getElementById('custoDesc').value = '';
                 document.getElementById('custoValor').value = '';
                 await loadConfiguracoes();
+                showToast('Custo adicionado!', 'success');
             }
         }
 
         async function excluirConfig(id) {
-            if (!confirm('Tem certeza que deseja excluir?')) return;
-            
+            if (!confirm('Excluir?')) return;
             const token = localStorage.getItem('token');
-            await fetch(`/api/config-financeiras/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
+            await fetch(`/api/config-financeiras/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
             await loadConfiguracoes();
+            showToast('Excluído!', 'success');
         }
 
-        async function salvarPlanejamento() {
+        function salvarPlanejamento() {
             const mensalidades = configFinanceiras.filter(c => c.tipo === 'mensalidade_fixa' || c.tipo === 'mensalidade_variavel');
             const custos = configFinanceiras.filter(c => c.tipo === 'custo_fixo');
 
             let receitaMensal = 0;
-            mensalidades.forEach(m => receitaMensal += parseFloat(m.valor) * m.quantidade);
+            mensalidades.forEach(m => { receitaMensal += parseFloat(m.valor) * m.quantidade; });
+
             let custosMensais = 0;
-            custos.forEach(c => custosMensais += parseFloat(c.valor));
+            custos.forEach(c => { custosMensais += parseFloat(c.valor); });
 
             const snapshot = {
-                receitaMensal: receitaMensal,
-                custosMensais: custosMensais,
+                receitaMensal,
+                custosMensais,
                 lucroLiquido: receitaMensal - custosMensais,
                 mes: new Date().toISOString().slice(0, 7)
             };
 
             localStorage.setItem('planejamentoFinanceiro', JSON.stringify(snapshot));
-
-            // Descomente para salvar também na API:
-            // const token = localStorage.getItem('token');
-            // await fetch('/api/planejamento-financeiro', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            //     body: JSON.stringify(snapshot)
-            // });
-
-            const msg = document.getElementById('savedMsg');
-            msg.style.display = 'block';
-            setTimeout(() => msg.style.display = 'none', 3000);
+            document.getElementById('savedMsg').style.display = 'block';
+            setTimeout(() => document.getElementById('savedMsg').style.display = 'none', 3000);
+            showToast('Planejamento salvo!', 'success');
         }
 
         async function logout() {
             const token = localStorage.getItem('token');
-            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            try { await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); } catch (e) {}
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
             window.location.href = '/';

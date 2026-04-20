@@ -1,4 +1,3 @@
-<!-- pages/confirmacoes.html -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -9,60 +8,115 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        /* ========== CONTAINER PRINCIPAL ========== */
         .confirmacoes-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
         
+        /* ========== SKELETON LOADING ========== */
+        .skeleton-section {
+            margin-bottom: 32px;
+        }
+        
+        .skeleton-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        
+        .skeleton-header {
+            padding: 16px;
+            background: var(--bg-dark);
+        }
+        
+        .skeleton-body {
+            padding: 16px;
+        }
+        
+        .skeleton-aluno {
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* ========== SECTION HEADER ========== */
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
         
         .section-title {
-            font-size: 1.5rem;
-            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
         }
         
-        .section-title.today { color: #10b981; }
-        .section-title.tomorrow { color: #f59e0b; }
-        .section-title.upcoming { color: #3b82f6; }
-        
-        .date-badge {
-            background: var(--bg-dark);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
+        .section-title i {
+            font-size: 20px;
         }
         
+        .section-title.today { 
+            color: #10b981; 
+        }
+        
+        .section-title.today i {
+            color: #10b981;
+        }
+        
+        .section-title.tomorrow { 
+            color: #f59e0b; 
+        }
+        
+        .section-title.tomorrow i {
+            color: #f59e0b;
+        }
+        
+        .section-title.upcoming { 
+            color: #3b82f6; 
+        }
+        
+        .section-title.upcoming i {
+            color: #3b82f6;
+        }
+        
+        .date-badge {
+            background: var(--bg-card);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        
+        /* ========== AULA CARD ========== */
         .aula-card {
-            background: white;
-            border-radius: 12px;
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
             margin-bottom: 20px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid var(--border);
         }
         
         .aula-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px 20px;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
         }
         
         .aula-header.amanha {
@@ -74,55 +128,74 @@
         }
         
         .aula-info h3 {
-            font-size: 1.1rem;
+            font-size: 16px;
+            font-weight: 600;
             margin-bottom: 4px;
         }
         
         .aula-info p {
-            font-size: 0.9rem;
+            font-size: 13px;
             opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
-
+        
+        .aula-info p i {
+            width: 16px;
+        }
+        
+        .pendente-badge {
+            background: rgba(255,255,255,0.25);
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+        
+        /* ========== BOTÃO WHATSAPP TURMA ========== */
         .whatsapp-turma-btn {
             background: rgba(255,255,255,0.2);
             color: white;
             border: 2px solid rgba(255,255,255,0.6);
-            padding: 8px 16px;
+            padding: 10px 16px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.9rem;
+            font-size: 13px;
             transition: all 0.2s;
-            backdrop-filter: blur(4px);
+            min-height: var(--touch-target-min, 44px);
         }
         
         .whatsapp-turma-btn:hover {
             background: rgba(255,255,255,0.35);
             border-color: white;
-            transform: translateY(-1px);
-        }
-
-        .whatsapp-turma-btn .fa-whatsapp {
-            font-size: 1.1rem;
+            transform: translateY(-2px);
         }
         
+        .whatsapp-turma-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* ========== LISTA DE ALUNOS ========== */
         .alunos-list {
-            padding: 15px;
+            padding: 16px;
         }
         
         .aluno-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
+            padding: 14px;
             border-radius: 8px;
             margin-bottom: 8px;
             background: var(--bg-dark);
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
         }
         
         .aluno-info {
@@ -143,48 +216,66 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
+            flex-shrink: 0;
         }
         
         .aluno-nome {
             font-weight: 500;
+            font-size: 14px;
         }
         
         .aluno-telefone {
-            font-size: 0.85rem;
+            font-size: 12px;
             color: var(--text-muted);
         }
-        
-        .status-badge {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        
-        .status-badge.pendente { background: #fef3c7; color: #d97706; }
-        .status-badge.confirmado { background: #d1fae5; color: #059669; }
-        .status-badge.cancelado { background: #fee2e2; color: #dc2626; }
         
         .aluno-actions {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-
+        
+        /* ========== STATUS BADGE ========== */
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-badge.pendente { 
+            background: var(--warning-bg); 
+            color: #d97706; 
+        }
+        
+        .status-badge.confirmado { 
+            background: var(--success-bg); 
+            color: #059669; 
+        }
+        
+        .status-badge.cancelado { 
+            background: var(--danger-bg); 
+            color: #dc2626; 
+        }
+        
+        /* ========== BOTÃO WHATSAPP ========== */
         .whatsapp-btn {
             background: #25D366;
             color: white;
             border: none;
-            padding: 8px 14px;
+            padding: 10px 14px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 6px;
-            text-decoration: none;
-            font-size: 0.85rem;
+            font-size: 13px;
             transition: all 0.2s;
+            min-height: var(--touch-target-min, 44px);
         }
         
         .whatsapp-btn:hover {
@@ -192,73 +283,107 @@
             transform: translateY(-2px);
         }
         
+        .whatsapp-btn:active {
+            transform: translateY(0);
+        }
+        
         .whatsapp-btn:disabled {
-            background: #ccc;
+            background: var(--border);
+            color: var(--text-muted);
             cursor: not-allowed;
             transform: none;
         }
-
-        .whatsapp-btn[disabled] { position: relative; }
-        .whatsapp-btn[disabled]:hover::after {
-            content: 'Sem telefone cadastrado';
-            position: absolute;
-            bottom: calc(100% + 6px);
-            right: 0;
-            background: #333;
-            color: white;
-            font-size: 0.75rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            white-space: nowrap;
+        
+        .whatsapp-btn:disabled:hover {
+            background: var(--border);
+            transform: none;
         }
         
+        /* ========== EMPTY STATE ========== */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 48px 20px;
             color: var(--text-muted);
         }
         
         .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
         }
-
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: #1a1a2e;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            z-index: 9999;
-            animation: slideInToast 0.3s ease;
-        }
-        .toast.hide { animation: slideOutToast 0.3s ease forwards; }
-        @keyframes slideInToast { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideOutToast { to { opacity: 0; transform: translateY(20px); } }
-        .toast i { color: #25D366; font-size: 1.1rem; }
         
-        @media (max-width: 600px) {
-            .section-header { flex-direction: column; align-items: flex-start; }
-            .aula-header { flex-direction: column; text-align: center; }
-            .aluno-item { flex-direction: column; align-items: flex-start; }
-            .whatsapp-btn { width: 100%; justify-content: center; }
-            .whatsapp-turma-btn { width: 100%; justify-content: center; }
+        /* ========== LOADING ========== */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .loading-state i {
+            font-size: 32px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ========== RESPONSIVIDADE ========== */
+        @media (max-width: 768px) {
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .aula-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .whatsapp-turma-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .aluno-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .aluno-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .whatsapp-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .content {
+                padding: 12px;
+            }
+            
+            .aula-info p {
+                font-size: 12px;
+                gap: 8px;
+            }
         }
     </style>
 </head>
 <body class="dashboard-body">
 
+    <!-- ========== MENU HAMBURGER MOBILE ========== -->
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu de navegação">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <div class="logo"><i class="fas fa-racquet"></i></div>
             <span>B&T Tech</span>
         </div>
         <nav class="sidebar-menu">
@@ -279,39 +404,112 @@
                     <p class="user-type" id="userType">Carregando...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            <button onclick="logout()" class="logout-btn" aria-label="Sair do sistema">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         <header class="top-header">
             <h1><i class="fab fa-whatsapp mr-2"></i>Confirmações</h1>
         </header>
 
-        <div class="confirmacoes-container">
-            <div class="section-header">
-                <h2 class="section-title today"><i class="fas fa-calendar-day"></i> Hoje</h2>
-                <span class="date-badge" id="dataHoje"></span>
-            </div>
-            <div id="aulasHoje"></div>
+        <div class="content">
+            <div class="confirmacoes-container">
+                <!-- Loading Skeleton -->
+                <div id="loadingSkeleton" class="skeleton-section">
+                    <div class="skeleton-card">
+                        <div class="skeleton-header">
+                            <div class="skeleton" style="width: 200px; height: 24px;"></div>
+                        </div>
+                        <div class="skeleton-body">
+                            <div class="skeleton skeleton-aluno"></div>
+                            <div class="skeleton skeleton-aluno"></div>
+                            <div class="skeleton skeleton-aluno"></div>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="section-header" style="margin-top: 40px;">
-                <h2 class="section-title tomorrow"><i class="fas fa-sun"></i> Amanhã</h2>
-                <span class="date-badge" id="dataAmanha"></span>
-            </div>
-            <div id="aulasAmanha"></div>
+                <!-- Seção Hoje -->
+                <div id="hojeSection" style="display: none;">
+                    <div class="section-header">
+                        <h2 class="section-title today"><i class="fas fa-calendar-day"></i> Hoje</h2>
+                        <span class="date-badge" id="dataHoje"></span>
+                    </div>
+                    <div id="aulasHoje"></div>
+                </div>
 
-            <div class="section-header" style="margin-top: 40px;">
-                <h2 class="section-title upcoming"><i class="fas fa-calendar-week"></i> Próximos Dias</h2>
+                <!-- Seção Amanhã -->
+                <div id="amanhaSection" style="display: none;">
+                    <div class="section-header" style="margin-top: 32px;">
+                        <h2 class="section-title tomorrow"><i class="fas fa-sun"></i> Amanhã</h2>
+                        <span class="date-badge" id="dataAmanha"></span>
+                    </div>
+                    <div id="aulasAmanha"></div>
+                </div>
+
+                <!-- Seção Próximos -->
+                <div id="proximosSection" style="display: none;">
+                    <div class="section-header" style="margin-top: 32px;">
+                        <h2 class="section-title upcoming"><i class="fas fa-calendar-week"></i> Próximos Dias</h2>
+                    </div>
+                    <div id="aulasProximos"></div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>Nenhuma aula confirmada para os próximos dias</p>
+                </div>
             </div>
-            <div id="aulasProximos"></div>
         </div>
     </main>
 
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
     <script>
         let authToken = null;
-        const aulasCache = {};
+        let aulasCache = {};
 
+        // ========== TOAST NOTIFICATIONS ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:inherit;margin-left:auto;cursor:pointer;padding:4px;" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ========== SIDEBAR TOGGLE ==========
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.toggle('show');
+        }
+
+        // ========== INICIALIZAÇÃO ==========
         document.addEventListener('DOMContentLoaded', async () => {
             authToken = localStorage.getItem('token');
             if (!authToken) { window.location.href = '/'; return; }
@@ -322,6 +520,7 @@
             document.getElementById('userName').textContent = perfil.nome;
             document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
 
+            // Definir datas
             const hoje = new Date();
             document.getElementById('dataHoje').textContent = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
             
@@ -332,14 +531,19 @@
         });
 
         async function getPerfil() {
-            const response = await fetch('/api/session', {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            const data = await response.json();
-            return data.perfil;
+            try {
+                const response = await fetch('/api/session', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                return data.perfil;
+            } catch (e) {
+                showToast('Erro ao carregar perfil', 'error');
+                return null;
+            }
         }
 
-        // FUNÇÃO CORRIGIDA - loadAulas
+        // ========== CARREGAR AULAS ==========
         async function loadAulas() {
             try {
                 const response = await fetch('/api/aulas-confirmacoes', {
@@ -347,21 +551,47 @@
                 });
                 const dados = await response.json();
                 
-                console.log('Dados recebidos:', dados);
+                // Esconder skeleton
+                document.getElementById('loadingSkeleton').style.display = 'none';
 
+                // Preencher cache
                 [...(dados.hoje||[]), ...(dados.amanha||[]), ...(dados.proximos||[])].forEach(aula => {
                     const key = `${aula.id}_${aula.data_formatada}`;
                     aulasCache[key] = aula;
                 });
 
-                renderAulas('aulasHoje', dados.hoje, 'hoje');
-                renderAulas('aulasAmanha', dados.amanha, 'amanha');
-                renderAulas('aulasProximos', dados.proximos, 'proximo');
+                // Verificar se tem conteúdo
+                const temHoje = dados.hoje && dados.hoje.length > 0;
+                const temAmanha = dados.amanha && dados.amanha.length > 0;
+                const temProximos = dados.proximos && dados.proximos.length > 0;
+
+                if (!temHoje && !temAmanha && !temProximos) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
+                if (temHoje) {
+                    document.getElementById('hojeSection').style.display = 'block';
+                    renderAulas('aulasHoje', dados.hoje, 'hoje');
+                }
+
+                if (temAmanha) {
+                    document.getElementById('amanhaSection').style.display = 'block';
+                    renderAulas('aulasAmanha', dados.amanha, 'amanha');
+                }
+
+                if (temProximos) {
+                    document.getElementById('proximosSection').style.display = 'block';
+                    renderAulas('aulasProximos', dados.proximos, 'proximo');
+                }
             } catch (error) {
                 console.error('Erro ao carregar aulas:', error);
+                document.getElementById('loadingSkeleton').style.display = 'none';
+                showToast('Erro ao carregar aulas', 'error');
             }
         }
 
+        // ========== RENDERIZAR AULAS ==========
         function renderAulas(containerId, aulas, tipo) {
             const container = document.getElementById(containerId);
             
@@ -377,26 +607,26 @@
 
             container.innerHTML = aulas.map(aula => {
                 const tipoClasse = tipo === 'hoje' ? '' : tipo === 'amanha' ? 'amanha' : 'proximo';
-                const horario    = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '';
-                const horarioFim = aula.horario_fim    ? aula.horario_fim.substring(0, 5)    : '';
-                const cacheKey   = `${aula.id}_${aula.data_formatada}`;
+                const horario = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '';
+                const horarioFim = aula.horario_fim ? aula.horario_fim.substring(0, 5) : '';
+                const cacheKey = `${aula.id}_${aula.data_formatada}`;
                 
-                const totalAlunos     = aula.alunos.length;
-                const confirmados     = aula.alunos.filter(a => a.status === 'confirmado').length;
-                const pendentes       = aula.alunos.filter(a => a.status === 'pendente').length;
+                const totalAlunos = aula.alunos.length;
+                const confirmados = aula.alunos.filter(a => a.status === 'confirmado').length;
+                const pendentes = aula.alunos.filter(a => a.status === 'pendente').length;
                 
                 return `
                 <div class="aula-card">
                     <div class="aula-header ${tipoClasse}">
                         <div class="aula-info">
-                            <h3>${aula.nome}</h3>
+                            <h3>${escapeHtml(aula.nome)}</h3>
                             <p>
-                                <i class="fas fa-user"></i> ${aula.professor || 'Sem professor'}
+                                <i class="fas fa-user"></i> ${escapeHtml(aula.professor || 'Sem professor')}
                                 &nbsp;|&nbsp;
                                 <i class="fas fa-clock"></i> ${horario} às ${horarioFim}
                                 &nbsp;|&nbsp;
                                 <i class="fas fa-users"></i> ${confirmados}/${totalAlunos} confirmados
-                                ${pendentes > 0 ? `<span style="margin-left:6px;background:rgba(255,255,255,0.25);padding:2px 8px;border-radius:10px;font-size:0.8rem;">${pendentes} pendente${pendentes > 1 ? 's' : ''}</span>` : ''}
+                                ${pendentes > 0 ? `<span class="pendente-badge">${pendentes} pendente${pendentes > 1 ? 's' : ''}</span>` : ''}
                             </p>
                         </div>
                         <button onclick="enviarMensagemTurma('${cacheKey}')" class="whatsapp-turma-btn" title="Enviar mensagem de confirmação para todos os alunos">
@@ -410,10 +640,10 @@
                             return `
                             <div class="aluno-item">
                                 <div class="aluno-info">
-                                    <div class="aluno-avatar">${aluno.nome.charAt(0)}</div>
+                                    <div class="aluno-avatar">${escapeHtml(aluno.nome.charAt(0))}</div>
                                     <div>
-                                        <div class="aluno-nome">${aluno.nome}</div>
-                                        <div class="aluno-telefone">${aluno.telefone || 'Sem telefone'}</div>
+                                        <div class="aluno-nome">${escapeHtml(aluno.nome)}</div>
+                                        <div class="aluno-telefone">${aluno.telefone ? escapeHtml(aluno.telefone) : 'Sem telefone'}</div>
                                     </div>
                                 </div>
                                 <div class="aluno-actions">
@@ -433,13 +663,22 @@
 
         function getStatusLabel(status) {
             const labels = {
-                'pendente':   'Aguardando',
-                'confirmado':  'Confirmado',
-                'cancelado':   'Cancelado'
+                'pendente': 'Aguardando',
+                'confirmado': 'Confirmado',
+                'cancelado': 'Cancelado'
             };
             return labels[status] || 'Aguardando';
         }
 
+        // ========== ESCAPE HTML ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== ENVIAR WHATSAPP ==========
         function limparTexto(texto) {
             if (!texto) return '';
             return texto.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
@@ -451,37 +690,37 @@
 
             const aluno = aula.alunos.find(a => a.id === alunoId);
             if (!aluno || !aluno.telefone) {
-                showToast('Aluno sem telefone cadastrado!', true);
+                showToast('Aluno sem telefone cadastrado!', 'warning');
                 return;
             }
 
-            const telefone    = aluno.telefone.replace(/\D/g, '');
-            const horario     = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '-';
-            const horarioFim  = aula.horario_fim    ? aula.horario_fim.substring(0, 5)    : '-';
+            const telefone = aluno.telefone.replace(/\D/g, '');
+            const horario = aula.horario_inicio ? aula.horario_inicio.substring(0, 5) : '-';
+            const horarioFim = aula.horario_fim ? aula.horario_fim.substring(0, 5) : '-';
             const linkConfirm = `https://saasbt.vercel.app/confirmar?aluno=${aluno.id}`;
 
             const colegas = aula.alunos.filter(a => a.id !== alunoId).map(a => `  - ${limparTexto(a.nome)}`).join('\n');
 
             const mensagem = 
-`*Confirmacao de Presenca* - B&T Tech
+`*Confirmação de Presença* - B&T Tech
 
-Ola, ${limparTexto(aluno.nome)}!
+Olá, ${limparTexto(aluno.nome)}!
 
-Voce tem uma aula agendada:
+Você tem uma aula agendada:
 
 Turma: ${limparTexto(aula.nome)}
 Professor: ${limparTexto(aula.professor) || 'A definir'}
 Data: ${limparTexto(aula.data_formatada)}
-Horario: ${horario} as ${horarioFim}${colegas ? '\n\nColegas de turma:\n' + colegas : ''}
+Horário: ${horario} às ${horarioFim}${colegas ? '\n\nColegas de turma:\n' + colegas : ''}
 
-Confirme ou cancele sua presenca pelo link abaixo:
+Confirme ou cancele sua presença pelo link abaixo:
 ${linkConfirm}
 
-B&T Tech aguarda voce!`;
+B&T Tech aguarda você!`;
 
             const urlWhats = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
             window.open(urlWhats, '_blank');
-            showToast(`WhatsApp aberto para ${aluno.nome}`);
+            showToast(`WhatsApp aberto para ${aluno.nome}`, 'success');
         }
 
         function enviarMensagemTurma(cacheKey) {
@@ -490,48 +729,76 @@ B&T Tech aguarda voce!`;
 
             const comTelefone = aula.alunos.filter(a => a.telefone);
             if (comTelefone.length === 0) {
-                showToast('Nenhum aluno com telefone nesta turma!', true);
+                showToast('Nenhum aluno com telefone nesta turma!', 'warning');
                 return;
             }
 
             const semTelefone = aula.alunos.length - comTelefone.length;
-            const confirmMsg  = semTelefone > 0
-                ? `Enviar mensagem para ${comTelefone.length} aluno(s)?\n(${semTelefone} sem telefone serao ignorados)`
-                : `Enviar mensagem para todos os ${comTelefone.length} aluno(s)?`;
-
-            if (!confirm(confirmMsg)) return;
-
-            comTelefone.forEach((aluno, index) => {
-                setTimeout(() => {
-                    enviarLinkAluno(cacheKey, aluno.id);
-                }, index * 600);
-            });
+            
+            // Usar toast em vez de confirm
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px;">
+                    <div class="modal-header">
+                        <h3><i class="fab fa-whatsapp" style="color: #25D366;"></i> Enviar Mensagens</h3>
+                        <button class="close" onclick="this.closest('.modal').remove()">&times;</button>
+                    </div>
+                    <div class="modal-body" style="text-align: center;">
+                        <p style="margin-bottom: 16px;">Enviar mensagem para ${comTelefone.length} aluno(s)?</p>
+                        ${semTelefone > 0 ? `<p style="color: var(--text-muted); font-size: 13px;">(${semTelefone} sem telefone serão ignorados)</p>` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" id="confirmarEnvio">
+                            <i class="fab fa-whatsapp"></i> Enviar
+                        </button>
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            document.getElementById('confirmarEnvio').onclick = () => {
+                document.body.removeChild(modal);
+                comTelefone.forEach((aluno, index) => {
+                    setTimeout(() => {
+                        enviarLinkAluno(cacheKey, aluno.id);
+                    }, index * 200); // Reduzido para 200ms
+                });
+                showToast(`Enviando ${comTelefone.length} mensagens...`, 'success');
+            };
         }
 
-        function showToast(msg, isError = false) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<i class="fas fa-${isError ? 'exclamation-triangle' : 'check-circle'}" style="color:${isError ? '#ef4444' : '#25D366'}"></i> ${msg}`;
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.add('hide');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
+        // ========== LOGOUT ==========
         async function logout() {
-            await fetch('/api/logout', { 
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
+            try {
+                await fetch('/api/logout', { 
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+            } catch (e) {}
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
             window.location.href = '/';
         }
+<<<<<<< HEAD
+        
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(m => m.remove());
+            }
+        });
+        
+        // Fechar modal ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.remove();
+            }
+=======
 
             // Recarrega os dados quando a página volta a ficar visível (quando volta de turmas.html)
         document.addEventListener('visibilitychange', function() {
@@ -544,6 +811,7 @@ B&T Tech aguarda voce!`;
         // Também recarrega quando a janela ganha foco
         window.addEventListener('focus', function() {
             loadAulas();
+>>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
         });
     </script>
 </body>

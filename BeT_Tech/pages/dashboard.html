@@ -8,12 +8,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* ========== SKELETON LOADING ========== */
+        .skeleton-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .skeleton-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .skeleton-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+        }
+        
+        .skeleton-text {
+            flex: 1;
+        }
+        
+        /* ========== QUICK ACTIONS ========== */
         .quick-actions {
             display: flex;
             gap: 12px;
             margin-bottom: 24px;
             flex-wrap: wrap;
         }
+        
         .quick-btn {
             display: flex;
             align-items: center;
@@ -25,27 +55,60 @@
             font-weight: 600;
             font-size: 14px;
             transition: all 0.2s;
+            min-height: var(--touch-target-min, 44px);
         }
-        .quick-btn:hover { transform: translateY(-2px); }
-        .quick-btn.primary { background: var(--primary); color: white; }
-        .quick-btn.secondary { background: var(--secondary); color: white; }
-        .quick-btn i { font-size: 16px; }
-
+        
+        .quick-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .quick-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .quick-btn.primary:hover {
+            background: var(--primary-dark);
+            box-shadow: var(--glow);
+        }
+        
+        .quick-btn.secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .quick-btn.secondary:hover {
+            background: var(--secondary-dark);
+        }
+        
+        .quick-btn i {
+            font-size: 16px;
+        }
+        
+        /* ========== STATS GRID ========== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
+        
         .stat-card {
             background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: var(--radius-md);
             padding: 20px;
             display: flex;
             align-items: center;
             gap: 16px;
-            border: 1px solid var(--border);
+            transition: all 0.2s;
         }
+        
+        .stat-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
         .stat-icon {
             width: 50px;
             height: 50px;
@@ -55,30 +118,70 @@
             justify-content: center;
             font-size: 20px;
             color: white;
+            flex-shrink: 0;
         }
-        .stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
-        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
-
-        .stat-info .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); }
-        .stat-info .stat-label { font-size: 13px; color: var(--text-muted); }
-
+        
+        .stat-icon.green {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .stat-icon.blue {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        
+        .stat-icon.purple {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        
+        .stat-icon.orange {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .stat-info .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        
+        .stat-info .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        /* ========== DASHBOARD GRID ========== */
         .dashboard-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
         }
+        
         @media (max-width: 1024px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
         }
-
+        
+        /* ========== OCCUPANCY GRID ========== */
         .occupancy-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 16px;
             margin-top: 20px;
         }
+        
+        @media (max-width: 768px) {
+            .occupancy-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .occupancy-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         .occupancy-card {
             background: var(--bg-dark);
             border-radius: 12px;
@@ -86,7 +189,14 @@
             border: 1px solid var(--border);
             position: relative;
             overflow: hidden;
+            transition: all 0.2s;
         }
+        
+        .occupancy-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
         .occupancy-card::before {
             content: '';
             position: absolute;
@@ -96,22 +206,26 @@
             height: 100%;
             background: var(--card-color, #3b82f6);
         }
+        
         .occupancy-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 12px;
         }
+        
         .occupancy-title {
             font-weight: 600;
             font-size: 14px;
             color: var(--text-primary);
         }
+        
         .occupancy-percent {
             font-size: 20px;
             font-weight: 700;
             color: var(--card-color, #3b82f6);
         }
+        
         .occupancy-bar {
             height: 8px;
             background: var(--border);
@@ -119,24 +233,29 @@
             overflow: hidden;
             margin-bottom: 8px;
         }
+        
         .occupancy-fill {
             height: 100%;
             border-radius: 4px;
             transition: width 0.5s ease;
         }
+        
         .occupancy-details {
             display: flex;
             justify-content: space-between;
             font-size: 12px;
             color: var(--text-muted);
         }
+        
         .occupancy-vagas {
             font-weight: 600;
         }
+        
         .occupancy-vagas.cheio { color: #ef4444; }
         .occupancy-vagas.lotado { color: #f59e0b; }
         .occupancy-vagas.disponivel { color: #10b981; }
-
+        
+        /* ========== TURMA MINI ========== */
         .turma-mini {
             display: flex;
             align-items: center;
@@ -145,7 +264,14 @@
             background: var(--bg-dark);
             border-radius: 8px;
             margin-bottom: 8px;
+            border-left: 3px solid;
+            transition: all 0.2s;
         }
+        
+        .turma-mini:hover {
+            background: var(--bg-card-hover);
+        }
+        
         .turma-mini-avatar {
             width: 40px;
             height: 40px;
@@ -155,38 +281,113 @@
             justify-content: center;
             color: white;
             font-weight: 700;
+            flex-shrink: 0;
         }
-        .turma-mini-info { flex: 1; }
-        .turma-mini-nome { font-weight: 600; font-size: 14px; }
-        .turma-mini-prof { font-size: 12px; color: var(--text-muted); }
+        
+        .turma-mini-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .turma-mini-nome {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .turma-mini-prof {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
         .turma-mini-qtd {
             background: var(--bg-card);
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
+            flex-shrink: 0;
         }
-
+        
+        /* ========== CHART ========== */
+        .chart-wrapper {
+            height: 200px;
+            margin-top: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-wrapper {
+                height: 150px;
+            }
+        }
+        
+        /* ========== EMPTY STATE ========== */
         .empty-state {
             text-align: center;
             padding: 40px;
             color: var(--text-muted);
         }
-
-        .chart-wrapper {
-            height: 200px;
-            margin-top: 16px;
+        
+        .empty-state i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+        
+        /* ========== LOADING ========== */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .loading-state i {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ========== RESPONSIVIDADE ========== */
+        @media (max-width: 768px) {
+            .quick-actions {
+                flex-direction: column;
+            }
+            
+            .quick-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body class="dashboard-body">
 
+    <!-- ========== MENU HAMBURGER MOBILE ========== -->
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu de navegação">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <div class="logo"><i class="fas fa-racquet"></i></div>
             <span>B&T Tech</span>
         </div>
-
         <nav class="sidebar-menu">
             <a href="/dashboard" class="menu-item active"><i class="fas fa-home"></i> Início</a>
             <a href="/alunos" class="menu-item"><i class="fas fa-users"></i> Alunos</a>
@@ -195,9 +396,8 @@
             <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
             <a href="/confirmacoes" class="menu-item"><i class="fab fa-whatsapp"></i> Confirmações</a>
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
-            <a href="/financeiro" class="menu-item "><i class="fas fa-dollar-sign"></i> Financeiro</a>
+            <a href="/financeiro" class="menu-item"><i class="fas fa-dollar-sign"></i> Financeiro</a>
         </nav>
-
         <div class="sidebar-footer">
             <div class="user-info">
                 <div class="user-avatar"><i class="fas fa-user"></i></div>
@@ -206,11 +406,13 @@
                     <p class="user-type" id="userType">Carregando...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            <button onclick="logout()" class="logout-btn" aria-label="Sair do sistema">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         <header class="top-header">
             <h1><i class="fas fa-home mr-2"></i>Dashboard</h1>
             <span class="date" id="currentDate"></span>
@@ -227,8 +429,40 @@
                 </button>
             </div>
 
+            <!-- Loading Skeleton -->
+            <div id="loadingSkeleton" class="skeleton-stats">
+                <div class="skeleton-stat">
+                    <div class="skeleton skeleton-icon"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton" style="width: 60px; height: 28px; margin-bottom: 4px;"></div>
+                        <div class="skeleton" style="width: 80px; height: 14px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-stat">
+                    <div class="skeleton skeleton-icon"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton" style="width: 60px; height: 28px; margin-bottom: 4px;"></div>
+                        <div class="skeleton" style="width: 80px; height: 14px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-stat">
+                    <div class="skeleton skeleton-icon"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton" style="width: 60px; height: 28px; margin-bottom: 4px;"></div>
+                        <div class="skeleton" style="width: 80px; height: 14px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-stat">
+                    <div class="skeleton skeleton-icon"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton" style="width: 60px; height: 28px; margin-bottom: 4px;"></div>
+                        <div class="skeleton" style="width: 80px; height: 14px;"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats Cards -->
-            <div class="stats-grid">
+            <div class="stats-grid" id="statsGrid" style="display: none;">
                 <div class="stat-card">
                     <div class="stat-icon green"><i class="fas fa-users"></i></div>
                     <div class="stat-info">
@@ -263,7 +497,7 @@
             </div>
 
             <!-- Grid Principal -->
-            <div class="dashboard-grid">
+            <div class="dashboard-grid" id="dashboardGrid" style="display: none;">
                 <!-- Coluna Esquerda: Ocupação -->
                 <div class="card">
                     <div class="card-header">
@@ -282,14 +516,17 @@
                     <div class="card-header">
                         <h2><i class="fas fa-clock mr-2"></i>Aulas de Hoje</h2>
                     </div>
-                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
-                        <div id="aulasHojeList"></div>
+                    <div class="card-body" id="aulasHojeContainer">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner"></i>
+                            <p style="margin-top: 10px;">Carregando...</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Alunos por Dia -->
-            <div class="card" style="margin-top: 24px;">
+            <div class="card" id="alunosDiaCard" style="display: none;">
                 <div class="card-header">
                     <h2><i class="fas fa-users mr-2"></i>Alunos por Dia da Semana</h2>
                 </div>
@@ -303,58 +540,62 @@
     </main>
 
     <!-- Modal Novo Aluno -->
-    <div id="modalAluno" class="modal hidden">
+    <div id="modalAluno" class="modal hidden" role="dialog" aria-labelledby="modalAlunoTitulo" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Novo Aluno</h3>
-                <button onclick="fecharModalAluno()" class="close">&times;</button>
+                <h3 id="modalAlunoTitulo">Novo Aluno</h3>
+                <button onclick="fecharModalAluno()" class="close" aria-label="Fechar modal">&times;</button>
             </div>
             <form id="alunoForm" class="modal-body">
                 <div class="form-group">
-                    <label>Nome *</label>
-                    <input type="text" id="alunoNome" required placeholder="Nome completo">
+                    <label for="alunoNome">Nome *</label>
+                    <input type="text" id="alunoNome" placeholder="Nome completo" required aria-required="true">
                 </div>
                 <div class="form-group">
-                    <label>Telefone</label>
-                    <input type="text" id="alunoTelefone" placeholder="(00) 00000-0000">
+                    <label for="alunoTelefone">Telefone</label>
+                    <input type="tel" id="alunoTelefone" placeholder="(00) 00000-0000">
                 </div>
                 <div class="form-group">
-                    <label>E-mail</label>
+                    <label for="alunoEmail">E-mail</label>
                     <input type="email" id="alunoEmail" placeholder="email@exemplo.com">
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Salvar</button>
-                    <button type="button" onclick="fecharModalAluno()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSalvarAluno">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                    <button type="button" onclick="fecharModalAluno()" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Nova Turma -->
-    <div id="modalTurma" class="modal hidden">
+    <div id="modalTurma" class="modal hidden" role="dialog" aria-labelledby="modalTurmaTitulo" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Nova Turma</h3>
-                <button onclick="fecharModalTurma()" class="close">&times;</button>
+                <h3 id="modalTurmaTitulo">Nova Turma</h3>
+                <button onclick="fecharModalTurma()" class="close" aria-label="Fechar modal">&times;</button>
             </div>
             <form id="turmaForm" class="modal-body">
                 <div class="form-group">
-                    <label>Nome da Turma *</label>
-                    <input type="text" id="turmaNome" required placeholder="Ex: Avançado A">
+                    <label for="turmaNome">Nome da Turma *</label>
+                    <input type="text" id="turmaNome" placeholder="Ex: Avançado A" required aria-required="true">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Início *</label>
-                        <input type="time" id="turmaInicio" required>
+                        <label for="turmaInicio">Início *</label>
+                        <input type="time" id="turmaInicio" required aria-required="true">
                     </div>
                     <div class="form-group">
-                        <label>Fim *</label>
-                        <input type="time" id="turmaFim" required>
+                        <label for="turmaFim">Fim *</label>
+                        <input type="time" id="turmaFim" required aria-required="true">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Dia da Semana *</label>
-                    <select id="turmaDia" required>
+                    <label for="turmaDia">Dia da Semana *</label>
+                    <select id="turmaDia" required aria-required="true">
                         <option value="">Selecione...</option>
                         <option value="segunda">Segunda</option>
                         <option value="terca">Terça</option>
@@ -366,22 +607,29 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Professor</label>
+                    <label for="turmaProfessor">Professor</label>
                     <select id="turmaProfessor">
                         <option value="">Selecione...</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Limite de Alunos</label>
+                    <label for="turmaLimite">Limite de Alunos</label>
                     <input type="number" id="turmaLimite" value="4" min="1" max="20">
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Salvar</button>
-                    <button type="button" onclick="fecharModalTurma()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSalvarTurma">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                    <button type="button" onclick="fecharModalTurma()" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <script>
         let perfil = null;
@@ -389,6 +637,43 @@
         let chartOcupacao = null;
         let chartAlunosDia = null;
 
+        // ========== TOAST NOTIFICATIONS ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:inherit;margin-left:auto;cursor:pointer;padding:4px;" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ========== SIDEBAR TOGGLE ==========
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.toggle('show');
+        }
+
+        // ========== INICIALIZAÇÃO ==========
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             if (!token) { window.location.href = '/'; return; }
@@ -396,13 +681,18 @@
             perfil = JSON.parse(localStorage.getItem('perfil'));
 
             if (!perfil) {
-                const response = await fetch('/api/session', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) { window.location.href = '/'; return; }
-                const data = await response.json();
-                perfil = data.perfil;
-                localStorage.setItem('perfil', JSON.stringify(perfil));
+                try {
+                    const response = await fetch('/api/session', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) { window.location.href = '/'; return; }
+                    const data = await response.json();
+                    perfil = data.perfil;
+                    localStorage.setItem('perfil', JSON.stringify(perfil));
+                } catch (e) {
+                    window.location.href = '/';
+                    return;
+                }
             }
 
             document.getElementById('userName').textContent = perfil.nome;
@@ -421,66 +711,106 @@
             await loadProfessoresSelect();
         });
 
+        // ========== CARREGAR DASHBOARD ==========
         async function loadDashboard() {
             const token = localStorage.getItem('token');
             
-            const response = await fetch('/api/dashboard', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const { alunosAtivos, turmasAtivas, aulasHoje } = await response.json();
-
-            document.getElementById('totalAlunos').textContent = alunosAtivos || 0;
-            document.getElementById('totalTurmas').textContent = turmasAtivas || 0;
-            document.getElementById('aulasHoje').textContent = aulasHoje?.length || 0;
-            document.getElementById('alunosDia').textContent = aulasHoje?.length || 0;
-
-            // Lista aulas de hoje
-            const lista = document.getElementById('aulasHojeList');
-            if (aulasHoje && aulasHoje.length > 0) {
-                lista.innerHTML = aulasHoje.map(t => {
-                    const cor = t.perfis?.cor || '#3b82f6';
-                    return `
-                    <div class="turma-mini" style="border-left: 4px solid ${cor};">
-                        <div class="turma-mini-avatar" style="background: ${cor};">
-                            ${t.nome.charAt(0)}
-                        </div>
-                        <div class="turma-mini-info">
-                            <div class="turma-mini-nome">${t.nome}</div>
-                            <div class="turma-mini-prof">${t.perfis?.nome || 'Sem professor'} • ${t.horario_inicio} - ${t.horario_fim}</div>
-                        </div>
-                    </div>
-                `}).join('');
-            } else {
-                lista.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-xmark"></i><p>Nenhuma aula hoje</p></div>';
-            }
-
-            await loadTurmasOcupacao();
-        }
-
-        async function loadTurmasOcupacao() {
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/turmas', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            turmasData = await response.json();
-
-            for (let turma of turmasData) {
-                const res = await fetch(`/api/matriculas/${turma.id}`, {
+            try {
+                const response = await fetch('/api/dashboard', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const matriculas = await res.json();
-                turma.alunosMatriculados = matriculas.filter(m => m.ativa).length;
-            }
+                const { alunosAtivos, turmasAtivas, aulasHoje } = await response.json();
 
-            renderOccupancyChart();
-            renderOccupancyCards();
-            renderAlunosDiaChart();
+                // Esconder skeleton e mostrar conteúdo
+                document.getElementById('loadingSkeleton').style.display = 'none';
+                document.getElementById('statsGrid').style.display = 'grid';
+                document.getElementById('dashboardGrid').style.display = 'grid';
+                document.getElementById('alunosDiaCard').style.display = 'block';
+
+                document.getElementById('totalAlunos').textContent = alunosAtivos || 0;
+                document.getElementById('totalTurmas').textContent = turmasAtivas || 0;
+                document.getElementById('aulasHoje').textContent = aulasHoje?.length || 0;
+                document.getElementById('alunosDia').textContent = aulasHoje?.length || 0;
+
+                // Lista aulas de hoje
+                renderAulasHoje(aulasHoje);
+
+                await loadTurmasOcupacao();
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+                showToast('Erro ao carregar dados', 'error');
+                document.getElementById('loadingSkeleton').style.display = 'none';
+                document.getElementById('statsGrid').style.display = 'grid';
+            }
         }
 
+        // ========== RENDER AULAS HOJE ==========
+        function renderAulasHoje(aulasHoje) {
+            const lista = document.getElementById('aulasHojeContainer');
+            
+            if (!aulasHoje || aulasHoje.length === 0) {
+                lista.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-xmark"></i>
+                        <p>Nenhuma aula hoje</p>
+                    </div>
+                `;
+                return;
+            }
+
+            lista.innerHTML = aulasHoje.map(t => {
+                const cor = t.perfis?.cor || '#3b82f6';
+                return `
+                <div class="turma-mini" style="border-left-color: ${cor};">
+                    <div class="turma-mini-avatar" style="background: ${cor};">
+                        ${escapeHtml(t.nome.charAt(0))}
+                    </div>
+                    <div class="turma-mini-info">
+                        <div class="turma-mini-nome">${escapeHtml(t.nome)}</div>
+                        <div class="turma-mini-prof">${escapeHtml(t.perfis?.nome || 'Sem professor')} • ${t.horario_inicio} - ${t.horario_fim}</div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // ========== CARREGAR TURMAS ==========
+        async function loadTurmasOcupacao() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch('/api/turmas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                turmasData = await response.json();
+
+                for (let turma of turmasData) {
+                    const res = await fetch(`/api/matriculas/${turma.id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const matriculas = await res.json();
+                    turma.alunosMatriculados = matriculas.filter(m => m.ativa).length;
+                }
+
+                renderOccupancyChart();
+                renderOccupancyCards();
+                renderAlunosDiaChart();
+            } catch (error) {
+                console.error('Erro ao carregar turmas:', error);
+            }
+        }
+
+        // ========== ESCAPE HTML ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== GRAFICO OCUPAÇÃO ==========
         function renderOccupancyChart() {
             const ctx = document.getElementById('ocupacaoChart').getContext('2d');
             
-            // Ordena turmas por ocupação
             const sortedTurmas = [...turmasData].sort((a, b) => {
                 const pctA = a.limite_alunos > 0 ? a.alunosMatriculados / a.limite_alunos : 0;
                 const pctB = b.limite_alunos > 0 ? b.alunosMatriculados / b.limite_alunos : 0;
@@ -538,10 +868,10 @@
             });
         }
 
+        // ========== CARDS DE OCUPAÇÃO ==========
         function renderOccupancyCards() {
             const container = document.getElementById('occupancyGrid');
             
-            // Ordena por % de ocupação
             const sortedTurmas = [...turmasData].sort((a, b) => {
                 const pctA = a.limite_alunos > 0 ? a.alunosMatriculados / a.limite_alunos : 0;
                 const pctB = b.limite_alunos > 0 ? b.alunosMatriculados / b.limite_alunos : 0;
@@ -564,15 +894,14 @@
                     statusText = `${vagas} vaga`;
                 }
 
-                // Cor da barra baseada no percentual
-                let barColor = '#10b981'; // verde
-                if (percentual >= 75) barColor = '#f59e0b'; // laranja
-                if (percentual >= 100) barColor = '#ef4444'; // vermelho
+                let barColor = '#10b981';
+                if (percentual >= 75) barColor = '#f59e0b';
+                if (percentual >= 100) barColor = '#ef4444';
 
                 return `
                 <div class="occupancy-card" style="--card-color: ${cor}">
                     <div class="occupancy-header">
-                        <div class="occupancy-title">${t.nome}</div>
+                        <div class="occupancy-title">${escapeHtml(t.nome)}</div>
                         <div class="occupancy-percent">${percentual}%</div>
                     </div>
                     <div class="occupancy-bar">
@@ -587,6 +916,7 @@
             }).join('');
         }
 
+        // ========== GRAFICO ALUNOS POR DIA ==========
         function renderAlunosDiaChart() {
             const ctx = document.getElementById('alunosDiaChart').getContext('2d');
             
@@ -599,7 +929,6 @@
                     .reduce((acc, t) => acc + (t.alunosMatriculados || 0), 0);
             });
 
-            // Cores gradient para cada barra
             const colors = dataAlunos.map(v => v > 0 ? '#3b82f6' : '#e5e7eb');
 
             if (chartAlunosDia) chartAlunosDia.destroy();
@@ -636,86 +965,166 @@
             });
         }
 
-        // Funções Modal
+        // ========== MODAL ALUNO ==========
         function abrirModalAluno() {
             document.getElementById('modalAluno').classList.remove('hidden');
             document.getElementById('alunoForm').reset();
+            document.getElementById('alunoNome').focus();
         }
+        
         function fecharModalAluno() {
             document.getElementById('modalAluno').classList.add('hidden');
         }
+
         document.getElementById('alunoForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const token = localStorage.getItem('token');
-            const nome = document.getElementById('alunoNome').value;
-            const telefone = document.getElementById('alunoTelefone').value;
-            const email = document.getElementById('alunoEmail').value;
+            const btn = document.getElementById('btnSalvarAluno');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+            
+            const nome = document.getElementById('alunoNome').value.trim();
+            const telefone = document.getElementById('alunoTelefone').value.trim();
+            const email = document.getElementById('alunoEmail').value.trim();
 
-            const response = await fetch('/api/alunos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ nome, telefone, email })
-            });
+            if (!nome) {
+                showToast('Nome é obrigatório', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
 
-            if (response.ok) {
-                alert('Aluno cadastrado com sucesso!');
-                fecharModalAluno();
-                loadDashboard();
-            } else {
-                alert('Erro ao cadastrar');
+            try {
+                const response = await fetch('/api/alunos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ nome, telefone, email })
+                });
+
+                if (response.ok) {
+                    showToast('Aluno cadastrado com sucesso!', 'success');
+                    fecharModalAluno();
+                    loadDashboard();
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Erro ao cadastrar', 'error');
+                }
+            } catch (error) {
+                showToast('Erro de conexão', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         });
 
+        // ========== MODAL TURMA ==========
         async function loadProfessoresSelect() {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/professores', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const professores = await response.json();
-            const select = document.getElementById('turmaProfessor');
-            select.innerHTML = '<option value="">Selecione...</option>' + 
-                professores.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            try {
+                const response = await fetch('/api/professores', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const professores = await response.json();
+                const select = document.getElementById('turmaProfessor');
+                select.innerHTML = '<option value="">Selecione...</option>' + 
+                    professores.map(p => `<option value="${p.id}">${escapeHtml(p.nome)}</option>`).join('');
+            } catch (e) {
+                console.error('Erro ao carregar professores');
+            }
         }
 
         function abrirModalTurma() {
             document.getElementById('modalTurma').classList.remove('hidden');
             document.getElementById('turmaForm').reset();
+            document.getElementById('turmaNome').focus();
         }
+        
         function fecharModalTurma() {
             document.getElementById('modalTurma').classList.add('hidden');
         }
+
         document.getElementById('turmaForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const token = localStorage.getItem('token');
-            const nome = document.getElementById('turmaNome').value;
+            const btn = document.getElementById('btnSalvarTurma');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+            
+            const nome = document.getElementById('turmaNome').value.trim();
             const horario_inicio = document.getElementById('turmaInicio').value;
             const horario_fim = document.getElementById('turmaFim').value;
             const dia_semana = document.getElementById('turmaDia').value;
             const professor_id = document.getElementById('turmaProfessor').value || null;
             const limite_alunos = parseInt(document.getElementById('turmaLimite').value);
 
-            const response = await fetch('/api/turmas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ nome, horario_inicio, horario_fim, dia_semana, professor_id, limite_alunos })
-            });
+            // Validação de horários
+            if (horario_inicio >= horario_fim) {
+                showToast('Horário de fim deve ser depois do início', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
 
-            if (response.ok) {
-                alert('Turma criada com sucesso!');
-                fecharModalTurma();
-                loadDashboard();
-            } else {
-                alert('Erro ao criar');
+            if (!nome || !horario_inicio || !horario_fim || !dia_semana) {
+                showToast('Preencha todos os campos obrigatórios', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/turmas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ nome, horario_inicio, horario_fim, dia_semana, professor_id, limite_alunos })
+                });
+
+                if (response.ok) {
+                    showToast('Turma criada com sucesso!', 'success');
+                    fecharModalTurma();
+                    loadDashboard();
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Erro ao criar turma', 'error');
+                }
+            } catch (error) {
+                showToast('Erro de conexão', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         });
 
+        // ========== LOGOUT ==========
         async function logout() {
             const token = localStorage.getItem('token');
-            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            try {
+                await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            } catch (e) {}
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
             window.location.href = '/';
         }
+
+        // ========== FECHAR MODAIS ==========
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                fecharModalAluno();
+                fecharModalTurma();
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>

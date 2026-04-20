@@ -2,43 +2,209 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grade Semanal - B&T Tech</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .view-toggle { display: flex; gap: 4px; background: var(--bg-dark); padding: 4px; border-radius: 8px; }
-        .view-btn { padding: 8px 16px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 6px; font-weight: 500; }
-        .view-btn.active { background: var(--primary); color: white; }
+        /* ========== SKELETON LOADING ========== */
+        .skeleton-calendar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
         
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); }
-        .calendar-header { background: var(--bg-dark); padding: 10px; text-align: center; font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; }
-        .calendar-day { background: var(--bg-darker); min-height: 80px; padding: 6px; }
-        .calendar-day.other-month { opacity: 0.4; }
-        .calendar-day.today { background: rgba(59, 130, 246, 0.1); }
-        .day-number { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
-        .calendar-day.today .day-number { color: var(--primary); }
-        .calendar-turma { padding: 4px 6px; margin-bottom: 3px; border-radius: 3px; font-size: 10px; cursor: pointer; border-left: 3px solid; background: var(--bg-dark); }
-        .turma-horario { font-size: 9px; opacity: 0.7; }
-        .turma-nome { font-weight: 500; }
-
-        .week-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .week-nav { display: flex; align-items: center; gap: 10px; }
-        .nav-btn { width: 36px; height: 36px; border: none; background: var(--bg-dark); color: var(--text); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .nav-btn:hover { background: var(--primary); color: white; }
-        .periodo-titulo { font-size: 18px; font-weight: 600; }
+        .skeleton-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
         
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        
+        .skeleton-day {
+            min-height: 200px;
+            padding: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .skeleton-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ========== WEEK GRID ========== */
+        .week-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .week-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            width: var(--touch-target-min, 44px);
+            height: var(--touch-target-min, 44px);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .periodo-titulo {
+            font-size: 18px;
+            font-weight: 600;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-dark);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        
+        .view-btn {
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 13px;
+            min-height: var(--touch-target-min, 44px);
+            transition: all 0.2s;
+        }
+        
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .view-btn:not(.active):hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+        
+        /* ========== CALENDAR GRID ========== */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        
+        .calendar-header {
+            background: var(--bg-dark);
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        
+        .calendar-day {
+            background: var(--bg-card);
+            min-height: 80px;
+            padding: 6px;
+        }
+        
+        .calendar-day.other-month {
+            opacity: 0.4;
+        }
+        
+        .calendar-day.today {
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        
+        .calendar-day.today .day-number {
+            color: var(--primary);
+        }
+        
+        .calendar-turma {
+            padding: 4px 6px;
+            margin-bottom: 3px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            border-left: 3px solid;
+            background: var(--bg-dark);
+        }
+        
+        .turma-horario {
+            font-size: 9px;
+            opacity: 0.7;
+        }
+        
+        .turma-nome {
+            font-weight: 500;
+        }
+        
+        /* ========== WEEK VIEW ========== */
         .week-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 8px;
         }
         
+        @media (max-width: 1024px) {
+            .week-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .week-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         .day-column {
-            background: var(--bg-darker);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            min-height: 400px;
             overflow: hidden;
+            min-height: 400px;
         }
         
         .day-header {
@@ -86,35 +252,7 @@
             font-style: italic;
         }
         
-        /* Status do aluno na card */
-        .aula-status-row {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 6px;
-            padding-top: 6px;
-            border-top: 1px solid var(--border);
-            font-size: 10px;
-        }
-        
-        .aula-status-row .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-        
-        .aula-status-row .status-dot.confirmado { background: #22c55e; }
-        .aula-status-row .status-dot.aguardando { background: #f97316; }
-        .aula-status-row .status-dot.cancelado { background: #ef4444; }
-        
-        .aula-status-row .status-text {
-            font-weight: 500;
-        }
-        
-        .aula-status-row .status-text.confirmado { color: #22c55e; }
-        .aula-status-row .status-text.aguardando { color: #f97316; }
-        .aula-status-row .status-text.cancelado { color: #ef4444; }
-        
+        /* ========== AULA CARD ========== */
         .aula-card {
             background: var(--bg-dark);
             border-radius: 8px;
@@ -147,13 +285,48 @@
             font-size: 11px;
             color: var(--text-secondary);
         }
-
-        /* Modal */
+        
+        /* Status do aluno na card */
+        .aula-status-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+            font-size: 10px;
+        }
+        
+        .aula-status-row .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .aula-status-row .status-dot.confirmado { background: #22c55e; }
+        .aula-status-row .status-dot.aguardando { background: #f97316; }
+        .aula-status-row .status-dot.cancelado { background: #ef4444; }
+        
+        .aula-status-row .status-text {
+            font-weight: 500;
+        }
+        
+        .aula-status-row .status-text.confirmado { color: #22c55e; }
+        .aula-status-row .status-text.aguardando { color: #f97316; }
+        .aula-status-row .status-text.cancelado { color: #ef4444; }
+        
+        /* ========== MODAL ========== */
         .modal-aula-info {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 16px;
+        }
+        
+        @media (max-width: 480px) {
+            .modal-aula-info {
+                grid-template-columns: 1fr;
+            }
         }
         
         .info-box {
@@ -184,6 +357,8 @@
             background: var(--bg-dark);
             border-radius: 8px;
             margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .aluno-row .aluno-info {
@@ -193,15 +368,16 @@
         }
         
         .aluno-row .aluno-avatar {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: var(--primary);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: 600;
         }
         
         .aluno-row .aluno-nome {
@@ -215,8 +391,8 @@
         }
         
         .whatsapp-btn {
-            width: 32px;
-            height: 32px;
+            width: var(--touch-target-min, 44px);
+            height: var(--touch-target-min, 44px);
             border: none;
             background: #25D366;
             color: white;
@@ -225,7 +401,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 18px;
             text-decoration: none;
             transition: transform 0.2s;
         }
@@ -235,21 +411,44 @@
         }
         
         .status-select {
-            padding: 6px 12px;
+            padding: 8px 12px;
             border-radius: 20px;
             border: none;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             text-transform: uppercase;
+            min-height: var(--touch-target-min, 44px);
         }
         
         .status-select.confirmado { background: #dcfce7; color: #166534; }
         .status-select.aguardando { background: #fed7aa; color: #9a3412; }
         .status-select.cancelado { background: #fee2e2; color: #991b1b; }
+        
+        /* Loading state */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .loading-state i {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="dashboard-body">
+
+    <!-- ========== MENU HAMBURGER MOBILE ========== -->
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu de navegação">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -264,7 +463,7 @@
             <a href="/semanal" class="menu-item active"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
             <a href="/confirmacoes" class="menu-item"><i class="fab fa-whatsapp"></i> Confirmações</a>
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
-            <a href="/financeiro" class="menu-item "><i class="fas fa-dollar-sign"></i> Financeiro</a>
+            <a href="/financeiro" class="menu-item"><i class="fas fa-dollar-sign"></i> Financeiro</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -274,35 +473,67 @@
                     <p class="user-type" id="userType">Carregando...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            <button onclick="logout()" class="logout-btn" aria-label="Sair do sistema">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         <header class="top-header">
             <h1><i class="fas fa-calendar-week mr-2"></i>Grade Semanal</h1>
-            <div class="view-toggle">
-                <button onclick="changeView('month')" id="btnMonth" class="view-btn">Mês</button>
-                <button onclick="changeView('week')" id="btnWeek" class="view-btn active">Semana</button>
+            <div class="view-toggle" role="tablist">
+                <button onclick="changeView('month')" id="btnMonth" class="view-btn" role="tab" aria-selected="false">
+                    <i class="fas fa-calendar"></i> Mês
+                </button>
+                <button onclick="changeView('week')" id="btnWeek" class="view-btn active" role="tab" aria-selected="true">
+                    <i class="fas fa-calendar-week"></i> Semana
+                </button>
             </div>
         </header>
 
         <div class="content">
+            <!-- Controles de Navegação -->
             <div class="week-controls">
                 <div class="week-nav">
-                    <button onclick="navegar(-1)" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                    <button onclick="navegar(-1)" class="nav-btn" aria-label="Semana anterior">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
                     <span id="periodoLabel" class="periodo-titulo">Abril 2024</span>
-                    <button onclick="navegar(1)" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                    <button onclick="navegar(1)" class="nav-btn" aria-label="Próxima semana">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
-                <button onclick="voltarHoje()" class="btn btn-secondary">Hoje</button>
+                <button onclick="voltarHoje()" class="btn btn-secondary">
+                    <i class="fas fa-calendar-day"></i> Hoje
+                </button>
             </div>
 
+            <!-- Loading Skeleton -->
+            <div id="loadingSkeleton" class="skeleton-calendar" style="display: none;">
+                <div class="skeleton-header">
+                    <div class="skeleton" style="width: 200px; height: 30px;"></div>
+                    <div class="skeleton" style="width: 150px; height: 40px;"></div>
+                </div>
+                <div class="skeleton-grid">
+                    <div class="skeleton skeleton-day"></div>
+                    <div class="skeleton skeleton-day"></div>
+                    <div class="skeleton skeleton-day"></div>
+                    <div class="skeleton skeleton-day"></div>
+                    <div class="skeleton skeleton-day"></div>
+                    <div class="skeleton skeleton-day"></div>
+                    <div class="skeleton skeleton-day"></div>
+                </div>
+            </div>
+
+            <!-- Visualização Mensal -->
             <div id="viewMonth" class="card" style="display: none;">
                 <div class="card-body no-padding">
                     <div class="calendar-grid" id="calendarGrid"></div>
                 </div>
             </div>
 
+            <!-- Visualização Semanal -->
             <div id="viewWeek" class="card">
                 <div class="card-body">
                     <div class="week-grid" id="weekGrid"></div>
@@ -311,11 +542,12 @@
         </div>
     </main>
 
-    <div id="modalDetalhesAula" class="modal hidden">
+    <!-- Modal Detalhes da Aula -->
+    <div id="modalDetalhesAula" class="modal hidden" role="dialog" aria-labelledby="modalTurmaNome" aria-modal="true">
         <div class="modal-content" style="max-width: 550px;">
             <div class="modal-header">
                 <h3 id="modalTurmaNome">Detalhes da Aula</h3>
-                <button onclick="fecharModal()" class="close">&times;</button>
+                <button onclick="fecharModal()" class="close" aria-label="Fechar modal">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="modal-aula-info">
@@ -341,12 +573,23 @@
                     <i class="fas fa-users"></i> Alunos (<span id="countAlunos">0</span>)
                 </h4>
                 
-                <div id="loadingAlunos" style="text-align: center; padding: 15px;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
-                <p id="semAlunos" class="empty" style="display: none;">Nenhum aluno matriculado</p>
+                <div id="loadingAlunos" class="loading-state" style="display: none;">
+                    <i class="fas fa-spinner"></i>
+                    <p style="margin-top: 10px;">Carregando alunos...</p>
+                </div>
+                
+                <p id="semAlunos" class="empty" style="display: none; text-align: center; padding: 20px;">
+                    <i class="fas fa-users" style="font-size: 24px; opacity: 0.3;"></i>
+                    <br>Nenhum aluno matriculado
+                </p>
+                
                 <div id="listaAlunosContainer"></div>
             </div>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <script>
         let perfil = null;
@@ -357,14 +600,50 @@
         let dataSelecionada = null;
         let aulaAtual = null;
         let turmasComStatus = {};
+        let cacheAulas = {}; // Cache para melhorar performance
         
-        // Mensagem padrão do WhatsApp
         const mensagemWhatsApp = "Olá! Confirme sua presença na aula de Beach Tennis.";
 
         const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const diasSemanaFull = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
         const diasSemanaNome = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+        // ========== TOAST NOTIFICATIONS ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:inherit;margin-left:auto;cursor:pointer;padding:4px;" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ========== SIDEBAR TOGGLE ==========
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.toggle('show');
+        }
 
         function formatarDataLocal(data) {
             const ano = data.getFullYear();
@@ -373,71 +652,111 @@
             return `${ano}-${mes}-${dia}`;
         }
 
-        // Formatar telefone para WhatsApp
         function formatarTelefone(telefone) {
             if (!telefone) return null;
-            // Remove tudo que não é número
             let nums = telefone.replace(/\D/g, '');
-            // Se não tiver código do país, adiciona 55
             if (!nums.startsWith('55')) {
                 nums = '55' + nums;
             }
             return nums;
         }
 
-        // Abrir WhatsApp
         function abrirWhatsApp(telefone, mensagem) {
             const nums = formatarTelefone(telefone);
             if (!nums) {
-                alert('Telefone não cadastrado para este aluno!');
+                showToast('Telefone não cadastrado para este aluno!', 'warning');
                 return;
             }
             const msg = encodeURIComponent(mensagem || mensagemWhatsApp);
             window.open(`https://wa.me/${nums}?text=${msg}`, '_blank');
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        // ========== INICIALIZAÇÃO ==========
+        document.addEventListener('DOMContentLoaded', async function() {
             const token = localStorage.getItem('token');
             if (!token) { window.location.href = '/'; return; }
             
             perfil = JSON.parse(localStorage.getItem('perfil')) || JSON.parse(sessionStorage.getItem('perfil'));
             
             if (!perfil) {
-                fetch('/api/session', { headers: { 'Authorization': 'Bearer ' + token } })
-                .then(res => res.json())
-                .then(data => {
+                try {
+                    const response = await fetch('/api/session', { headers: { 'Authorization': 'Bearer ' + token } });
+                    const data = await response.json();
                     perfil = data.perfil;
                     localStorage.setItem('perfil', JSON.stringify(perfil));
-                    init();
-                });
-            } else {
-                init();
+                } catch (e) {
+                    showToast('Erro ao carregar sessão', 'error');
+                    window.location.href = '/';
+                    return;
+                }
             }
+
+            init();
         });
 
         function init() {
             document.getElementById('userName').textContent = perfil.nome;
             document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';
-            if (perfil.tipo !== 'dono') document.querySelector('a[href="/professores"]').style.display = 'none';
+            if (perfil.tipo !== 'dono') {
+                document.querySelector('a[href="/professores"]').style.display = 'none';
+            }
+            
             loadTurmas();
         }
 
+        // ========== CARREGAR TURMAS ==========
         function loadTurmas() {
             const token = localStorage.getItem('token');
+            
+            // Mostrar skeleton
+            document.getElementById('loadingSkeleton').style.display = 'block';
+            document.getElementById('viewWeek').style.display = 'none';
+            document.getElementById('viewMonth').style.display = 'none';
+            
             fetch('/api/turmas', { headers: { 'Authorization': 'Bearer ' + token } })
             .then(res => res.json())
             .then(data => {
                 turmas = data || [];
+                
+                // Esconder skeleton e mostrar view
+                document.getElementById('loadingSkeleton').style.display = 'none';
+                document.getElementById(currentView === 'week' ? 'viewWeek' : 'viewMonth').style.display = 'block';
+                
                 render();
+            })
+            .catch(error => {
+                console.error('Erro ao carregar turmas:', error);
+                showToast('Erro ao carregar turmas', 'error');
+                document.getElementById('loadingSkeleton').style.display = 'none';
+                document.getElementById('viewWeek').style.display = 'block';
             });
         }
 
+        // ========== MUDAR VISUALIZAÇÃO ==========
         function changeView(view) {
             currentView = view;
-            document.getElementById('btnMonth').className = view === 'month' ? 'view-btn active' : 'view-btn';
-            document.getElementById('btnWeek').className = view === 'week' ? 'view-btn active' : 'view-btn';
-            document.getElementById('viewMonth').style.display = view === 'month' ? 'block' : 'none';
-            document.getElementById('viewWeek').style.display = view === 'week' ? 'block' : 'none';
+            
+            const btnMonth = document.getElementById('btnMonth');
+            const btnWeek = document.getElementById('btnWeek');
+            const viewMonth = document.getElementById('viewMonth');
+            const viewWeek = document.getElementById('viewWeek');
+            
+            if (view === 'month') {
+                btnMonth.className = 'view-btn active';
+                btnWeek.className = 'view-btn';
+                btnMonth.setAttribute('aria-selected', 'true');
+                btnWeek.setAttribute('aria-selected', 'false');
+                viewMonth.style.display = 'block';
+                viewWeek.style.display = 'none';
+            } else {
+                btnMonth.className = 'view-btn';
+                btnWeek.className = 'view-btn active';
+                btnMonth.setAttribute('aria-selected', 'false');
+                btnWeek.setAttribute('aria-selected', 'true');
+                viewMonth.style.display = 'none';
+                viewWeek.style.display = 'block';
+            }
+            
             render();
         }
 
@@ -450,8 +769,12 @@
             render();
         }
 
-        function voltarHoje() { currentDate = new Date(); render(); }
+        function voltarHoje() {
+            currentDate = new Date();
+            render();
+        }
 
+        // ========== RENDERIZAR ==========
         function render() {
             const periodoLabel = document.getElementById('periodoLabel');
             if (currentView === 'month') {
@@ -488,47 +811,22 @@
             return t.perfis?.cor || '#6b7280';
         }
 
-        async function getStatusAlunosAula(turmaId, data) {
-            const token = localStorage.getItem('token');
-            const key = `${turmaId}_${data}`;
-            
-            try {
-                const aulaResponse = await fetch(`/api/aulas/buscar?turma_id=${turmaId}&data=${data}`, { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
-                });
-                const aula = await aulaResponse.json();
-                
-                if (!aula) {
-                    turmasComStatus[key] = [];
-                    return [];
-                }
-                
-                const presencaResponse = await fetch('/api/presencas/' + aula.id, { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
-                });
-                const presencas = await presencaResponse.json();
-                
-                turmasComStatus[key] = presencas || [];
-                return presencas || [];
-            } catch (error) {
-                turmasComStatus[key] = [];
-                return [];
-            }
-        }
-
+        // ========== RENDER WEEK - OTIMIZADO ==========
         async function renderWeek() {
             const primeiroDia = getPrimeiroDiaSemana();
             const hoje = new Date();
             
-            // Carrega os status
-            for (const t of turmas) {
-                for (let i = 0; i < 7; i++) {
-                    const dataAtual = new Date(primeiroDia);
-                    dataAtual.setDate(primeiroDia.getDate() + i);
-                    const dataFormatada = formatarDataLocal(dataAtual);
-                    await getStatusAlunosAula(t.id, dataFormatada);
-                }
-            }
+            // Mostrar loading
+            const grid = document.getElementById('weekGrid');
+            grid.innerHTML = `
+                <div class="loading-state" style="grid-column: 1 / -1;">
+                    <i class="fas fa-spinner"></i>
+                    <p style="margin-top: 10px;">Carregando aulas...</p>
+                </div>
+            `;
+            
+            // Carregar status em paralelo para todos os dias
+            await loadAllStatus(primeiroDia);
             
             let html = '';
             
@@ -582,8 +880,8 @@
                         html += `
                         <div class="aula-card" onclick="abrirDetalhesTurma('${t.id}', '${dataFormatada}')" style="border-left-color: ${cor};">
                             <div class="aula-horario">${t.horario_inicio} - ${t.horario_fim}</div>
-                            <div class="aula-nome">${t.data_avulsa ? '⭐ ' : ''}${t.nome}</div>
-                            <div class="aula-prof">${t.perfis?.nome || 'Sem professor'}</div>
+                            <div class="aula-nome">${t.data_avulsa ? '⭐ ' : ''}${escapeHtml(t.nome)}</div>
+                            <div class="aula-prof">${escapeHtml(t.perfis?.nome || 'Sem professor')}</div>
                             <div class="aula-status-row">
                                 <span class="status-dot ${statusDisplay}"></span>
                                 <span class="status-text ${statusDisplay}">${statusText}</span>
@@ -596,9 +894,81 @@
                 html += '</div></div>';
             }
             
-            document.getElementById('weekGrid').innerHTML = html;
+            grid.innerHTML = html;
         }
 
+        // ========== CARREGAR TODOS OS STATUS - OTIMIZADO ==========
+        async function loadAllStatus(primeiroDia) {
+            const token = localStorage.getItem('token');
+            const requests = [];
+            
+            // Coletar todas as turmas e datas
+            turmas.forEach(t => {
+                for (let i = 0; i < 7; i++) {
+                    const dataAtual = new Date(primeiroDia);
+                    dataAtual.setDate(primeiroDia.getDate() + i);
+                    const diaSemana = diasSemanaFull[dataAtual.getDay()];
+                    const dataFormatada = formatarDataLocal(dataAtual);
+                    
+                    // Verificar se é uma turma válida para este dia
+                    const turmasDoDia = getTurmasDoDia(diaSemana, dataFormatada);
+                    if (turmasDoDia.find(td => td.id === t.id)) {
+                        requests.push({ turmaId: t.id, data: dataFormatada });
+                    }
+                }
+            });
+            
+            // Se não há requests, não fazer nada
+            if (requests.length === 0) return;
+            
+            // Buscar aulas em paralelo
+            const aulasPromises = requests.map(async (r) => {
+                const cacheKey = `aula_${r.turmaId}_${r.data}`;
+                
+                // Verificar cache
+                if (cacheAulas[cacheKey]) {
+                    return { ...r, aula: cacheAulas[cacheKey] };
+                }
+                
+                try {
+                    const response = await fetch(`/api/aulas/buscar?turma_id=${r.turmaId}&data=${r.data}`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const aula = await response.json();
+                    cacheAulas[cacheKey] = aula;
+                    return { ...r, aula };
+                } catch (e) {
+                    return { ...r, aula: null };
+                }
+            });
+            
+            const aulasResults = await Promise.all(aulasPromises);
+            
+            // Buscar presenças em paralelo
+            const presencasPromises = aulasResults
+                .filter(r => r.aula)
+                .map(async (r) => {
+                    const key = `${r.turmaId}_${r.data}`;
+                    try {
+                        const response = await fetch('/api/presencas/' + r.aula.id, {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        const presencas = await response.json();
+                        return { key, presencas: presencas || [] };
+                    } catch (e) {
+                        return { key, presencas: [] };
+                    }
+                });
+            
+            const presencasResults = await Promise.all(presencasPromises);
+            
+            // Preencher cache
+            presencasResults.forEach(result => {
+                turmasComStatus[result.key] = result.presencas;
+            });
+        }
+
+        // ========== RENDER MONTH ==========
         function renderMonth() {
             const ano = currentDate.getFullYear();
             const mes = currentDate.getMonth();
@@ -609,7 +979,9 @@
             const hoje = new Date();
             
             let html = '';
-            for (let i = 0; i < diasSemana.length; i++) html += '<div class="calendar-header">' + diasSemana[i] + '</div>';
+            for (let i = 0; i < diasSemana.length; i++) {
+                html += '<div class="calendar-header">' + diasSemana[i] + '</div>';
+            }
             
             const ultimoDiaMesAnterior = new Date(ano, mes, 0).getDate();
             for (let i = primeiroDiaSemana - 1; i >= 0; i--) {
@@ -627,33 +999,42 @@
                 let turmasHtml = turmasDoDia.map(t => {
                     const labelHorario = t.data_avulsa ? new Date(t.data_avulsa).toLocaleDateString('pt-BR') : t.horario_inicio;
                     const corTurma = getCorTurma(t);
-                    return '<div class="calendar-turma" onclick="abrirDetalhesTurma(\'' + t.id + '\', \'' + dataFormatada + '\')" style="border-left-color: ' + corTurma + '; background: ' + corTurma + '20;">' +
-                        '<div class="turma-horario">' + labelHorario + '</div>' +
-                        '<div class="turma-nome">' + (t.data_avulsa ? '⭐ ' : '') + t.nome + '</div>' +
-                    '</div>';
+                    return `<div class="calendar-turma" onclick="abrirDetalhesTurma('${t.id}', '${dataFormatada}')" style="border-left-color: ${corTurma}; background: ${corTurma}20;">
+                        <div class="turma-horario">${labelHorario}</div>
+                        <div class="turma-nome">${t.data_avulsa ? '⭐ ' : ''}${escapeHtml(t.nome)}</div>
+                    </div>`;
                 }).join('');
                 
-                html += '<div class="calendar-day' + (ehHoje ? ' today' : '') + '"><div class="day-number">' + dia + '</div>' + turmasHtml + '</div>';
+                html += `<div class="calendar-day${ehHoje ? ' today' : ''}"><div class="day-number">${dia}</div>${turmasHtml}</div>`;
             }
             
             const totalCells = Math.ceil((primeiroDiaSemana + diasNoMes) / 7) * 7;
             for (let dia = 1; dia <= totalCells - (primeiroDiaSemana + diasNoMes); dia++) {
-                html += '<div class="calendar-day other-month"><div class="day-number">' + dia + '</div></div>';
+                html += `<div class="calendar-day other-month"><div class="day-number">${dia}</div></div>`;
             }
             
             document.getElementById('calendarGrid').innerHTML = html;
         }
 
+        // ========== ESCAPE HTML ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== ABRIR MODAL ==========
         async function abrirDetalhesTurma(id, data) {
             turmaSelecionada = turmas.find(t => String(t.id) === String(id));
-            if (!turmaSelecionada) { 
-                alert('Turma não encontrada!'); 
-                return; 
+            if (!turmaSelecionada) {
+                showToast('Turma não encontrada!', 'error');
+                return;
             }
             
             dataSelecionada = data;
             
-            document.getElementById('modalTurmaNome').textContent = turmaSelecionada.nome;
+            document.getElementById('modalTurmaNome').textContent = escapeHtml(turmaSelecionada.nome);
             
             if (turmaSelecionada.data_avulsa) {
                 document.getElementById('modalTurmaDia').textContent = new Date(turmaSelecionada.data_avulsa).toLocaleDateString('pt-BR');
@@ -665,8 +1046,9 @@
             }
             
             document.getElementById('modalTurmaHorario').textContent = turmaSelecionada.horario_inicio + ' - ' + turmaSelecionada.horario_fim;
-            document.getElementById('modalTurmaProfessor').textContent = turmaSelecionada.perfis?.nome || 'Não definido';
+            document.getElementById('modalTurmaProfessor').textContent = escapeHtml(turmaSelecionada.perfis?.nome || 'Não definido');
             
+            // Mostrar loading
             document.getElementById('listaAlunosContainer').innerHTML = '';
             document.getElementById('loadingAlunos').style.display = 'block';
             document.getElementById('semAlunos').style.display = 'none';
@@ -682,8 +1064,8 @@
             const url = `/api/aulas/buscar?turma_id=${turmaSelecionada.id}&data=${dataSelecionada}`;
             
             try {
-                const response = await fetch(url, { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
+                const response = await fetch(url, {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 aulaAtual = await response.json();
             } catch (error) {
@@ -694,8 +1076,8 @@
         function carregarAlunos() {
             const token = localStorage.getItem('token');
             
-            fetch('/api/matriculas/' + turmaSelecionada.id, { 
-                headers: { 'Authorization': 'Bearer ' + token } 
+            fetch('/api/matriculas/' + turmaSelecionada.id, {
+                headers: { 'Authorization': 'Bearer ' + token }
             })
             .then(res => res.json())
             .then(async (matriculas) => {
@@ -720,6 +1102,7 @@
             .catch(err => {
                 document.getElementById('loadingAlunos').style.display = 'none';
                 document.getElementById('semAlunos').style.display = 'block';
+                showToast('Erro ao carregar alunos', 'error');
             });
         }
 
@@ -732,8 +1115,8 @@
             }
             
             try {
-                const response = await fetch('/api/presencas/' + aulaAtual.id, { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
+                const response = await fetch('/api/presencas/' + aulaAtual.id, {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const presencas = await response.json();
                 renderizarAlunos(matriculas, presencas || []);
@@ -751,8 +1134,6 @@
                 const status = presenca?.status || 'aguardando';
                 
                 const inicial = aluno.nome ? aluno.nome.charAt(0).toUpperCase() : '?';
-                
-                // Verifica se tem telefone
                 const temTelefone = aluno.telefone && aluno.telefone.length > 0;
                 
                 html += `
@@ -760,13 +1141,19 @@
                     <div class="aluno-info">
                         <div class="aluno-avatar">${inicial}</div>
                         <div>
-                            <div class="aluno-nome">${aluno.nome || 'Desconhecido'}</div>
-                            ${aluno.telefone ? `<div class="aluno-telefone">${aluno.telefone}</div>` : ''}
+                            <div class="aluno-nome">${escapeHtml(aluno.nome || 'Desconhecido')}</div>
+                            ${aluno.telefone ? `<div class="aluno-telefone">${escapeHtml(aluno.telefone)}</div>` : ''}
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        ${temTelefone ? `<a href="#" onclick="abrirWhatsApp('${aluno.telefone}', '${mensagemWhatsApp}')" class="whatsapp-btn" title="Enviar WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
-                        <select class="status-select ${status}" onchange="alterarStatus('${aluno.id}', this.value)">
+                        ${temTelefone ? `
+                            <button onclick="abrirWhatsApp('${escapeHtml(aluno.telefone)}', '${escapeHtml(mensagemWhatsApp)}')" 
+                                class="whatsapp-btn" 
+                                title="Enviar WhatsApp"
+                                aria-label="Enviar WhatsApp para ${escapeHtml(aluno.nome)}">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>` : ''}
+                        <select class="status-select ${status}" onchange="alterarStatus('${aluno.id}', this.value)" aria-label="Status de presença de ${escapeHtml(aluno.nome)}">
                             <option value="aguardando" ${status === 'aguardando' ? 'selected' : ''}>Aguardando</option>
                             <option value="confirmado" ${status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
                             <option value="cancelado" ${status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
@@ -783,6 +1170,29 @@
             const token = localStorage.getItem('token');
             
             if (!aulaAtual) {
+<<<<<<< HEAD
+                try {
+                    const createResponse = await fetch('/api/aulas', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({
+                            turma_id: turmaSelecionada.id,
+                            data: dataSelecionada
+                        })
+                    });
+                    
+                    if (!createResponse.ok) {
+                        showToast('Erro ao criar aula', 'error');
+                        return;
+                    }
+                    
+                    aulaAtual = await createResponse.json();
+                } catch (error) {
+                    showToast('Erro de conexão', 'error');
+=======
                 // Cria a aula se não existir
                 const createResponse = await fetch('/api/aulas', {
                     method: 'POST',
@@ -798,19 +1208,18 @@
                 
                 if (!createResponse.ok) {
                     alert('Erro ao criar aula');
+>>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
                     return;
                 }
-                
-                aulaAtual = await createResponse.json();
             }
             
             try {
                 // Salva no servidor
                 await fetch('/api/presencas', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token 
+                        'Authorization': 'Bearer ' + token
                     },
                     body: JSON.stringify({
                         aula_id: aulaAtual.id,
@@ -834,7 +1243,11 @@
                     });
                 }
                 
+<<<<<<< HEAD
+                showToast('Status atualizado!', 'success');
+=======
                 // Atualiza a visualização da grade semanal imediatamente
+>>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
                 renderWeek();
                 
                 // Atualiza o select para refletir o novo status visualmente
@@ -845,12 +1258,16 @@
                 
             } catch (error) {
                 console.error('Erro ao salvar presença:', error);
+<<<<<<< HEAD
+                showToast('Erro ao salvar', 'error');
+=======
                 alert('Erro ao salvar presença');
+>>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
             }
         }
 
-        function fecharModal() { 
-            document.getElementById('modalDetalhesAula').classList.add('hidden'); 
+        function fecharModal() {
+            document.getElementById('modalDetalhesAula').classList.add('hidden');
             turmaSelecionada = null;
             dataSelecionada = null;
             aulaAtual = null;
@@ -864,9 +1281,19 @@
             window.location.href = '/';
         }
         
-        window.onclick = function(event) { 
-            if (event.target.id === 'modalDetalhesAula') fecharModal(); 
-        };
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                fecharModal();
+            }
+        });
+        
+        // Fechar modal ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'modalDetalhesAula') {
+                fecharModal();
+            }
+        });
     </script>
 </body>
 </html>

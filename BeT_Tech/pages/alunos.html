@@ -2,85 +2,19 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alunos - B&T Tech</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        .btn-icon {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: var(--radius-sm);
-            transition: all 0.2s;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-        .btn-icon:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
-        }
-        .btn-icon.btn-danger:hover {
-            background: var(--danger-bg);
-            color: var(--danger);
-        }
-        
-        .btn-whatsapp {
-            background: #25D366;
-            color: white;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            transition: transform 0.2s;
-        }
-        .btn-whatsapp:hover {
-            transform: scale(1.1);
-            color: white;
-        }
-        
-        /* Busca */
-        .search-box {
-            position: relative;
-            margin-bottom: 16px;
-        }
-        .search-box i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-        .search-box input {
-            width: 100%;
-            padding: 12px 14px 12px 42px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            font-size: 14px;
-            color: var(--text-primary);
-            transition: all 0.2s;
-        }
-        .search-box input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        }
-        .search-box input::placeholder {
-            color: var(--text-muted);
-        }
-        .no-results {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
-    </style>
 </head>
 <body class="dashboard-body">
+
+    <!-- ========== MENU HAMBURGER MOBILE ========== -->
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu de navegação">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -95,8 +29,7 @@
             <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
             <a href="/confirmacoes" class="menu-item"><i class="fab fa-whatsapp"></i> Confirmações</a>
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
-            <a href="/financeiro" class="menu-item "><i class="fas fa-dollar-sign"></i> Financeiro</a>
-
+            <a href="/financeiro" class="menu-item"><i class="fas fa-dollar-sign"></i> Financeiro</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -106,22 +39,25 @@
                     <p class="user-type" id="userType">Carregando...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            <button onclick="logout()" class="logout-btn" aria-label="Sair do sistema">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         <header class="top-header">
             <h1><i class="fas fa-users mr-2"></i>Gestão de Alunos</h1>
         </header>
 
         <div class="content">
+            <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon green"><i class="fas fa-users"></i></div>
                     <div class="stat-info">
                         <p class="stat-label">Total de Alunos</p>
-                        <p class="stat-value" id="totalAlunos">0</p>
+                        <p class="stat-value" id="totalAlunos">--</p>
                     </div>
                 </div>
             </div>
@@ -129,18 +65,38 @@
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-list mr-2"></i>Lista de Alunos</h2>
-                    <button onclick="openModal('Aluno')" class="btn btn-primary">
+                    <button onclick="openModal('Aluno')" class="btn btn-primary" aria-label="Cadastrar novo aluno">
                         <i class="fas fa-plus"></i> Novo Aluno
                     </button>
                 </div>
                 <div class="card-body">
                     <!-- Campo de Busca -->
                     <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="buscaAluno" placeholder="Buscar aluno por nome..." onkeyup="filtrarAlunos()">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input 
+                            type="text" 
+                            id="buscaAluno" 
+                            placeholder="Buscar aluno por nome..." 
+                            onkeyup="filtrarAlunos()"
+                            aria-label="Buscar aluno por nome"
+                        >
                     </div>
                     
-                    <table class="data-table">
+                    <!-- Loading Skeleton -->
+                    <div id="loadingSkeleton" class="skeleton-container">
+                        <div class="skeleton-card mb-2">
+                            <div class="skeleton skeleton-title"></div>
+                        </div>
+                        <div class="skeleton-card mb-2">
+                            <div class="skeleton skeleton-title"></div>
+                        </div>
+                        <div class="skeleton-card mb-2">
+                            <div class="skeleton skeleton-title"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabela de Alunos -->
+                    <table class="data-table" id="alunosTableWrapper" style="display: none;">
                         <thead>
                             <tr>
                                 <th>Nome</th>
@@ -160,40 +116,44 @@
     </main>
 
     <!-- Modal Novo/Editar Aluno -->
-    <div id="modalAluno" class="modal hidden">
+    <div id="modalAluno" class="modal hidden" role="dialog" aria-labelledby="modalAlunoTitulo" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalAlunoTitulo">Novo Aluno</h3>
-                <button onclick="closeModal('Aluno')" class="close">&times;</button>
+                <button onclick="closeModal('Aluno')" class="close" aria-label="Fechar modal">&times;</button>
             </div>
             <form id="alunoForm" class="modal-body">
                 <input type="hidden" id="alunoId">
                 <div class="form-group">
-                    <label><i class="fas fa-user"></i> Nome *</label>
-                    <input type="text" id="alunoNome" placeholder="Nome completo" required>
+                    <label for="alunoNome"><i class="fas fa-user"></i> Nome *</label>
+                    <input type="text" id="alunoNome" placeholder="Nome completo" required aria-required="true">
                 </div>
                 <div class="form-group">
-                    <label><i class="fab fa-whatsapp"></i> Telefone</label>
-                    <input type="text" id="alunoTelefone" placeholder="(00) 00000-0000">
+                    <label for="alunoTelefone"><i class="fab fa-whatsapp"></i> Telefone</label>
+                    <input type="tel" id="alunoTelefone" placeholder="(00) 00000-0000">
                 </div>
                 <div class="form-group">
-                    <label><i class="fas fa-envelope"></i> E-mail</label>
+                    <label for="alunoEmail"><i class="fas fa-envelope"></i> E-mail</label>
                     <input type="email" id="alunoEmail" placeholder="email@exemplo.com">
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Salvar</button>
-                    <button type="button" onclick="closeModal('Aluno')" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSalvarAluno">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                    <button type="button" onclick="closeModal('Aluno')" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Matricular -->
-    <div id="modalMatricular" class="modal hidden">
+    <div id="modalMatricular" class="modal hidden" role="dialog" aria-labelledby="modalMatricularTitulo" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Matricular Aluno em Turma</h3>
-                <button onclick="closeModal('Matricular')" class="close">&times;</button>
+                <h3 id="modalMatricularTitulo">Matricular Aluno em Turma</h3>
+                <button onclick="closeModal('Matricular')" class="close" aria-label="Fechar modal">&times;</button>
             </div>
             <div class="modal-body">
                 <p>Selecione a turma para matricular <strong id="alunoMatricularNome"></strong>:</p>
@@ -202,19 +162,57 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
     <script>
         let perfil = null;
         let alunosData = [];
+        let isLoading = false;
 
-        // Mensagem padrão do WhatsApp
+        // ========== TOAST NOTIFICATIONS ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:inherit;margin-left:auto;cursor:pointer;padding:4px;" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ========== SIDEBAR TOGGLE ==========
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.toggle('show');
+        }
+
+        // ========== MENSAGEM PADRÃO WHATSAPP ==========
         const mensagemWhatsApp = "Olá! Gostaria de informações sobre as aulas de Beach Tennis.";
 
         // Formatar telefone para WhatsApp
         function formatarTelefone(telefone) {
             if (!telefone) return null;
-            // Remove tudo que não é número
             let nums = telefone.replace(/\D/g, '');
-            // Se não tiver código do país, adiciona 55
             if (!nums.startsWith('55')) {
                 nums = '55' + nums;
             }
@@ -225,13 +223,14 @@
         function abrirWhatsApp(telefone, mensagem) {
             const nums = formatarTelefone(telefone);
             if (!nums) {
-                alert('Telefone não cadastrado para este aluno!');
+                showToast('Telefone não cadastrado para este aluno!', 'warning');
                 return;
             }
             const msg = encodeURIComponent(mensagem || mensagemWhatsApp);
             window.open(`https://wa.me/${nums}?text=${msg}`, '_blank');
         }
 
+        // ========== INICIALIZAÇÃO ==========
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             if (!token) { window.location.href = '/'; return; }
@@ -250,43 +249,82 @@
         });
 
         async function getPerfil(token) {
-            const response = await fetch('/api/session', { headers: { 'Authorization': `Bearer ${token}` } });
-            const data = await response.json();
-            return data.perfil;
-        }
-
-        async function loadAlunos() {
-            const token = localStorage.getItem('token');
-            
             try {
-                const response = await fetch('/api/alunos', { headers: { 'Authorization': `Bearer ${token}` } });
-                
-                if (!response.ok) {
-                    document.getElementById('alunosTable').innerHTML = '<tr><td colspan="5" class="error">Erro ao carregar alunos</td></tr>';
-                    return;
-                }
-                
-                alunosData = await response.json();
-                document.getElementById('totalAlunos').textContent = alunosData.length;
-
-                renderAlunos(alunosData);
-            } catch (error) {
-                console.error('Erro geral:', error);
-                document.getElementById('alunosTable').innerHTML = '<tr><td colspan="5" class="error">Erro ao carregar alunos</td></tr>';
+                const response = await fetch('/api/session', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await response.json();
+                return data.perfil;
+            } catch (e) {
+                showToast('Erro ao carregar perfil', 'error');
+                return null;
             }
         }
 
-        // Renderiza a tabela de alunos
+        // ========== CARREGAR ALUNOS ==========
+        async function loadAlunos() {
+            if (isLoading) return;
+            isLoading = true;
+
+            const token = localStorage.getItem('token');
+            
+            // Mostrar skeleton e esconder tabela
+            document.getElementById('loadingSkeleton').style.display = 'block';
+            document.getElementById('alunosTableWrapper').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/alunos', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar alunos');
+                }
+                
+                alunosData = await response.json();
+                
+                // Atualizar stats
+                document.getElementById('totalAlunos').textContent = alunosData.length;
+
+                // Esconder skeleton e mostrar tabela
+                document.getElementById('loadingSkeleton').style.display = 'none';
+                document.getElementById('alunosTableWrapper').style.display = 'table';
+                
+                renderAlunos(alunosData);
+            } catch (error) {
+                console.error('Erro geral:', error);
+                document.getElementById('loadingSkeleton').style.display = 'none';
+                showToast('Erro ao carregar alunos', 'error');
+                document.getElementById('alunosTable').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty">
+                            <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                            <br>Erro ao carregar alunos
+                            <br><button onclick="loadAlunos()" class="btn btn-secondary btn-sm" style="margin-top: 10px;">
+                                <i class="fas fa-redo"></i> Tentar novamente
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('alunosTableWrapper').style.display = 'table';
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // ========== RENDERIZAR TABELA ==========
         function renderAlunos(lista) {
             const tbody = document.getElementById('alunosTable');
             
             if (!lista || lista.length === 0) {
                 const termo = document.getElementById('buscaAluno').value;
-                if (termo) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="no-results">Nenhum aluno encontrado para "' + termo + '"</td></tr>';
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum aluno cadastrado</td></tr>';
-                }
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty">
+                            <i class="fas fa-users" style="font-size: 32px; opacity: 0.3;"></i>
+                            <br>${termo ? 'Nenhum aluno encontrado para "' + termo + '"' : 'Nenhum aluno cadastrado'}
+                            ${termo ? '<br><button onclick="document.getElementById(\'buscaAluno\').value=\'\';filtrarAlunos()" class="btn btn-secondary btn-sm" style="margin-top: 10px;">Limpar busca</button>' : ''}
+                        </td>
+                    </tr>
+                `;
                 return;
             }
             
@@ -301,27 +339,55 @@
                 }
                 
                 const tr = document.createElement('tr');
-                
-                // Verifica se tem telefone
                 const temTelefone = a.telefone && a.telefone.length > 0;
                 
                 tr.innerHTML = `
-                    <td><strong>${a.nome}</strong></td>
-                    <td>${a.telefone || '-'}</td>
-                    <td>${a.email || '-'}</td>
-                    <td>${turmas.length > 0 ? turmas.map(t => `<span class="badge">${t}</span>`).join(' ') : '-'}</td>
-                    <td style="display: flex; gap: 4px;">
-                        ${temTelefone ? `<a href="#" onclick="abrirWhatsApp('${a.telefone}', '${mensagemWhatsApp}')" class="btn-icon btn-whatsapp" title="Enviar WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
-                        <button onclick="matricular('${a.id}', '${(a.nome || '').replace(/'/g, "\\'")}')" class="btn-icon" title="Matricular"><i class="fas fa-plus-circle"></i></button>
-                        <button onclick="editarAluno('${a.id}')" class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
-                        <button onclick="excluirAluno('${a.id}')" class="btn-icon btn-danger" title="Excluir"><i class="fas fa-trash"></i></button>
-                    </td>
+                    <td><strong>${escapeHtml(a.nome)}</strong></td>
+                    <td>${a.telefone ? escapeHtml(a.telefone) : '<span style="color: var(--text-muted);">-</span>'}</td>
+                    <td>${a.email ? escapeHtml(a.email) : '<span style="color: var(--text-muted);">-</span>'}</td>
+                    <td>${turmas.length > 0 ? turmas.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join(' ') : '<span style="color: var(--text-muted);">-</span>'}</td>
+                    <td style="text-align: center;">
+    <div class="action-buttons">
+        ${temTelefone ? `
+            <button onclick="abrirWhatsApp('${escapeHtml(a.telefone)}', '${escapeHtml(mensagemWhatsApp)}')" 
+                class="action-btn btn-whatsapp" 
+                title="WhatsApp"
+                aria-label="Enviar WhatsApp para ${escapeHtml(a.nome)}">
+                <i class="fab fa-whatsapp"></i>
+            </button>` : `
+            <button class="action-btn disabled" 
+                title="Sem telefone"
+                aria-label="Sem telefone cadastrado">
+                <i class="fab fa-whatsapp"></i>
+            </button>`
+        }
+        <button onclick="matricular('${a.id}', '${escapeHtml(a.nome || '').replace(/'/g, "\\'")}')" 
+            class="action-btn btn-edit" 
+            title="Matricular"
+            aria-label="Matricular ${escapeHtml(a.nome)}">
+            <i class="fas fa-plus-circle"></i>
+        </button>
+        <button onclick="editarAluno('${a.id}')" 
+            class="action-btn" 
+            title="Editar"
+            aria-label="Editar ${escapeHtml(a.nome)}">
+            <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="excluirAluno('${a.id}', '${escapeHtml(a.nome || '')}')" 
+            class="action-btn btn-delete" 
+            title="Excluir"
+            aria-label="Excluir ${escapeHtml(a.nome)}">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+</td>
+
                 `;
                 tbody.appendChild(tr);
             }
         }
 
-        // Filtra alunos em tempo real
+        // ========== FILTRAR ALUNOS ==========
         function filtrarAlunos() {
             const termo = document.getElementById('buscaAluno').value.toLowerCase().trim();
             
@@ -337,46 +403,63 @@
             renderAlunos(filtrados);
         }
 
-        async function getTurmasDoAluno(alunoId) {
-            const token = localStorage.getItem('token');
-            try {
-                const response = await fetch('/api/turmas', { headers: { 'Authorization': `Bearer ${token}` } });
-                if (!response.ok) return [];
-                
-                const turmas = await response.json();
-                if (!Array.isArray(turmas)) return [];
-                
-                const turmasComAlunos = await Promise.all(turmas.map(async (t) => {
-                    try {
-                        const res = await fetch(`/api/matriculas/${t.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
-                        const matriculas = await res.json();
-                        return { ...t, alunosMatriculados: matriculas || [] };
-                    } catch(e) {
-                        return { ...t, alunosMatriculados: [] };
-                    }
-                }));
-                
-                return turmasComAlunos
-                    .filter(t => t.alunosMatriculados?.some(m => m.aluno_id === alunoId))
-                    .map(t => t.nome);
-            } catch (e) {
-                console.error(e);
-                return [];
-            }
+        // ========== ESCAPE HTML ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        window.openModal = (tipo) => document.getElementById(`modal${tipo}`).classList.remove('hidden');
-        window.closeModal = (tipo) => document.getElementById(`modal${tipo}`).classList.add('hidden');
+        // ========== MODAIS ==========
+        window.openModal = (tipo) => {
+            document.getElementById(`modal${tipo}`).classList.remove('hidden');
+            document.getElementById(`modal${tipo}`).querySelector('input, button')?.focus();
+        };
+        
+        window.closeModal = (tipo) => {
+            document.getElementById(`modal${tipo}`).classList.add('hidden');
+        };
 
-        // CRIAR/EDITAR ALUNO
+        // Fechar modal ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.add('hidden');
+            }
+        });
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        });
+
+        // ========== CRIAR/EDITAR ALUNO ==========
         document.getElementById('alunoForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const token = localStorage.getItem('token');
+            const btn = document.getElementById('btnSalvarAluno');
+            const originalText = btn.innerHTML;
+            
+            // Feedback de loading
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
             
             const alunoId = document.getElementById('alunoId').value;
-            const nome = document.getElementById('alunoNome').value;
-            const telefone = document.getElementById('alunoTelefone').value;
-            const email = document.getElementById('alunoEmail').value;
+            const nome = document.getElementById('alunoNome').value.trim();
+            const telefone = document.getElementById('alunoTelefone').value.trim();
+            const email = document.getElementById('alunoEmail').value.trim();
+
+            if (!nome) {
+                showToast('Nome é obrigatório', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
 
             let url = '/api/alunos';
             let method = 'POST';
@@ -386,28 +469,39 @@
                 method = 'PUT';
             }
 
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ nome, telefone, email })
-            });
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ nome, telefone, email })
+                });
 
-            if (response.ok) {
-                closeModal('Aluno');
-                document.getElementById('alunoForm').reset();
-                document.getElementById('alunoId').value = '';
-                document.getElementById('modalAlunoTitulo').textContent = 'Novo Aluno';
-                loadAlunos();
-            } else {
-                const err = await response.json();
-                alert('Erro: ' + (err.error || 'Não foi possível salvar'));
+                if (response.ok) {
+                    closeModal('Aluno');
+                    document.getElementById('alunoForm').reset();
+                    document.getElementById('alunoId').value = '';
+                    document.getElementById('modalAlunoTitulo').textContent = 'Novo Aluno';
+                    showToast(alunoId ? 'Aluno atualizado com sucesso!' : 'Aluno cadastrado com sucesso!', 'success');
+                    loadAlunos();
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Não foi possível salvar', 'error');
+                }
+            } catch (error) {
+                showToast('Erro de conexão', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         });
 
-        // EDITAR ALUNO - PREPARAR FORM
+        // ========== EDITAR ALUNO ==========
         window.editarAluno = (id) => {
             const aluno = alunosData.find(a => a.id === id);
-            if (!aluno) return;
+            if (!aluno) {
+                showToast('Aluno não encontrado', 'error');
+                return;
+            }
             
             document.getElementById('alunoId').value = aluno.id;
             document.getElementById('alunoNome').value = aluno.nome || '';
@@ -418,33 +512,40 @@
             openModal('Aluno');
         };
 
-        // MATRICULAR
+        // ========== MATRICULAR ==========
         window.matricular = async (alunoId, alunoNome) => {
             document.getElementById('alunoMatricularNome').textContent = alunoNome;
             
             const token = localStorage.getItem('token');
+            const container = document.getElementById('turmasSelect');
+            
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando turmas...</div>';
             
             try {
                 const response = await fetch('/api/turmas', { headers: { 'Authorization': `Bearer ${token}` } });
                 const turmas = await response.json();
 
-                const container = document.getElementById('turmasSelect');
-                
                 if (!turmas || turmas.length === 0) {
-                    container.innerHTML = '<p style="color: var(--text-muted);">Nenhuma turma disponível</p>';
+                    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;"><i class="fas fa-school" style="font-size: 24px; opacity: 0.3;"></i><br>Nenhuma turma disponível</p>';
                 } else {
                     container.innerHTML = turmas.map(t => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-dark); border-radius: 8px; margin-bottom: 8px;">
-                            <div>
-                                <strong>${t.nome}</strong>
-                                <p style="font-size: 12px; color: var(--text-muted);">${t.dia_semana} ${t.horario_inicio}</p>
+                        <div class="turma-card" style="margin-bottom: 8px; cursor: default;">
+                            <div class="turma-body">
+                                <p><i class="fas fa-school"></i> <strong>${escapeHtml(t.nome)}</strong></p>
+                                <p><i class="fas fa-calendar"></i> ${escapeHtml(t.dia_semana)} ${escapeHtml(t.horario_inicio)}</p>
                             </div>
-                            <button onclick="confirmarMatricula('${t.id}', '${alunoId}')" class="btn btn-primary btn-sm">Matricular</button>
+                            <div class="turma-actions">
+                                <button onclick="confirmarMatricula('${t.id}', '${alunoId}')" 
+                                    class="btn btn-primary btn-sm" 
+                                    style="width: 100%;">
+                                    <i class="fas fa-user-plus"></i> Matricular
+                                </button>
+                            </div>
                         </div>
                     `).join('');
                 }
             } catch(e) {
-                console.error(e);
+                container.innerHTML = '<p style="color: var(--danger); text-align: center;">Erro ao carregar turmas</p>';
             }
 
             openModal('Matricular');
@@ -452,47 +553,115 @@
 
         window.confirmarMatricula = async (turmaId, alunoId) => {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/matriculas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ turma_id: turmaId, aluno_id: alunoId })
-            });
+            
+            try {
+                const response = await fetch('/api/matriculas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ turma_id: turmaId, aluno_id: alunoId })
+                });
 
-            if (response.ok) {
-                alert('Aluno matriculado com sucesso!');
-                closeModal('Matricular');
-                loadAlunos();
-            } else {
-                const data = await response.json();
-                alert(data.error || 'Erro ao matricular');
+                if (response.ok) {
+                    showToast('Aluno matriculado com sucesso!', 'success');
+                    closeModal('Matricular');
+                    loadAlunos();
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Erro ao matricular', 'error');
+                }
+            } catch (e) {
+                showToast('Erro de conexão', 'error');
             }
         };
 
-        // EXCLUIR ALUNO
-        window.excluirAluno = async (id) => {
-            if (!confirm('Excluir aluno? Esta ação não pode ser desfeita.')) return;
+        // ========== EXCLUIR ALUNO ==========
+        window.excluirAluno = async (id, nome) => {
+            // Usar toast em vez de confirm nativo
+            const confirmar = () => {
+                return new Promise((resolve) => {
+                    const modal = document.createElement('div');
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-content" style="max-width: 400px;">
+                            <div class="modal-header">
+                                <h3><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Confirmar Exclusão</h3>
+                                <button class="close" aria-label="Fechar">&times;</button>
+                            </div>
+                            <div class="modal-body" style="text-align: center;">
+                                <p style="margin-bottom: 20px;">Deseja realmente excluir o aluno <strong>${escapeHtml(nome)}</strong>?</p>
+                                <p style="color: var(--text-muted); font-size: 13px;">Esta ação não pode ser desfeita.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-danger" id="confirmarExcluir">
+                                    <i class="fas fa-trash"></i> Sim, excluir
+                                </button>
+                                <button class="btn btn-secondary" id="cancelarExcluir">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(modal);
+                    
+                    document.getElementById('confirmarExcluir').onclick = () => {
+                        document.body.removeChild(modal);
+                        resolve(true);
+                    };
+                    
+                    document.getElementById('cancelarExcluir').onclick = () => {
+                        document.body.removeChild(modal);
+                        resolve(false);
+                    };
+                    
+                    modal.querySelector('.close').onclick = () => {
+                        document.body.removeChild(modal);
+                        resolve(false);
+                    };
+                    
+                    modal.onclick = (e) => {
+                        if (e.target === modal) {
+                            document.body.removeChild(modal);
+                            resolve(false);
+                        }
+                    };
+                });
+            };
+
+            const confirmed = await confirmar();
+            
+            if (!confirmed) return;
             
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/alunos/${id}`, { 
-                method: 'DELETE', 
-                headers: { 'Authorization': `Bearer ${token}` } 
-            });
             
-            if (response.ok) {
-                loadAlunos();
-            } else {
-                const err = await response.json();
-                alert('Erro: ' + (err.error || 'Não foi possível excluir'));
+            try {
+                const response = await fetch(`/api/alunos/${id}`, { 
+                    method: 'DELETE', 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                
+                if (response.ok) {
+                    showToast('Aluno excluído com sucesso!', 'success');
+                    loadAlunos();
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Não foi possível excluir', 'error');
+                }
+            } catch (e) {
+                showToast('Erro de conexão', 'error');
             }
         };
 
+        // ========== LOGOUT ==========
         async function logout() {
             const token = localStorage.getItem('token');
-            await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            try {
+                await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            } catch (e) {}
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
             window.location.href = '/';
         }
     </script>
-</body> 
+</body>
 </html>

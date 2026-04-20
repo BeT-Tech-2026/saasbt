@@ -2,16 +2,322 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turmas - B&T Tech</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ========== SKELETON LOADING ========== */
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .skeleton-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        
+        .skeleton-header {
+            padding: 14px;
+            background: var(--bg-dark);
+        }
+        
+        .skeleton-body {
+            padding: 14px;
+        }
+        
+        /* ========== GRID CARDS ========== */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ========== TURMA CARD ========== */
+        .turma-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        
+        .turma-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .turma-header {
+            padding: 14px 16px;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .turma-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        
+        .turma-body {
+            padding: 14px 16px;
+        }
+        
+        .turma-body p {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        
+        .turma-body p i {
+            width: 16px;
+            color: var(--primary);
+            text-align: center;
+        }
+        
+        .turma-alunos {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .turma-alunos-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .turma-alunos-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .aluno-tag {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: #60a5fa;
+            gap: 4px;
+        }
+        
+        .aluno-tag button {
+            color: #f87171;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            min-height: 20px;
+        }
+        
+        .aluno-tag button:hover {
+            color: #ef4444;
+        }
+        
+        .turma-actions {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            flex-wrap: wrap;
+        }
+        
+        .turma-actions .btn {
+            flex: 1;
+            justify-content: center;
+            font-size: 12px;
+            min-height: var(--touch-target-min, 44px);
+        }
+        
+        /* ========== FORM MODAL ========== */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        
+        .form-group input[type="checkbox"] {
+            width: auto;
+            min-width: var(--touch-target-min, 44px);
+            min-height: var(--touch-target-min, 44px);
+        }
+        
+        /* ========== CHECKBOX DIAS ========== */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            background: var(--bg-dark);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+        
+        .checkbox-item:hover {
+            border-color: var(--primary);
+        }
+        
+        .checkbox-item input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        /* ========== AULA AVULSA ========== */
+        .avulsa-toggle {
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+        }
+        
+        .avulsa-toggle label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .avulsa-toggle input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+        }
+        
+        /* ========== MODAL MATRICULAR ========== */
+        .aluno-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-dark);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        
+        .aluno-checkbox-item:hover {
+            border-color: var(--primary);
+        }
+        
+        .aluno-checkbox-item input {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .aluno-checkbox-item.registered {
+            background: var(--success-bg);
+            border-color: var(--success);
+        }
+        
+        /* ========== LOADING ========== */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .loading-state i {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ========== EMPTY STATE ========== */
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+    </style>
 </head>
 <body class="dashboard-body">
 
+    <!-- ========== MENU HAMBURGER MOBILE ========== -->
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu de navegação">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo"><i class="fas fa-volleyball-ball"></i></div>
+            <div class="logo"><i class="fas fa-racquet"></i></div>
             <span>B&T Tech</span>
         </div>
         <nav class="sidebar-menu">
@@ -22,8 +328,7 @@
             <a href="/semanal" class="menu-item"><i class="fas fa-calendar-week"></i> Grade Semanal</a>
             <a href="/confirmacoes" class="menu-item"><i class="fab fa-whatsapp"></i> Confirmações</a>
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-bar"></i> Relatórios</a>
-            <a href="/financeiro" class="menu-item "><i class="fas fa-dollar-sign"></i> Financeiro</a>
-
+            <a href="/financeiro" class="menu-item"><i class="fas fa-dollar-sign"></i> Financeiro</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info">
@@ -33,20 +338,38 @@
                     <p class="user-type" id="userType">Carregando...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            <button onclick="logout()" class="logout-btn" aria-label="Sair do sistema">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         <header class="top-header">
             <h1><i class="fas fa-school mr-2"></i>Turmas</h1>
         </header>
 
         <div class="content">
-            <div class="card">
+            <!-- Loading Skeleton -->
+            <div id="loadingSkeleton" class="skeleton-grid">
+                <div class="skeleton-card">
+                    <div class="skeleton-header"></div>
+                    <div class="skeleton-body"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-header"></div>
+                    <div class="skeleton-body"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-header"></div>
+                    <div class="skeleton-body"></div>
+                </div>
+            </div>
+
+            <div class="card" id="turmasCard" style="display: none;">
                 <div class="card-header">
                     <h2><i class="fas fa-list mr-2"></i>Lista de Turmas</h2>
-                    <button id="btnNovaTurma" class="btn btn-primary">
+                    <button id="btnNovaTurma" class="btn btn-primary" aria-label="Criar nova turma">
                         <i class="fas fa-plus"></i> Nova Turma
                     </button>
                 </div>
@@ -58,56 +381,55 @@
     </main>
 
     <!-- Modal Nova/Editar Turma -->
-    <div id="modalTurma" class="modal hidden">
+    <div id="modalTurma" class="modal hidden" role="dialog" aria-labelledby="modalTurmaTitulo" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Nova Turma</h3>
-                <button onclick="fecharModalTurma()" class="close">&times;</button>
+                <h3 id="modalTurmaTitulo">Nova Turma</h3>
+                <button onclick="fecharModalTurma()" class="close" aria-label="Fechar modal">&times;</button>
             </div>
             <form id="turmaForm" class="modal-body">
                 <div class="form-group">
-                    <label>Nome da Turma *</label>
-                    <input type="text" id="turmaNome" required placeholder="Ex: Avançado A">
+                    <label for="turmaNome">Nome da Turma *</label>
+                    <input type="text" id="turmaNome" placeholder="Ex: Avançado A" required aria-required="true">
                 </div>
                 
-                
-                <!-- Aula Avaaaaaaaaaaaaaaaaaaaaaaaaulsa -->
-                <div class="form-group" style="border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-md);">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="checkbox" id="turmaAvulsa" style="margin-right: 10px; width: 18px; height: 18px;" onchange="toggleDataAvulsa()">
-                        <span style="font-weight: 600; color: var(--text-primary);">Aula Avulsa (evento único)</span>
+                <!-- Aula Avulsa -->
+                <div class="avulsa-toggle">
+                    <label>
+                        <input type="checkbox" id="turmaAvulsa" onchange="toggleDataAvulsa()">
+                        <span>Aula Avulsa (evento único)</span>
                     </label>
                 </div>
 
                 <!-- Data da Aula Avulsa -->
                 <div class="form-group" id="grupoDataAvulsa" style="display: none;">
-                    <label>Data da Aula *</label>
+                    <label for="turmaDataAvulsa">Data da Aula *</label>
                     <input type="date" id="turmaDataAvulsa">
                 </div>
 
                 <!-- Dias da Semana -->
                 <div class="form-group" id="grupoDiasSemana">
                     <label>Dia(s) da Semana *</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-dark); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
                             <input type="checkbox" class="dia-checkbox" value="segunda"> Seg
                         </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-dark); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                        <label class="checkbox-item">
                             <input type="checkbox" class="dia-checkbox" value="terca"> Ter
                         </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-dark); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                        <label class="checkbox-item">
                             <input type="checkbox" class="dia-checkbox" value="quarta"> Qua
                         </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-dark); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                        <label class="checkbox-item">
                             <input type="checkbox" class="dia-checkbox" value="quinta"> Qui
                         </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-dark); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                        <label class="checkbox-item">
                             <input type="checkbox" class="dia-checkbox" value="sexta"> Sex
                         </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-dark); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                        <label class="checkbox-item">
                             <input type="checkbox" class="dia-checkbox" value="sabado"> Sáb
                         </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-dark); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                        <label class="checkbox-item">
                             <input type="checkbox" class="dia-checkbox" value="domingo"> Dom
                         </label>
                     </div>
@@ -115,64 +437,128 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Início *</label>
-                        <input type="time" id="turmaInicio" required>
+                        <label for="turmaInicio">Início *</label>
+                        <input type="time" id="turmaInicio" required aria-required="true">
                     </div>
                     <div class="form-group">
-                        <label>Fim *</label>
-                        <input type="time" id="turmaFim" required>
+                        <label for="turmaFim">Fim *</label>
+                        <input type="time" id="turmaFim" required aria-required="true">
                     </div>
                 </div>
+                
                 <div class="form-group">
-                    <label>Professor</label>
+                    <label for="turmaProfessor">Professor</label>
                     <select id="turmaProfessor">
                         <option value="">Selecione...</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
-                    <label>Limite de Alunos</label>
+                    <label for="turmaLimite">Limite de Alunos</label>
                     <input type="number" id="turmaLimite" value="4" min="1" max="20">
                 </div>
 
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Salvar</button>
-                    <button type="button" onclick="fecharModalTurma()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSalvarTurma">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                    <button type="button" onclick="fecharModalTurma()" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Matricular -->
-    <div id="modalMatricular" class="modal hidden">
+    <div id="modalMatricular" class="modal hidden" role="dialog" aria-labelledby="modalMatricularTitulo" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Matricular Aluno</h3>
-                <button onclick="fecharModalMatricular()" class="close">&times;</button>
+                <h3 id="modalMatricularTitulo">Matricular Alunos</h3>
+                <button onclick="fecharModalMatricular()" class="close" aria-label="Fechar modal">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Campo de Busca -->
-                <div class="search-box">
+                <p style="margin-bottom: 12px;">Selecione os alunos para <strong id="turmaMatricularNome"></strong>:</p>
+                
+                <div class="search-box" style="margin-bottom: 12px;">
                     <i class="fas fa-search"></i>
                     <input type="text" id="buscaAlunoMatricula" placeholder="Buscar aluno por nome..." onkeyup="filtrarAlunosModal()">
                 </div>
                 
-                <p>Selecione os alunos:</p>
-                <div id="alunosCheckboxes" style="margin-top: 16px; max-height: 300px; overflow-y: auto;"></div>
-                <div class="modal-footer" style="margin-top: 20px;">
-                    <button onclick="salvarMatriculas()" class="btn btn-primary">Salvar</button>
-                    <button onclick="fecharModalMatricular()" class="btn btn-secondary">Cancelar</button>
+                <div id="loadingAlunos" class="loading-state">
+                    <i class="fas fa-spinner"></i>
+                    <p style="margin-top: 10px;">Carregando alunos...</p>
+                </div>
+                
+                <div id="alunosCheckboxes" style="max-height: 300px; overflow-y: auto;"></div>
+                
+                <div class="modal-footer" style="margin-top: 16px;">
+                    <button onclick="salvarMatriculas()" class="btn btn-primary" id="btnSalvarMatriculas">
+                        <i class="fas fa-save"></i> Salvar Matrículas
+                    </button>
+                    <button onclick="fecharModalMatricular()" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <script>
         let perfil = null;
         let turmasData = [];
         let turmaSelecionada = null;
         let turmaEmEdicao = null;
-        let alunosData = []; // Lista original de alunos para busca
+        let alunosData = [];
 
+        // ========== TOAST NOTIFICATIONS ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:inherit;margin-left:auto;cursor:pointer;padding:4px;" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ========== SIDEBAR TOGGLE ==========
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.toggle('show');
+        }
+
+        // ========== ESCAPE HTML ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== INICIALIZAÇÃO ==========
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             if (!token) { 
@@ -183,12 +569,17 @@
             perfil = JSON.parse(localStorage.getItem('perfil'));
             
             if (!perfil) {
-                const response = await fetch('/api/session', { 
-                    headers: { 'Authorization': `Bearer ${token}` } 
-                });
-                const data = await response.json();
-                perfil = data.perfil;
-                localStorage.setItem('perfil', JSON.stringify(perfil));
+                try {
+                    const response = await fetch('/api/session', { 
+                        headers: { 'Authorization': `Bearer ${token}` } 
+                    });
+                    const data = await response.json();
+                    perfil = data.perfil;
+                    localStorage.setItem('perfil', JSON.stringify(perfil));
+                } catch (e) {
+                    window.location.href = '/';
+                    return;
+                }
             }
 
             if (!perfil) { 
@@ -209,138 +600,151 @@
             await loadProfessoresSelect();
         });
 
+        // ========== CARREGAR TURMAS ==========
         async function loadTurmas() {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/turmas', { 
-                headers: { 'Authorization': `Bearer ${token}` } 
-            });
-            turmasData = await response.json();
-
-            for (let turma of turmasData) {
-                const res = await fetch(`/api/matriculas/${turma.id}`, { 
+            
+            // Esconder skeleton
+            document.getElementById('loadingSkeleton').style.display = 'none';
+            document.getElementById('turmasCard').style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/turmas', { 
                     headers: { 'Authorization': `Bearer ${token}` } 
                 });
-                turma.alunosMatriculados = await res.json();
-            }
+                turmasData = await response.json();
 
-            renderTurmas();
+                for (let turma of turmasData) {
+                    const res = await fetch(`/api/matriculas/${turma.id}`, { 
+                        headers: { 'Authorization': `Bearer ${token}` } 
+                    });
+                    turma.alunosMatriculados = await res.json();
+                }
+
+                renderTurmas();
+            } catch (error) {
+                console.error('Erro ao carregar turmas:', error);
+                showToast('Erro ao carregar turmas', 'error');
+            }
         }
 
+        // ========== RENDERIZAR TURMAS ==========
         function renderTurmas() {
             const container = document.getElementById('turmasList');
-            if (turmasData && turmasData.length > 0) {
-                container.innerHTML = turmasData.map(t => {
-                    // COR DO PROFESSOR: usa a cor definida no cadastro do professor
-                    const cardColor = t.perfis?.cor || '#6b7280'; // Cinza padrão se não tiver cor
-                    
-                    // Formata o dia da semana para exibição
-                    const diaSemana = t.dia_semana ? t.dia_semana.charAt(0).toUpperCase() + t.dia_semana.slice(1) : '';
-                    
-                    return `
-                    <div class="turma-card" style="border-left: 6px solid ${cardColor};">
-                        <div class="turma-header">
-                            <h3>${t.nome}</h3>
-                            <span class="badge" style="background-color: ${cardColor}; color: white;">${t.data_avulsa ? 'Avulsa' : diaSemana}</span>
-                        </div>
-                        <div class="turma-body">
-                            <p><i class="fas fa-clock"></i> ${t.horario_inicio} - ${t.horario_fim}</p>
-                            <p><i class="fas fa-user"></i> ${t.perfis?.nome || 'Sem professor'}</p>
-                            ${t.data_avulsa ? `<p><i class="fas fa-calendar"></i> ${new Date(t.data_avulsa + 'T12:00:00').toLocaleDateString('pt-BR')}</p>` : ''}
-                            <p><i class="fas fa-users"></i> ${t.alunosMatriculados?.length || 0}/${t.limite_alunos} alunos</p>
-                            
-                            <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
-                                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">ALUNOS:</p>
-                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                    ${t.alunosMatriculados?.map(m => `
+            
+            if (!turmasData || turmasData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="fas fa-school"></i>
+                        <p>Nenhuma turma cadastrada</p>
+                        <button onclick="abrirModalTurma()" class="btn btn-primary" style="margin-top: 16px;">
+                            <i class="fas fa-plus"></i> Criar primeira turma
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = turmasData.map(t => {
+                const cardColor = t.perfis?.cor || '#6b7280';
+                const diaSemana = t.dia_semana ? t.dia_semana.charAt(0).toUpperCase() + t.dia_semana.slice(1) : '';
+                
+                return `
+                <div class="turma-card" style="border-left: 4px solid ${cardColor};">
+                    <div class="turma-header">
+                        <h3>${escapeHtml(t.nome)}</h3>
+                        <span class="badge" style="background-color: ${cardColor}; color: white;">${t.data_avulsa ? 'Avulsa' : diaSemana}</span>
+                    </div>
+                    <div class="turma-body">
+                        <p><i class="fas fa-clock"></i> ${t.horario_inicio} - ${t.horario_fim}</p>
+                        <p><i class="fas fa-user"></i> ${escapeHtml(t.perfis?.nome || 'Sem professor')}</p>
+                        ${t.data_avulsa ? `<p><i class="fas fa-calendar"></i> ${new Date(t.data_avulsa + 'T12:00:00').toLocaleDateString('pt-BR')}</p>` : ''}
+                        <p><i class="fas fa-users"></i> ${t.alunosMatriculados?.length || 0}/${t.limite_alunos} alunos</p>
+                        
+                        <div class="turma-alunos">
+                            <div class="turma-alunos-label">Alunos:</div>
+                            <div class="turma-alunos-list">
+                                ${t.alunosMatriculados && t.alunosMatriculados.length > 0 
+                                    ? t.alunosMatriculados.map(m => `
                                         <span class="aluno-tag">
-                                            ${m.alunos?.nome}
-                                            <button onclick="desmatricular('${m.id}')" title="Remover">&times;</button>
+                                            ${escapeHtml(m.alunos?.nome || '')}
+                                            <button onclick="desmatricular('${m.id}', '${escapeHtml(m.alunos?.nome || '')}')" title="Remover" aria-label="Remover ${escapeHtml(m.alunos?.nome || '')}">&times;</button>
                                         </span>
-                                    `).join('') || '<span style="font-size: 12px; color: var(--text-muted);">Nenhum</span>'}
-                                </div>
+                                    `).join('')
+                                    : '<span style="font-size: 12px; color: var(--text-muted);">Nenhum aluno</span>'
+                                }
                             </div>
                         </div>
-                        <div class="turma-actions">
-                            <button onclick="matricularAlunos('${t.id}')" class="btn btn-sm btn-primary" style="flex: 1;">
-                                <i class="fas fa-user-plus"></i> Matricular
-                            </button>
-                            <button onclick="editarTurma('${t.id}')" class="btn btn-sm btn-secondary">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button onclick="excluirTurma('${t.id}')" class="btn btn-sm btn-danger">Excluir</button>
-                        </div>
                     </div>
-                `}).join('');
-            } else {
-                container.innerHTML = '<p class="empty">Nenhuma turma cadastrada</p>';
-            }
+                    <div class="turma-actions">
+                        <button onclick="matricularAlunos('${t.id}')" class="btn btn-primary" aria-label="Matricular alunos">
+                            <i class="fas fa-user-plus"></i> Matricular
+                        </button>
+                        <button onclick="editarTurma('${t.id}')" class="btn btn-secondary" aria-label="Editar turma">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="excluirTurma('${t.id}', '${escapeHtml(t.nome || '')}')" class="btn btn-danger" aria-label="Excluir turma">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
         }
 
+        // ========== CARREGAR PROFESSORES ==========
         async function loadProfessoresSelect() {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/professores', { 
-                headers: { 'Authorization': `Bearer ${token}` } 
-            });
-            const professores = await response.json();
-            const select = document.getElementById('turmaProfessor');
-            if (professores) {
+            try {
+                const response = await fetch('/api/professores', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                const professores = await response.json();
+                const select = document.getElementById('turmaProfessor');
                 select.innerHTML = '<option value="">Selecione...</option>' + 
-                    professores.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+                    professores.map(p => `<option value="${p.id}">${escapeHtml(p.nome)}</option>`).join('');
+            } catch (e) {
+                console.error('Erro ao carregar professores');
             }
         }
 
+        // ========== MODAL TURMA ==========
         function toggleDataAvulsa() {
             const avulsa = document.getElementById('turmaAvulsa').checked;
             document.getElementById('grupoDataAvulsa').style.display = avulsa ? 'block' : 'none';
             document.getElementById('grupoDiasSemana').style.display = avulsa ? 'none' : 'block';
-            
-            // Ajustar required
-            document.getElementById('turmaDataAvulsa').required = avulsa;
         }
 
         function abrirModalTurma() {
             turmaEmEdicao = null;
             document.getElementById('turmaForm').reset();
-            
-            // Reset checkboxes
             document.querySelectorAll('.dia-checkbox').forEach(cb => cb.checked = false);
-            
-            // Reset campos
             document.getElementById('turmaAvulsa').checked = false;
             document.getElementById('grupoDataAvulsa').style.display = 'none';
             document.getElementById('grupoDiasSemana').style.display = 'block';
-            
-            document.querySelector('#modalTurma .modal-header h3').textContent = 'Nova Turma';
+            document.getElementById('modalTurmaTitulo').textContent = 'Nova Turma';
             document.getElementById('modalTurma').classList.remove('hidden');
+            document.getElementById('turmaNome').focus();
         }
 
         function fecharModalTurma() {
             document.getElementById('modalTurma').classList.add('hidden');
         }
 
-        function abrirModalMatricular() {
-            document.getElementById('modalMatricular').classList.remove('hidden');
-        }
-
-        function fecharModalMatricular() {
-            document.getElementById('modalMatricular').classList.add('hidden');
-            // Limpa o campo de busca ao fechar
-            document.getElementById('buscaAlunoMatricula').value = '';
-        }
-
         window.editarTurma = async (id) => {
             const turma = turmasData.find(t => t.id === id);
-            if (!turma) return;
+            if (!turma) {
+                showToast('Turma não encontrada', 'error');
+                return;
+            }
 
             turmaEmEdicao = id;
             
-            document.getElementById('turmaNome').value = turma.nome;
-            document.getElementById('turmaInicio').value = turma.horario_inicio;
-            document.getElementById('turmaFim').value = turma.horario_fim;
+            document.getElementById('turmaNome').value = turma.nome || '';
+            document.getElementById('turmaInicio').value = turma.horario_inicio || '';
+            document.getElementById('turmaFim').value = turma.horario_fim || '';
             document.getElementById('turmaProfessor').value = turma.professor_id || '';
-            document.getElementById('turmaLimite').value = turma.limite_alunos;
+            document.getElementById('turmaLimite').value = turma.limite_alunos || 4;
 
-            // Verifica se é avulsa
             if (turma.data_avulsa) {
                 document.getElementById('turmaAvulsa').checked = true;
                 document.getElementById('turmaDataAvulsa').value = turma.data_avulsa;
@@ -353,28 +757,44 @@
                 toggleDataAvulsa();
             }
 
-            document.querySelector('#modalTurma .modal-header h3').textContent = 'Editar Turma';
+            document.getElementById('modalTurmaTitulo').textContent = 'Editar Turma';
             document.getElementById('modalTurma').classList.remove('hidden');
+            document.getElementById('turmaNome').focus();
         };
 
         document.getElementById('turmaForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const token = localStorage.getItem('token');
-
+            const btn = document.getElementById('btnSalvarTurma');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+            
             const avulsa = document.getElementById('turmaAvulsa').checked;
-            const nome = document.getElementById('turmaNome').value;
+            const nome = document.getElementById('turmaNome').value.trim();
             const horario_inicio = document.getElementById('turmaInicio').value;
             const horario_fim = document.getElementById('turmaFim').value;
             const professor_id = document.getElementById('turmaProfessor').value || null;
             const limite_alunos = parseInt(document.getElementById('turmaLimite').value);
 
+            // Validação de horários
+            if (horario_inicio >= horario_fim) {
+                showToast('Horário de fim deve ser depois do início', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
+
             let turmasToInsert = [];
 
             if (avulsa) {
-                // Aula avulsa - uma data específica
                 const data_avulsa = document.getElementById('turmaDataAvulsa').value;
                 if (!data_avulsa) {
-                    alert('Selecione a data da aula avulsa!');
+                    showToast('Selecione a data da aula avulsa', 'warning');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
                     return;
                 }
                 
@@ -390,11 +810,12 @@
                     data_avulsa: data_avulsa
                 });
             } else {
-                // Turma regular - pode ter múltiplos dias
                 const diasSelecionados = Array.from(document.querySelectorAll('.dia-checkbox:checked')).map(cb => cb.value);
                 
                 if (diasSelecionados.length === 0) {
-                    alert('Selecione pelo menos um dia da semana!');
+                    showToast('Selecione pelo menos um dia da semana', 'warning');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
                     return;
                 }
 
@@ -421,97 +842,105 @@
                 method = 'PUT';
             }
 
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(avulsa ? turmasToInsert[0] : { turmas: turmasToInsert })
-            });
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(avulsa ? turmasToInsert[0] : { turmas: turmasToInsert })
+                });
 
-            if (response.ok) {
-                fecharModalTurma();
-                document.getElementById('turmaForm').reset();
-                await loadTurmas();
-            } else {
-                const err = await response.json();
-                alert('Erro ao salvar: ' + err.error);
+                if (response.ok) {
+                    fecharModalTurma();
+                    showToast(turmaEmEdicao ? 'Turma atualizada!' : 'Turma criada!', 'success');
+                    await loadTurmas();
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Erro ao salvar', 'error');
+                }
+            } catch (error) {
+                showToast('Erro de conexão', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         });
 
-        // Função para renderizar a lista de alunos no modal
-        function renderAlunosModal(alunos, matriculados) {
+        // ========== MODAL MATRICULAR ==========
+        function abrirModalMatricular() {
+            document.getElementById('modalMatricular').classList.remove('hidden');
+        }
+
+        function fecharModalMatricular() {
+            document.getElementById('modalMatricular').classList.add('hidden');
+            document.getElementById('buscaAlunoMatricula').value = '';
+        }
+
+        window.matricularAlunos = async (turmaId) => {
+            turmaSelecionada = turmasData.find(t => t.id === turmaId);
+            document.getElementById('turmaMatricularNome').textContent = turmaSelecionada.nome;
+            
+            const token = localStorage.getItem('token');
+            
+            document.getElementById('loadingAlunos').style.display = 'block';
+            document.getElementById('alunosCheckboxes').innerHTML = '';
+            
+            abrirModalMatricular();
+            
+            try {
+                const response = await fetch('/api/alunos', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                alunosData = await response.json();
+                
+                document.getElementById('loadingAlunos').style.display = 'none';
+                renderAlunosModal(alunosData);
+            } catch (e) {
+                document.getElementById('loadingAlunos').style.display = 'none';
+                showToast('Erro ao carregar alunos', 'error');
+            }
+        };
+
+        function renderAlunosModal(alunos) {
             const container = document.getElementById('alunosCheckboxes');
+            const matriculados = turmaSelecionada.alunosMatriculados?.map(m => m.aluno_id) || [];
             
             if (!alunos || alunos.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Nenhum aluno encontrado</p>';
+                container.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum aluno cadastrado</p>';
                 return;
             }
             
             container.innerHTML = alunos.map(a => `
-                <label style="display: flex; align-items: center; padding: 12px; background: ${matriculados.includes(a.id) ? 'var(--success-bg)' : 'var(--bg-dark)'}; border-radius: 8px; cursor: pointer; margin-bottom: 8px; border: 1px solid var(--border);">
-                    <input type="checkbox" value="${a.id}" ${matriculados.includes(a.id) ? 'checked' : ''} style="margin-right: 12px;">
-                    <span>${a.nome}</span>
+                <label class="aluno-checkbox-item ${matriculados.includes(a.id) ? 'registered' : ''}">
+                    <input type="checkbox" value="${a.id}" ${matriculados.includes(a.id) ? 'checked' : ''}>
+                    <span>${escapeHtml(a.nome)}</span>
                 </label>
             `).join('');
         }
 
-        // Função para filtrar alunos na busca
         window.filtrarAlunosModal = function() {
             const termo = document.getElementById('buscaAlunoMatricula').value.toLowerCase().trim();
             
-            // Mantém os checkboxes marcados atualmente
-            const checkboxes = document.querySelectorAll('#alunosCheckboxes input[type="checkbox"]');
-            const marcados = Array.from(checkboxes)
-                .filter(cb => cb.checked)
-                .map(cb => cb.value);
-            
             if (!termo) {
-                // Se não tiver termo, mostra todos os alunos originais
-                const turma = turmaSelecionada;
-                const matriculados = turma.alunosMatriculados?.map(m => m.aluno_id) || [];
-                renderAlunosModal(alunosData, matriculados);
+                renderAlunosModal(alunosData);
                 return;
             }
             
-            // Filtra localmente baseado no array alunosData
             const filtrados = alunosData.filter(aluno => {
                 return aluno.nome && aluno.nome.toLowerCase().includes(termo);
             });
             
-            const turma = turmaSelecionada;
-            const matriculados = turma.alunosMatriculados?.map(m => m.aluno_id) || [];
-            
-            renderAlunosModal(filtrados, matriculados);
-        };
-
-        window.matricularAlunos = async (turmaId) => {
-            turmaSelecionada = turmasData.find(t => t.id === turmaId);
-            const token = localStorage.getItem('token');
-            
-            const response = await fetch('/api/alunos', { 
-                headers: { 'Authorization': `Bearer ${token}` } 
-            });
-            const alunos = await response.json();
-            
-            // GUARDA OS ALUNOS NA VARIÁVEL GLOBAL PARA PODER FILTRAR
-            alunosData = alunos;
-            
-            const matriculados = turmaSelecionada.alunosMatriculados?.map(m => m.aluno_id) || [];
-            
-            // Limpa o campo de busca ao abrir
-            document.getElementById('buscaAlunoMatricula').value = '';
-            
-            renderAlunosModal(alunos, matriculados);
-            abrirModalMatricular();
+            renderAlunosModal(filtrados);
         };
 
         window.salvarMatriculas = async () => {
             const token = localStorage.getItem('token');
             const checkboxes = document.querySelectorAll('#alunosCheckboxes input:checked');
             const alunosSelecionados = Array.from(checkboxes).map(c => c.value);
+            const matriculados = turmaSelecionada.alunosMatriculados?.map(m => m.aluno_id) || [];
             
+            // Adicionar novos
             for (const alunoId of alunosSelecionados) {
-                const jaMatriculado = turmaSelecionada.alunosMatriculados?.some(m => m.aluno_id === alunoId);
-                if (!jaMatriculado) {
+                if (!matriculados.includes(alunoId)) {
                     await fetch('/api/matriculas', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -520,8 +949,8 @@
                 }
             }
             
-            const alunosAtuaisIds = turmaSelecionada.alunosMatriculados?.map(m => m.aluno_id) || [];
-            for (const alunoId of alunosAtuaisIds) {
+            // Remover desatvulados
+            for (const alunoId of matriculados) {
                 if (!alunosSelecionados.includes(alunoId)) {
                     const matricula = turmaSelecionada.alunosMatriculados.find(m => m.aluno_id === alunoId);
                     if (matricula) {
@@ -534,40 +963,157 @@
             }
             
             fecharModalMatricular();
+            showToast('Matrículas atualizadas!', 'success');
             await loadTurmas();
-            alert('Alunos matriculados!');
         };
 
-        window.desmatricular = async (matriculaId) => {
-            if (!confirm('Remover aluno?')) return;
-            const token = localStorage.getItem('token');
-            await fetch(`/api/matriculas/${matriculaId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
+        // ========== DESMATRICULAR ==========
+        window.desmatricular = async (matriculaId, nome) => {
+            const confirmed = await new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 400px;">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-exclamation-circle" style="color: var(--warning);"></i> Remover Aluno</h3>
+                            <button class="close">&times;</button>
+                        </div>
+                        <div class="modal-body" style="text-align: center;">
+                            <p style="margin-bottom: 16px;">Remover <strong>${escapeHtml(nome)}</strong> desta turma?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-danger" id="confirmarRemover">
+                                <i class="fas fa-trash"></i> Remover
+                            </button>
+                            <button class="btn btn-secondary" id="cancelarRemover">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                modal.querySelector('#confirmarRemover').onclick = () => {
+                    document.body.removeChild(modal);
+                    resolve(true);
+                };
+                
+                modal.querySelector('#cancelarRemover').onclick = modal.querySelector('.close').onclick = () => {
+                    document.body.removeChild(modal);
+                    resolve(false);
+                };
+                
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                        resolve(false);
+                    }
+                };
             });
-            await loadTurmas();
-        };
-
-        window.excluirTurma = async (id) => {
-            if (!confirm('Excluir turma?')) return;
+            
+            if (!confirmed) return;
+            
             const token = localStorage.getItem('token');
-            await fetch(`/api/turmas/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            await loadTurmas();
+            
+            try {
+                await fetch(`/api/matriculas/${matriculaId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                showToast('Aluno removido da turma', 'success');
+                await loadTurmas();
+            } catch (e) {
+                showToast('Erro ao remover', 'error');
+            }
         };
 
+        // ========== EXCLUIR TURMA ==========
+        window.excluirTurma = async (id, nome) => {
+            const confirmed = await new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 400px;">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Excluir Turma</h3>
+                            <button class="close">&times;</button>
+                        </div>
+                        <div class="modal-body" style="text-align: center;">
+                            <p style="margin-bottom: 16px;">Excluir a turma <strong>${escapeHtml(nome)}</strong>?</p>
+                            <p style="color: var(--text-muted); font-size: 13px;">Esta ação não pode ser desfeita.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-danger" id="confirmarExcluir">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button class="btn btn-secondary" id="cancelarExcluir">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                modal.querySelector('#confirmarExcluir').onclick = () => {
+                    document.body.removeChild(modal);
+                    resolve(true);
+                };
+                
+                modal.querySelector('#cancelarExcluir').onclick = modal.querySelector('.close').onclick = () => {
+                    document.body.removeChild(modal);
+                    resolve(false);
+                };
+                
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                        resolve(false);
+                    }
+                };
+            });
+            
+            if (!confirmed) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                await fetch(`/api/turmas/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                showToast('Turma excluída!', 'success');
+                await loadTurmas();
+            } catch (e) {
+                showToast('Erro ao excluir', 'error');
+            }
+        };
+
+        // ========== LOGOUT ==========
         async function logout() {
             const token = localStorage.getItem('token');
-            await fetch('/api/logout', { 
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            try {
+                await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            } catch (e) {}
             localStorage.removeItem('token');
             localStorage.removeItem('perfil');
             window.location.href = '/';
         }
+
+        // ========== FECHAR MODAIS ==========
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                fecharModalTurma();
+                fecharModalMatricular();
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
