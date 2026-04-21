@@ -3,12 +3,14 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const compression = require('compression');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -274,25 +276,24 @@ app.get('/api/alunos', authenticate, async (req, res) => {
             return res.status(401).json({ error: 'Perfil não encontrado' });
         }
 
+        // OTIMIZAÇÃO: Consulta única com JOIN em vez de N+1 queries
         const { data: alunos, error } = await supabase
             .from('alunos')
-            .select('*')
+            .select('*, matriculas(ativa, turmas(nome))')
             .eq('escola_id', perfil.escola_id)
             .eq('ativo', true)
             .order('nome');
         
         if (error) throw error;
         
-        const alunosComTurmas = await Promise.all((alunos || []).map(async (aluno) => {
-            const { data: matriculas } = await supabase
-                .from('matriculas')
-                .select('*, turmas(nome)')
-                .eq('aluno_id', aluno.id)
-                .eq('ativa', true);
-            
-            const turmas = matriculas?.map(m => m.turmas?.nome).filter(Boolean) || [];
-            return { ...aluno, turmas };
-        }));
+        // Processa no servidor para evitar processamento no cliente
+        const alunosComTurmas = (alunos || []).map((aluno) => {
+            const turmas = aluno.matriculas
+                ?.filter(m => m.ativa && m.turmas)
+                ?.map(m => m.turmas.nome) || [];
+            const { matriculas, ...alunoSemMatriculas } = aluno;
+            return { ...alunoSemMatriculas, turmas };
+        });
         
         res.json(alunosComTurmas);
     } catch (error) {
