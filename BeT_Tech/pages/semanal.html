@@ -1170,7 +1170,6 @@
             const token = localStorage.getItem('token');
             
             if (!aulaAtual) {
-<<<<<<< HEAD
                 try {
                     const createResponse = await fetch('/api/aulas', {
                         method: 'POST',
@@ -1192,23 +1191,6 @@
                     aulaAtual = await createResponse.json();
                 } catch (error) {
                     showToast('Erro de conexão', 'error');
-=======
-                // Cria a aula se não existir
-                const createResponse = await fetch('/api/aulas', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token 
-                    },
-                    body: JSON.stringify({
-                        turma_id: turmaSelecionada.id,
-                        data: dataSelecionada
-                    })
-                });
-                
-                if (!createResponse.ok) {
-                    alert('Erro ao criar aula');
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
                     return;
                 }
             }
@@ -1243,11 +1225,7 @@
                     });
                 }
                 
-<<<<<<< HEAD
                 showToast('Status atualizado!', 'success');
-=======
-                // Atualiza a visualização da grade semanal imediatamente
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
                 renderWeek();
                 
                 // Atualiza o select para refletir o novo status visualmente
@@ -1258,11 +1236,7 @@
                 
             } catch (error) {
                 console.error('Erro ao salvar presença:', error);
-<<<<<<< HEAD
                 showToast('Erro ao salvar', 'error');
-=======
-                alert('Erro ao salvar presença');
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
             }
         }
 

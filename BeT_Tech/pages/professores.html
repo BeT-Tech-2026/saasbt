@@ -203,14 +203,6 @@
             <div class="modal-header">
                 <h3 id="modalProfessorTitulo"><i class="fas fa-user mr-2"></i>Novo Professor</h3>
                 <button onclick="closeModal()" class="close" aria-label="Fechar">&times;</button>
-=======
-    <!-- Modal para Cadastrar Professor -->
-    <div id="modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Novo Professor</h3>
-                <button onclick="closeModal()" class="close">&times;</button>
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
             </div>
             <form id="professorForm" class="modal-body">
                 <input type="hidden" id="profId">
@@ -224,19 +216,9 @@
                     <label for="profEmail">E-mail *</label>
                     <input type="email" id="profEmail" placeholder="email@exemplo.com" required>
                 </div>
-<<<<<<< HEAD
-
                 <div class="form-group">
                     <label for="profSenha">Senha *</label>
                     <input type="password" id="profSenha" required minlength="6" placeholder="Mínimo 6 caracteres">
-=======
-                <div class="form-group" id="senhaGroup">
-                    <label><i class="fas fa-lock"></i> Senha *</label>
-                    <input type="password" id="profSenha" minlength="6" placeholder="Mínimo 6 caracteres">
-                    <small id="senhaHint" style="color: var(--text-secondary); display: none;">
-                        Deixe em branco para manter a senha atual
-                    </small>
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
                 </div>
 
                 <div class="form-group">
@@ -249,17 +231,12 @@
                 </div>
 
                 <div class="modal-footer">
-<<<<<<< HEAD
                     <button type="submit" class="btn btn-primary" id="btnSalvarProfessor">
                         <i class="fas fa-check"></i> Salvar
                     </button>
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
-=======
-                    <button type="submit" class="btn btn-primary" id="btnSubmit">Cadastrar</button>
-                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
                 </div>
             </form>
         </div>
@@ -346,7 +323,6 @@
                 if (!response.ok) throw new Error('Erro');
                 professoresData = await response.json();
 
-<<<<<<< HEAD
                 document.getElementById('loadingSkeleton').style.display = 'none';
                 renderProfessores();
             } catch (error) {
@@ -429,72 +405,7 @@
             document.getElementById('modalProfessorTitulo').innerHTML = '<i class="fas fa-edit mr-2"></i>Editar Professor';
             document.getElementById('modalProfessor').classList.remove('hidden');
             document.getElementById('profNome').focus();
-=======
-            const container = document.getElementById('professoresList');
-            if (professores && professores.length > 0) {
-                container.innerHTML = professores.map(p => `
-                    <div class="profile-card">
-                        <div class="color-indicator" style="background: ${p.cor || '#3b82f6'};"></div>
-                        <div class="profile-avatar"><i class="fas fa-user"></i></div>
-                        <h3>${p.nome}</h3>
-                        <p>${p.email}</p>
-                        <div class="card-actions">
-                            <button onclick="editarProfessor('${p.id}')" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button onclick="desativarProfessor('${p.id}')" class="btn btn-danger btn-sm">
-                                <i class="fas fa-trash"></i> Desativar
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                container.innerHTML = '<p class="empty">Nenhum professor cadastrado</p>';
-            }
-        }
 
-        // Abrir modal para NOVO professor
-        window.openModal = () => {
-            document.getElementById('modalTitle').textContent = 'Novo Professor';
-            document.getElementById('btnSubmit').textContent = 'Cadastrar';
-            document.getElementById('professorForm').reset();
-            document.getElementById('profId').value = '';
-            document.getElementById('profSenha').required = true;
-            document.getElementById('profSenha').placeholder = 'Mínimo 6 caracteres';
-            document.getElementById('senhaHint').style.display = 'none';
-            document.getElementById('profCor').value = '#3b82f6';
-            document.getElementById('colorPreview').style.background = '#3b82f6';
-            document.getElementById('modal').classList.remove('hidden');
-        };
-
-        // Abrir modal para EDITAR professor
-        window.editarProfessor = async (id) => {
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/professores/' + id, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const professor = await response.json();
-
-            if (professor) {
-                document.getElementById('modalTitle').textContent = 'Editar Professor';
-                document.getElementById('btnSubmit').textContent = 'Salvar Alterações';
-                document.getElementById('profId').value = professor.id;
-                document.getElementById('profNome').value = professor.nome;
-                document.getElementById('profEmail').value = professor.email;
-                document.getElementById('profSenha').value = '';
-                document.getElementById('profSenha').required = false;
-                document.getElementById('profSenha').placeholder = '••••••••';
-                document.getElementById('senhaHint').style.display = 'block';
-                document.getElementById('profCor').value = professor.cor || '#3b82f6';
-                document.getElementById('colorPreview').style.background = professor.cor || '#3b82f6';
-                document.getElementById('modal').classList.remove('hidden');
-            }
-        };
-
-        window.closeModal = () => {
-            document.getElementById('modal').classList.add('hidden');
-            document.getElementById('professorForm').reset();
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
         };
 
         document.getElementById('professorForm').addEventListener('submit', async (e) => {
@@ -503,22 +414,15 @@
             const btn = document.getElementById('btnSalvarProfessor');
             const originalText = btn.innerHTML;
             
-<<<<<<< HEAD
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             const nome = document.getElementById('profNome').value.trim();
             const email = document.getElementById('profEmail').value.trim();
-=======
-            const id = document.getElementById('profId').value;
-            const nome = document.getElementById('profNome').value;
-            const email = document.getElementById('profEmail').value;
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
             const senha = document.getElementById('profSenha').value;
             const cor = document.getElementById('profCor').value;
             const editId = document.getElementById('professorForm').getAttribute('data-edit-id');
 
-<<<<<<< HEAD
             if (!nome || !email) { showToast('Preencha os campos obrigatórios', 'warning'); btn.disabled = false; btn.innerHTML = originalText; return; }
 
             const body = { nome, email, cor };
@@ -543,38 +447,6 @@
                 }
             } catch (error) { showToast('Erro de conexão', 'error'); }
             finally { btn.disabled = false; btn.innerHTML = originalText; }
-=======
-            const payload = { nome, email, cor };
-            if (senha) {
-                payload.senha = senha;
-            }
-
-            const method = id ? 'PUT' : 'POST';
-            const url = id ? '/api/professores/' + id : '/api/professores';
-
-            const response = await fetch(url, {
-                method: method,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                const message = id ? 'Professor atualizado com sucesso!' : 'Professor cadastrado com sucesso!';
-                if (!id) {
-                    alert(message + '\n\nEmail: ' + email + '\nSenha: ' + senha);
-                } else {
-                    alert(message);
-                }
-                closeModal();
-                loadProfessores();
-            } else {
-                const data = await response.json();
-                alert('Erro: ' + data.error);
-            }
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
         });
 
         let confirmCallback = null;

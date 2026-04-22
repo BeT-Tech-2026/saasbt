@@ -784,26 +784,24 @@ B&T Tech aguarda você!`;
             localStorage.removeItem('perfil');
             window.location.href = '/';
         }
-<<<<<<< HEAD
-        
+
         // Fechar modal com ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal').forEach(m => m.remove());
             }
         });
-        
+
         // Fechar modal ao clicar fora
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 e.target.remove();
             }
-=======
+        });
 
-            // Recarrega os dados quando a página volta a ficar visível (quando volta de turmas.html)
+        // Recarrega os dados quando a página volta a ficar visível
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
-                console.log('Página visível novamente, recarregando aulas...');
                 loadAulas();
             }
         });
@@ -811,7 +809,7 @@ B&T Tech aguarda você!`;
         // Também recarrega quando a janela ganha foco
         window.addEventListener('focus', function() {
             loadAulas();
->>>>>>> 29fbe809248e925a81e3a35d47ae495cc8c61390
+        });
         });
     </script>
 </body>

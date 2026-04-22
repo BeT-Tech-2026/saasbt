@@ -1596,6 +1596,132 @@ app.get('/api/presencas-aula', authenticate, async (req, res) => {
     }
 });
 
+app.get('/api/aulas/buscar', authenticate, async (req, res) => {
+    const { turma_id, data } = req.query;
+    if (!turma_id || !data) {
+        return res.status(400).json({ error: 'turma_id e data são obrigatórios' });
+    }
+
+    try {
+        const perfil = await getPerfil(req.user.id);
+        if (!perfil) return res.status(401).json({ error: 'Perfil não encontrado' });
+
+        const { data: turma, error } = await supabase
+            .from('turmas')
+            .select('id, escola_id')
+            .eq('id', turma_id)
+            .single();
+
+        if (error || !turma) {
+            return res.status(404).json({ error: 'Turma não encontrada' });
+        }
+
+        if (turma.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const aulaId = `${turma_id}_${data}`;
+        res.json({ id: aulaId, turma_id, data });
+    } catch (error) {
+        console.error('❌ Erro ao buscar aula:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/presencas/:aulaId', authenticate, async (req, res) => {
+    try {
+        const perfil = await getPerfil(req.user.id);
+        if (!perfil) return res.status(401).json({ error: 'Perfil não encontrado' });
+
+        const { data: presencas, error } = await supabase
+            .from('presencas')
+            .select('aula_id, aluno_id, status')
+            .eq('aula_id', req.params.aulaId)
+            .eq('escola_id', perfil.escola_id);
+
+        if (error) throw error;
+        res.json(presencas || []);
+    } catch (error) {
+        console.error('❌ Erro ao buscar presenças da aula:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/aulas', authenticate, async (req, res) => {
+    const { turma_id, data } = req.body;
+    if (!turma_id || !data) {
+        return res.status(400).json({ error: 'turma_id e data são obrigatórios' });
+    }
+
+    try {
+        const perfil = await getPerfil(req.user.id);
+        if (!perfil) return res.status(401).json({ error: 'Perfil não encontrado' });
+
+        const { data: turma, error } = await supabase
+            .from('turmas')
+            .select('id, escola_id')
+            .eq('id', turma_id)
+            .single();
+
+        if (error || !turma) {
+            return res.status(404).json({ error: 'Turma não encontrada' });
+        }
+
+        if (turma.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const aulaId = `${turma_id}_${data}`;
+        res.json({ id: aulaId, turma_id, data });
+    } catch (error) {
+        console.error('❌ Erro ao criar aula:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/presencas', authenticate, async (req, res) => {
+    const { aula_id, aluno_id, status } = req.body;
+    if (!aula_id || !aluno_id || !status) {
+        return res.status(400).json({ error: 'aula_id, aluno_id e status são obrigatórios' });
+    }
+
+    try {
+        const perfil = await getPerfil(req.user.id);
+        if (!perfil) return res.status(401).json({ error: 'Perfil não encontrado' });
+
+        const [turmaId] = aula_id.split('_');
+        const { data: turma, error: turmaError } = await supabase
+            .from('turmas')
+            .select('id, escola_id')
+            .eq('id', turmaId)
+            .single();
+
+        if (turmaError || !turma) {
+            return res.status(404).json({ error: 'Turma não encontrada para aula' });
+        }
+
+        if (turma.escola_id !== perfil.escola_id) {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const { data: presenca, error } = await supabase
+            .from('presencas')
+            .upsert({
+                aula_id,
+                aluno_id,
+                turma_id: turmaId,
+                escola_id: perfil.escola_id,
+                status
+            }, { onConflict: 'aula_id,aluno_id' });
+
+        if (error) throw error;
+        res.json({ success: true, data: presenca });
+    } catch (error) {
+        console.error('❌ Erro ao salvar presença:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==================== ROTAS DE PÁGINA ====================
 
 app.get('/', (req, res) => {
