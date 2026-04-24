@@ -14,6 +14,11 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir arquivos estáticos de CSS e JS
+app.use('/css', express.static(path.resolve(__dirname, '../css')));
+app.use('/js', express.static(path.resolve(__dirname, '../js')));
+app.use('/pages', express.static(path.resolve(__dirname, '../pages')));
+
 // CORS - Adicionar para permitir requisições do frontend
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
