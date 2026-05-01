@@ -1,5 +1,3 @@
 {
-  "dependencies": {
-    "twilio": "^5.13.1"
-  }
+  "description": "B&T Tech - Plataforma de Gestão para Escolas de Beach Tennis",
 }

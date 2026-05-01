@@ -14,10 +14,19 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir arquivos estáticos de CSS e JS
-app.use('/css', express.static(path.resolve(__dirname, '../css')));
-app.use('/js', express.static(path.resolve(__dirname, '../js')));
-app.use('/pages', express.static(path.resolve(__dirname, '../pages')));
+// Cache para arquivos estáticos (performance)
+app.use('/css', express.static(path.resolve(__dirname, '../css'), {
+    maxAge: '1d',
+    etag: true
+}));
+app.use('/js', express.static(path.resolve(__dirname, '../js'), {
+    maxAge: '1d',
+    etag: true
+}));
+app.use('/pages', express.static(path.resolve(__dirname, '../pages'), {
+    maxAge: '1h',
+    etag: true
+}));
 
 // CORS - Adicionar para permitir requisições do frontend
 app.use((req, res, next) => {
@@ -256,7 +265,7 @@ app.get('/api/session', authenticate, async (req, res) => {
     }
 });
 
-app.get('/api/escolas', async (req, res) => {
+app.get('/api/escolas', authenticate, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('escolas')
