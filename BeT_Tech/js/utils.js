@@ -327,3 +327,74 @@ window.Skeleton = Skeleton;
 window.EmptyState = EmptyState;
 window.LazyLoad = LazyLoad;
 window.ApiCache = ApiCache;
+
+
+// ============================================================
+// PATCH FINAL RESPONSIVO - SIDEBAR/HAMBURGER
+// Mantém o menu mobile consistente em todas as páginas internas.
+// ============================================================
+(function () {
+    function getLayoutElements() {
+        return {
+            sidebar: document.querySelector('.sidebar'),
+            overlay: document.querySelector('.sidebar-overlay'),
+            toggle: document.querySelector('.menu-toggle')
+        };
+    }
+
+    function setSidebarState(open) {
+        const { sidebar, overlay, toggle } = getLayoutElements();
+        if (!sidebar) return;
+
+        sidebar.classList.toggle('show', open);
+        if (overlay) overlay.classList.toggle('show', open);
+        document.body.classList.toggle('menu-open', open);
+        document.body.classList.toggle('sidebar-open', open);
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggle.setAttribute('aria-label', open ? 'Fechar menu de navegação' : 'Abrir menu de navegação');
+            const icon = toggle.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-bars', !open);
+                icon.classList.toggle('fa-times', open);
+            }
+        }
+    }
+
+    window.toggleSidebar = function (forceClose) {
+        const { sidebar } = getLayoutElements();
+        if (!sidebar) return;
+        const open = forceClose === true ? false : !sidebar.classList.contains('show');
+        setSidebarState(open);
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const { overlay, toggle } = getLayoutElements();
+
+        if (toggle) {
+            toggle.setAttribute('type', 'button');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function () {
+                window.toggleSidebar(true);
+            });
+        }
+
+        document.querySelectorAll('.sidebar .menu-item').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 1024) window.toggleSidebar(true);
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') window.toggleSidebar(true);
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 1024) window.toggleSidebar(true);
+        });
+    });
+})();

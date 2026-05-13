@@ -2349,3 +2349,272 @@ body.menu-open {
         justify-content: center !important;
     }
 }
+
+
+/* ============================================================
+   PATCH FINAL RESPONSIVO - MENU HAMBURGER / CELULAR / TABLET
+   Cole este bloco no FINAL do style.css.
+   ============================================================ */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+body.menu-open,
+body.sidebar-open {
+    overflow: hidden !important;
+    touch-action: none;
+}
+
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1025px) {
+    .menu-toggle,
+    .sidebar-overlay,
+    .sidebar-overlay.show {
+        display: none !important;
+    }
+
+    .sidebar {
+        transform: none !important;
+        visibility: visible !important;
+    }
+
+    .main-content {
+        margin-left: var(--sidebar-width, 250px) !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: min(84vw, 310px);
+    }
+
+    html,
+    body {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .dashboard-body {
+        display: block !important;
+        min-height: 100vh !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .menu-toggle {
+        display: flex !important;
+        position: fixed !important;
+        top: 14px !important;
+        left: 14px !important;
+        z-index: 1000002 !important;
+        width: 46px !important;
+        height: 46px !important;
+        min-width: 46px !important;
+        min-height: 46px !important;
+        padding: 0 !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255,255,255,0.14) !important;
+        background: var(--primary) !important;
+        color: #fff !important;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.35) !important;
+        cursor: pointer !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+    .menu-toggle i {
+        font-size: 18px !important;
+        line-height: 1 !important;
+    }
+
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: var(--sidebar-width) !important;
+        max-width: 310px !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        transform: translateX(-110%) !important;
+        transition: transform 0.25s ease !important;
+        z-index: 1000001 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        box-shadow: 18px 0 42px rgba(0,0,0,0.45) !important;
+        visibility: visible !important;
+    }
+
+    .sidebar.show {
+        transform: translateX(0) !important;
+    }
+
+    .sidebar-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: rgba(0,0,0,0.64) !important;
+        z-index: 1000000 !important;
+        display: none !important;
+        opacity: 0 !important;
+        transition: opacity 0.2s ease !important;
+    }
+
+    .sidebar-overlay.show {
+        display: block !important;
+        opacity: 1 !important;
+    }
+
+    .main-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        position: relative !important;
+        overflow-x: hidden !important;
+    }
+
+    .top-header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 72px !important;
+        padding: 14px 14px 14px 76px !important;
+        box-sizing: border-box !important;
+        gap: 10px !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+    }
+
+    .top-header h1 {
+        font-size: 17px !important;
+        line-height: 1.2 !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .content,
+    .confirmacoes-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    .card,
+    .finance-card,
+    .chart-card,
+    .tabela-section,
+    .aula-card,
+    .turma-card,
+    .profile-card,
+    .stat-card,
+    .stat-card-relatorio,
+    .resultado-card {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .card-header,
+    .section-header,
+    .header-actions,
+    .week-controls,
+    .quick-actions,
+    .turma-actions,
+    .profile-card-actions,
+    .input-group,
+    .aula-header {
+        flex-wrap: wrap !important;
+    }
+
+    .stats-grid,
+    .stats-grid-relatorio,
+    .resultados-grid,
+    .financeiro-grid,
+    .financeiro-stats,
+    .dashboard-grid,
+    .charts-grid,
+    .grid-cards,
+    .occupancy-grid,
+    .week-grid,
+    .skeleton-grid {
+        grid-template-columns: 1fr !important;
+        width: 100% !important;
+    }
+
+    .data-table,
+    .painel-table,
+    .tabela-professor,
+    .tabela-section table,
+    table {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .table-responsive,
+    .tabela-section {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .data-table,
+    .tabela-section table {
+        min-width: 620px;
+    }
+
+    .modal-content,
+    .modal-box,
+    .modal-relatorio-content {
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        margin: 12px auto !important;
+        max-height: calc(100vh - 24px) !important;
+        overflow-y: auto !important;
+    }
+
+    input,
+    select,
+    textarea,
+    button,
+    .btn,
+    .menu-item {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-header h1 {
+        font-size: 16px !important;
+    }
+
+    .card-header .btn,
+    .quick-btn,
+    .whatsapp-turma-btn,
+    .input-group .btn,
+    .input-group button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .input-group {
+        flex-direction: column !important;
+    }
+}
