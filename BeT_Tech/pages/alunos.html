@@ -11,7 +11,7 @@
 <body class="dashboard-body">
 
     <!-- ========== MENU HAMBURGER MOBILE ========== -->
-    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu de navegação">
+    <button class="menu-toggle" type="button" onclick="toggleSidebar()" aria-label="Abrir menu de navegação" aria-expanded="false">
         <i class="fas fa-bars"></i>
     </button>
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -663,5 +663,35 @@
             window.location.href = '/';
         }
     </script>
+
+<script>
+    // ========== SIDEBAR MOBILE/TABLET PADRONIZADA ==========
+    window.toggleSidebar = function(forceClose = false) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (!sidebar) return;
+
+        const shouldOpen = forceClose ? false : !sidebar.classList.contains('show');
+        sidebar.classList.toggle('show', shouldOpen);
+        if (overlay) overlay.classList.toggle('show', shouldOpen);
+        document.body.classList.toggle('sidebar-open', shouldOpen);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (overlay) overlay.addEventListener('click', () => window.toggleSidebar(true));
+
+        document.querySelectorAll('.sidebar .menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) window.toggleSidebar(true);
+            });
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) window.toggleSidebar(true);
+    });
+</script>
+
 </body>
 </html>

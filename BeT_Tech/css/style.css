@@ -1852,3 +1852,378 @@ input[type="color"]::-webkit-color-swatch {
     color: var(--text-muted);
 }
 
+/* ============================================================
+   PATCH DE EMERGÊNCIA - MELHORIA MOBILE (Colar ao final do arquivo)
+   Este código corrige apenas a aparência no celular sem alterar o desktop.
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* 1. Força as tabelas a não estourarem a tela e virarem "cards" */
+    .data-table, .painel-table, .tabela-professor, table {
+        display: block !important;
+        overflow-x: auto !important;
+    }
+    
+    .data-table tr, .painel-table tr, .tabela-professor tr {
+        display: block !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        margin-bottom: 15px !important;
+        padding: 10px !important;
+        background: var(--bg-card) !important;
+    }
+
+    .data-table td, .painel-table td, .tabela-professor td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: right !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        padding: 10px 0 !important;
+    }
+
+    /* 2. Ajusta todas as grids para ficarem em uma única coluna */
+    .stats-grid, .grid-cards, .dashboard-grid, .painel-grid, 
+    .financeiro-grid, .charts-grid, .occupancy-grid, .resultados-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    /* Exceção para stats: tenta manter 2 colunas se couber, se não, 1 */
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    }
+
+    /* 3. Melhora os botões no mobile */
+    .btn, .btn-primary, .btn-secondary, .btn-danger, .whatsapp-turma-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* 4. Ajusta o Header para não sumir com o menu hambúrguer */
+    .top-header {
+        padding-left: 60px !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    /* 5. Modal em tela cheia para facilitar o uso no dedo */
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* 6. Ajuste de espaçamento geral da página */
+    .content {
+        padding: 15px !important;
+    }
+}
+
+/* ============================================================
+   PATCH DE FORÇA BRUTA - CORREÇÃO DE VISIBILIDADE TOTAL
+   Limpando conflitos de Z-Index e Posicionamento
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* 1. Força o botão a flutuar acima de QUALQUER elemento (Gráficos, Tabelas, Modais) */
+    .menu-toggle {
+        display: flex !important; 
+        position: fixed !important; 
+        top: 15px !important; 
+        left: 15px !important; 
+        z-index: 999999 !important; /* Valor altíssimo para vencer qualquer conflito */
+        visibility: visible !important;
+        opacity: 1 !important;
+        background-color: var(--primary) !important;
+        color: white !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+    }
+
+    /* 2. Destrava a lateral da tela em TODAS as páginas */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-left: 0 !important;
+        position: relative !important;
+    }
+
+    /* 3. Garante que a sidebar não empurre o conteúdo */
+    .sidebar {
+        transform: translateX(-100%) !important;
+        position: fixed !important;
+        left: 0 !important;
+        z-index: 1000000 !important;
+    }
+
+    .sidebar.show {
+        transform: translateX(0) !important;
+    }
+
+    /* 4. Impede que tabelas e gráficos "estiquem" a tela para o lado */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        position: relative !important;
+    }
+
+    /* 5. Ajusta o header para não ficar escondido atrás do botão */
+    .top-header {
+        padding-left: 65px !important;
+        padding-right: 20px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 6. Ajusta a overlay do menu para cobrir tudo */
+    .sidebar-overlay {
+        z-index: 999998 !important;
+    }
+}
+
+
+/* ============================================================
+   PATCH MOBILE FINAL - SIDEBAR/HAMBURGER PADRONIZADO
+   Corrige overlay, empilhamento, largura e tabelas no celular.
+   ============================================================ */
+
+html, body {
+    max-width: 100%;
+}
+
+body.menu-open {
+    overflow: hidden !important;
+}
+
+.sidebar-overlay.show {
+    display: block !important;
+}
+
+@media (min-width: 769px) {
+    .sidebar-overlay,
+    .sidebar-overlay.show,
+    .menu-toggle {
+        display: none !important;
+    }
+
+    .sidebar {
+        transform: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: min(82vw, 300px);
+    }
+
+    html,
+    body {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .dashboard-body {
+        display: block !important;
+        min-height: 100vh !important;
+    }
+
+    .menu-toggle {
+        display: flex !important;
+        position: fixed !important;
+        top: 14px !important;
+        left: 14px !important;
+        z-index: 1000002 !important;
+        width: 46px !important;
+        height: 46px !important;
+        min-width: 46px !important;
+        min-height: 46px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--primary) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255,255,255,0.14) !important;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.35) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+    .menu-toggle i {
+        font-size: 18px !important;
+        line-height: 1 !important;
+    }
+
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: var(--sidebar-width) !important;
+        max-width: 300px !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        transform: translateX(-105%) !important;
+        transition: transform 0.25s ease !important;
+        z-index: 1000001 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        box-shadow: 18px 0 40px rgba(0,0,0,0.35) !important;
+    }
+
+    .sidebar.show {
+        transform: translateX(0) !important;
+    }
+
+    .sidebar-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: rgba(0,0,0,0.62) !important;
+        z-index: 1000000 !important;
+        display: none !important;
+    }
+
+    .sidebar-overlay.show {
+        display: block !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding-left: 0 !important;
+        position: relative !important;
+    }
+
+    .top-header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+        min-height: 72px !important;
+        padding: 14px 14px 14px 74px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        gap: 10px !important;
+        align-items: center !important;
+    }
+
+    .top-header h1 {
+        font-size: 17px !important;
+        line-height: 1.2 !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .top-header .date,
+    .top-header .header-actions,
+    .top-header > div:not(:first-child) {
+        max-width: 100% !important;
+    }
+
+    .content,
+    .confirmacoes-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    .card,
+    .finance-card,
+    .chart-card,
+    .tabela-section,
+    .aula-card,
+    .turma-card,
+    .profile-card,
+    .stat-card,
+    .resultado-card {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .card-header,
+    .section-header,
+    .header-actions,
+    .week-controls,
+    .quick-actions,
+    .turma-actions,
+    .profile-card-actions,
+    .input-group {
+        flex-wrap: wrap !important;
+    }
+
+    .stats-grid,
+    .stats-grid-relatorio,
+    .resultados-grid,
+    .financeiro-grid,
+    .financeiro-stats,
+    .dashboard-grid,
+    .charts-grid,
+    .grid-cards,
+    .occupancy-grid {
+        grid-template-columns: 1fr !important;
+        width: 100% !important;
+    }
+
+    .data-table,
+    .painel-table,
+    .tabela-professor,
+    .tabela-section table,
+    table {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .modal-content,
+    .modal-box,
+    .modal-relatorio-content {
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        margin: 12px auto !important;
+        max-height: calc(100vh - 24px) !important;
+        overflow-y: auto !important;
+    }
+
+    .btn,
+    button,
+    input,
+    select,
+    textarea,
+    .menu-item {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-header h1 {
+        font-size: 16px !important;
+    }
+
+    .card-header .btn,
+    .quick-btn,
+    .whatsapp-turma-btn,
+    .input-group .btn,
+    .input-group button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
