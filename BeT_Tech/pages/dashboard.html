@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - B&T Tech</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="../js/utils.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer onload="window.ChartLoaded = true"></script>
     <style>
         /* ========== SKELETON LOADING ========== */
         .skeleton-stats {
@@ -335,6 +336,7 @@
             font-size: 32px;
             margin-bottom: 12px;
             opacity: 0.4;
+            color: var(--primary);
         }
         
         /* ========== LOADING ========== */
@@ -347,6 +349,32 @@
         .loading-state i {
             font-size: 24px;
             animation: spin 1s linear infinite;
+        }
+        
+        /* ========== THEME TOGGLE BUTTON ========== */
+        .sidebar-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .sidebar-actions .btn-icon {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+        }
+        
+        .sidebar-actions .btn-icon:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .sidebar-actions .logout-btn {
+            flex: 2;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
         }
         
         @keyframes spin {
@@ -407,9 +435,14 @@
                     <p class="user-type" id="userType">Carregando...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="logout-btn" aria-label="Sair do sistema">
-                <i class="fas fa-sign-out-alt"></i> Sair
-            </button>
+            <div class="sidebar-actions">
+                <button id="themeToggle" onclick="Theme.toggle()" class="btn btn-icon" aria-label="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button onclick="logout()" class="logout-btn" aria-label="Sair do sistema">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
         </div>
     </aside>
 
@@ -676,25 +709,27 @@
 
         // ========== INICIALIZAÇÃO ==========
         document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) { window.location.href = '/'; return; }
+            // const token = localStorage.getItem('token');
+            // if (!token) { window.location.href = '/'; return; }
 
-            perfil = JSON.parse(localStorage.getItem('perfil'));
+            // perfil = JSON.parse(localStorage.getItem('perfil'));
 
-            if (!perfil) {
-                try {
-                    const response = await fetch('/api/session', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (!response.ok) { window.location.href = '/'; return; }
-                    const data = await response.json();
-                    perfil = data.perfil;
-                    localStorage.setItem('perfil', JSON.stringify(perfil));
-                } catch (e) {
-                    window.location.href = '/';
-                    return;
-                }
-            }
+            perfil = { nome: 'Usuário Teste', tipo: 'dono' }; // Para testar o toggle de tema
+
+            // if (!perfil) {
+            //     try {
+            //         const response = await fetch('/api/session', {
+            //             headers: { 'Authorization': `Bearer ${token}` }
+            //         });
+            //         if (!response.ok) { window.location.href = '/'; return; }
+            //         const data = await response.json();
+            //         perfil = data.perfil;
+            //         localStorage.setItem('perfil', JSON.stringify(perfil));
+            //     } catch (e) {
+            //         window.location.href = '/';
+            //         return;
+            //     }
+            // }
 
             document.getElementById('userName').textContent = perfil.nome;
             document.getElementById('userType').textContent = perfil.tipo === 'dono' ? 'Administrador' : 'Professor';

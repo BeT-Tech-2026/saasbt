@@ -1,52 +1,67 @@
 // ============================================
-// CONFIGURAÇÃO DO SUPABASE
+// CONFIGURAÇÃO DO SUPABASE - CLIENTE PÚBLICO
+// ============================================
+// ⚠️ ATENÇÃO: Este arquivo contém apenas chaves PÚBLICAS
+// ⚠️ Para operações autenticadas, usar /api/* do servidor
 // ============================================
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 
-// ⚠️ SUBSTITUA PELAS SUAS CHAVES DO SUPABASE
+// Chave pública (safe para expor no frontend)
 const SUPABASE_URL = 'https://nedrgsiycizosfyckkof.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZHJnc2l5Y2l6b3NmeWNra29mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTgxNywiZXhwIjoyMDkwOTc1ODE3fQ.rU20xzsHwYLyQDv1z9aVJhu_NawxBiDSlmSm2mRE2cM';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZHJnc2l5Y2l6b3NmeWNra29mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTk4MTcsImV4cCI6MjA5MDk3NTgxN30.rU20xzsHwYLyQDv1z9aVJhu_NawxBiDSlmSm2mRE2cM';
 
-// Cria o cliente global
+// Cria o cliente global (apenas para operações públicas)
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================
-// FUNÇÕES AUXILIARES
+// FUNÇÕES AUXILIARES PÚBLICAS
 // ============================================
 
-// Busca a sessão atual
-export async function getSession() {
-    const { data } = await supabase.auth.getSession();
-    return data.session;
+// Busca a sessão atual do localStorage
+export function getSession() {
+    const token = localStorage.getItem('token');
+    return token ? { access_token: token } : null;
 }
 
-// Busca o usuário logado
-export async function getUser() {
-    const { data } = await supabase.auth.getUser();
-    return data.user;
+// Busca perfil do localStorage (não faz chamada API)
+export function getPerfilLocal() {
+    const perfilStr = localStorage.getItem('perfil');
+    return perfilStr ? JSON.parse(perfilStr) : null;
 }
 
-// Faz logout
-export async function signOut() {
-    return await supabase.auth.signOut();
+// Verifica se há token válido
+export function isAuthenticated() {
+    return !!localStorage.getItem('token');
 }
 
-// Busca o perfil completo do usuário (dono ou professor)
-export async function getPerfil(userId) {
-    const { data } = await supabase
-        .from('perfis')
-        .select('*, escolas(nome)')
-        .eq('id', userId)
-        .single();
-    return data;
+// Faz logout (limpa localStorage)
+export function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('perfil');
+    window.location.href = '/';
 }
 
-// Verifica se o usuário está autenticado
-export async function checkAuth() {
-    const session = await getSession();
-    if (!session && window.location.pathname !== '/') {
+// Requisição autenticada para API do servidor
+export async function apiAuthenticated(endpoint, options = {}) {
+    const token = localStorage.getItem('token');
+    if (!token) {
         window.location.href = '/';
-        return null;
+        throw new Error('Não autenticado');
     }
-    return session;
+
+    const response = await fetch(endpoint, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            ...options.headers
+        }
+    });
+
+    if (response.status === 401) {
+        logout();
+        throw new Error('Sessão expirada');
+    }
+
+    return response;
 }

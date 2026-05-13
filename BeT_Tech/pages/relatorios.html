@@ -7,9 +7,7 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <script src="/js/utils.js" defer></script>
     <style>
         .stats-grid-relatorio {
             display: grid;
@@ -625,6 +623,12 @@
         };
 
         function gerarPDF() {
+            // Lazy load jsPDF se necessário
+            if (typeof jspdf === 'undefined') {
+                LazyLoad.loadJsPDF(() => gerarPDF());
+                return;
+            }
+            
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const d = dadosRelatorio;

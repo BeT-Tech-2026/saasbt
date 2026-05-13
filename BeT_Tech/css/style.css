@@ -3,6 +3,24 @@
    Tema Escuro + Acessibilidade + Responsividade
    ============================================ */
 
+/* ---------- TOGGLE TEMA ---------- */
+[data-theme="light"] {
+    --bg-dark: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --bg-sidebar: #1e293b;
+    --bg-input: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+    --shadow-xl: 0 12px 32px rgba(0,0,0,0.16);
+    --glow: 0 0 20px rgba(37, 99, 235, 0.15);
+}
+
 /* ---------- VARIÁVEIS ---------- */
 :root {
     /* Cores Principais */
@@ -142,6 +160,109 @@
     height: 80px;
 }
 
+/* ---------- EMPTY STATES ---------- */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.4;
+    color: var(--primary);
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    font-size: 14px;
+    margin-bottom: 20px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state .btn {
+    margin-top: 8px;
+}
+
+/* Empty state inline (para tablas) */
+.empty-state-inline {
+    display: none;
+    padding: 40px 20px;
+}
+
+/* ---------- ANIMAÇÕES SUAVES ---------- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Classes de animação */
+.animate-fadeIn { animation: fadeIn 0.3s ease forwards; }
+.animate-fadeInUp { animation: fadeInUp 0.4s ease forwards; }
+.animate-fadeInDown { animation: fadeInDown 0.4s ease forwards; }
+.animate-scaleIn { animation: scaleIn 0.3s ease forwards; }
+.animate-slideInLeft { animation: slideInLeft 0.4s ease forwards; }
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* Transições suaves para elementos */
+.card, .stat-card, .data-table tr, .menu-item, .btn {
+    transition: all var(--transition-normal);
+}
+
+/* Hover com feedback visual */
+.card:hover, .stat-card:hover, .turma-card:hover, .profile-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.data-table tr:hover td {
+    background: var(--bg-card-hover);
+}
+
+/* Botões com feedback de clique */
+.btn:active, .btn-icon:active {
+    transform: scale(0.96);
+}
+
+/* ---------- PAGE TRANSITIONS ---------- */
+.main-content {
+    animation: fadeIn 0.3s ease;
+}
+
 /* ---------- TOAST NOTIFICATIONS ---------- */
 .toast-container {
     position: fixed;
@@ -151,6 +272,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-width: 400px;
 }
 
 .toast {
